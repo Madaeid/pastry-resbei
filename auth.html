@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>🔐 Login - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <!-- Header -->
+        <div class="auth-header">
+            <div class="header-icon">
+                <span>🔐</span>
+            </div>
+            <h1>My Recipe Book</h1>
+            <p>Sign in to access your delicious recipes</p>
+        </div>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">
+                <span class="tab-icon">🔑</span>
+                Sign In
+            </button>
+            <button class="auth-tab" data-tab="register">
+                <span class="tab-icon">✨</span>
+                Register
+            </button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login" class="auth-form-content active">
+            <form id="loginForm" class="auth-form">
+                <div class="form-group">
+                    <label for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" name="username" placeholder="Enter your username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
+                            required>
+                        <button type="button" class="password-toggle" data-target="loginPassword"
+                            aria-label="Toggle password visibility">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group remember-me-group"
+                    style="display: flex; justify-content: space-between; align-items: center;">
+                    <label class="remember-me-label">
+                        <input type="checkbox" id="rememberMe" name="rememberMe">
+                        <span class="checkbox-custom"></span>
+                        <span class="remember-text">Remember Me</span>
+                    </label>
+                    <a href="#" class="forgot-password-link" id="forgotPasswordLink"
+                        style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Forgot
+                        Password?</a>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <span class="btn-icon">🔓</span>
+                        Sign In
+                    </button>
+                </div>
+
+                <div class="auth-switch">
+                    <p>Don't have an account? <a href="#" class="switch-auth" data-target="register">Register</a></p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register" class="auth-form-content">
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" name="username" placeholder="Choose a username" required
+                        minlength="3">
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" name="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPhone">Phone Number</label>
+                    <input type="tel" id="registerPhone" name="phone" placeholder="+1234567890" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerBirthday">Birthday</label>
+                    <input type="date" id="registerBirthday" name="birthday" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="registerPassword" name="password" placeholder="Create a password"
+                            required minlength="4">
+                        <button type="button" class="password-toggle" data-target="registerPassword"
+                            aria-label="Toggle password visibility">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="confirmPassword" name="confirmPassword"
+                            placeholder="Confirm your password" required>
+                        <button type="button" class="password-toggle" data-target="confirmPassword"
+                            aria-label="Toggle password visibility">
+                            <span class="eye-icon">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <span class="btn-icon">🎉</span>
+                        Create Account
+                    </button>
+                </div>
+
+                <div class="auth-switch">
+                    <p>Already have an account? <a href="#" class="switch-auth" data-target="login">Sign In</a></p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div id="forgot-password" class="auth-form-content">
+            <form id="forgotPasswordForm" class="auth-form">
+                <!-- Step 1: Request Code -->
+                <div id="resetStep1">
+                    <div class="reset-header" style="text-align: center; margin-bottom: 25px;">
+                        <span style="font-size: 3rem;">🔑</span>
+                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;">Reset Your Password</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Choose how you'd like to receive
+                            your verification code</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resetUsername">Username</label>
+                        <input type="text" id="resetUsername" name="username" placeholder="Enter your username"
+                            required>
+                    </div>
+
+                    <!-- Recovery Method Selection -->
+                    <div class="form-group">
+                        <label>Send OTP via:</label>
+                        <div class="recovery-method-selector">
+                            <button type="button" class="method-btn active" data-method="email" id="methodEmail">
+                                <span class="method-icon">📧</span>
+                                <span class="method-text">Email</span>
+                            </button>
+                            <button type="button" class="method-btn" data-method="phone" id="methodPhone">
+                                <span class="method-icon">📱</span>
+                                <span class="method-text">Phone</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Email Input (shown by default) -->
+                    <div class="form-group" id="emailInputGroup">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" name="email" placeholder="Enter your registered email">
+                    </div>
+
+                    <!-- Phone Input (hidden by default) -->
+                    <div class="form-group" id="phoneInputGroup" style="display: none;">
+                        <label for="resetPhone">Phone Number</label>
+                        <input type="tel" id="resetPhone" name="phone" placeholder="Enter your registered phone number">
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="sendCodeBtn" class="btn btn-primary btn-full">
+                            <span class="btn-icon" id="sendCodeIcon">📧</span>
+                            <span id="sendCodeText">Send OTP to Email</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Verify & Reset -->
+                <div id="resetStep2" style="display: none;">
+                    <div class="reset-header" style="text-align: center; margin-bottom: 25px;">
+                        <span style="font-size: 3rem;">✉️</span>
+                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;">Enter Verification Code</h3>
+                        <p class="step-info" style="color: var(--text-secondary); font-size: 0.9rem;"
+                            id="otpSentMessage">
+                            We sent a 6-digit code to your email
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resetCode">Verification Code (OTP)</label>
+                        <input type="text" id="resetCode" name="code" placeholder="Enter 6-digit code" maxlength="6"
+                            pattern="\d{6}" class="otp-input"
+                            style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"
+                                minlength="4">
+                            <button type="button" class="password-toggle" data-target="newPassword"
+                                aria-label="Toggle password visibility">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="confirmNewPassword" name="confirmNewPassword"
+                                placeholder="Confirm new password" minlength="4">
+                            <button type="button" class="password-toggle" data-target="confirmNewPassword"
+                                aria-label="Toggle password visibility">
+                                <span class="eye-icon">👁️</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="flex-direction: column; gap: 10px;">
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <span class="btn-icon">🔄</span>
+                            Reset Password
+                        </button>
+                        <button type="button" id="resendCodeBtn" class="btn btn-secondary btn-full">
+                            <span class="btn-icon">🔁</span>
+                            <span id="resendText">Resend Code</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="auth-switch">
+                    <p>Remembered it? <a href="#" class="switch-auth" data-target="login">Back to Sign In</a></p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Error/Success Message -->
+        <div id="authMessage" class="auth-message"></div>
+    </div>
+
+    <footer>
+        <p>📖 My Recipe Book &copy; 2024</p>
+    </footer>
+
+    <script type="module" src="./auth.js"></script>
+</body>
+
+</html>

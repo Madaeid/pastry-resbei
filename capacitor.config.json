@@ -1,0 +1,5 @@
+{
+  "appId": "com.myrecipebook.app",
+  "appName": "My Recipe Book",
+  "webDir": "dist"
+}

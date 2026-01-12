@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dev-dist/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+
+# Capacitor
+android/app/build/
+android/.gradle/
+android/app/src/main/assets/public
+ios/App/App/public

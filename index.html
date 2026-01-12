@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>🧁 My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate auth check to prevent unauthenticated access
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- User Header (shows when logged in) -->
+    <div class="user-header" id="userHeader" style="display: none;">
+        <div class="user-display">
+            <span class="user-avatar">👤</span>
+            <span class="user-name" id="userName"></span>
+            <span class="premium-badge" id="premiumBadge" style="display: none;">💎 Premium</span>
+        </div>
+
+        <a href="./payment.html" id="upgradeBtn" class="btn-upgrade">
+            <span>💎</span>
+            <span>Upgrade</span>
+        </a>
+        <a href="./admin.html" id="adminDashboardBtn" class="btn-dashboard" style="display: none;">
+            <span>👑</span>
+            <span>Dashboard</span>
+        </a>
+        <button class="btn-logout" id="logoutBtn">
+            <span>🚪</span>
+            <span>Logout</span>
+        </button>
+        <button class="btn-edit-user" id="editUserBtn">
+            <span>✏️</span>
+            <span>Edit Profile</span>
+        </button>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Header Section -->
+    <div class="page-header">
+        <div class="header-icon">
+            <span>🧁</span>
+        </div>
+        <h1>My Recipe Book</h1>
+        <p>Create your personal collection of delicious recipes</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+        <button class="tab active" data-tab="add-recipe">
+            <span class="tab-icon">➕</span>
+            Add Recipe
+        </button>
+        <button class="tab" data-tab="my-recipes">
+            <span class="tab-icon">📖</span>
+            My Recipes
+        </button>
+    </div>
+
+    <!-- Add Recipe Tab Content -->
+    <div id="add-recipe" class="tab-content active">
+        <div class="form-container">
+            <form id="addRecipeForm" class="recipe-form">
+                <!-- Recipe Photo Upload -->
+                <div class="form-group cover-upload">
+                    <label>Recipe Photo</label>
+                    <div class="cover-preview" id="photoPreview">
+                        <span class="upload-icon">📷</span>
+                        <span class="upload-text">Click to upload photo</span>
+                    </div>
+                    <input type="file" id="recipePhoto" name="recipePhoto" accept="image/*" hidden>
+                </div>
+
+                <!-- Recipe Name -->
+                <div class="form-group">
+                    <label for="recipeName">Recipe Name *</label>
+                    <input type="text" id="recipeName" name="recipeName" placeholder="e.g., Chocolate Croissant"
+                        required>
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <label for="category">Category *</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="cakes">🎂 Cakes</option>
+                        <option value="cookies">🍪 Cookies</option>
+                        <option value="pastries">🥐 Pastries</option>
+                        <option value="pies">🥧 Pies & Tarts</option>
+                        <option value="breads">🍞 Breads</option>
+                        <option value="desserts">🍰 Desserts</option>
+                        <option value="chocolates">🍫 Chocolates</option>
+                        <option value="other">✨ Other</option>
+                    </select>
+                </div>
+
+                <!-- Prep & Cook Time -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prepTime">Prep Time (min) *</label>
+                        <input type="number" id="prepTime" name="prepTime" placeholder="30" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cookTime">Cook Time (min) *</label>
+                        <input type="number" id="cookTime" name="cookTime" placeholder="45" min="0" required>
+                    </div>
+                </div>
+
+                <!-- Servings & Difficulty -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="servings">Servings *</label>
+                        <input type="number" id="servings" name="servings" placeholder="8" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="easy">🟢 Easy</option>
+                            <option value="medium" selected>🟡 Medium</option>
+                            <option value="hard">🔴 Hard</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Ingredients -->
+                <div class="form-group">
+                    <label for="ingredients">Ingredients *</label>
+                    <textarea id="ingredients" name="ingredients" rows="6"
+                        placeholder="Enter each ingredient on a new line:&#10;2 cups all-purpose flour&#10;1 cup sugar&#10;1/2 cup butter&#10;2 eggs&#10;1 tsp vanilla extract"
+                        required></textarea>
+                </div>
+
+                <!-- Instructions -->
+                <div class="form-group">
+                    <label for="instructions">Instructions *</label>
+                    <textarea id="instructions" name="instructions" rows="8"
+                        placeholder="Enter step-by-step instructions:&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Add wet ingredients&#10;4. Pour into pan..."
+                        required></textarea>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label for="notes">Chef's Notes (Optional)</label>
+                    <textarea id="notes" name="notes" rows="3"
+                        placeholder="Any tips, variations, or special notes..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="reset" class="btn btn-secondary">
+                        <span class="btn-icon">🗑️</span>
+                        Clear Form
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">✨</span>
+                        Add Recipe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- My Recipes Tab Content -->
+    <div id="my-recipes" class="tab-content">
+        <div class="recipes-header">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="recipeSearch" class="search-input" placeholder="Search recipes...">
+            </div>
+            <div class="recipes-count">
+                <span id="recipeCount">0</span> Recipes
+            </div>
+            <div class="recipes-actions">
+                <button id="downloadPdfBtn" class="btn btn-primary">
+                    <span class="btn-icon">📄</span>
+                    Save as PDF
+                </button>
+
+                <button id="clearAllBtn" class="btn btn-danger">
+                    <span class="btn-icon">🗑️</span>
+                    Clear All
+                </button>
+            </div>
+        </div>
+
+        <div id="recipesGrid" class="recipes-grid">
+            <!-- Recipes will be dynamically inserted here -->
+        </div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="empty-icon">📖</div>
+            <h3>Your recipe book is empty</h3>
+            <p>Start adding your favorite recipes!</p>
+        </div>
+    </div>
+
+    <!-- Recipe View Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div id="modalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="modal-close" id="closeEditUserModal">&times;</button>
+            <div class="modal-header">
+                <h2>✏️ Edit Profile</h2>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm" class="edit-user-form">
+                    <div class="form-group">
+                        <label for="editUsername">Username</label>
+                        <input type="text" id="editUsername" name="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDisplayName">Display Name</label>
+                        <input type="text" id="editDisplayName" name="displayName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editEmail">Email Address</label>
+                        <input type="email" id="editEmail" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editPhoneNumber">Phone Number</label>
+                        <input type="tel" id="editPhoneNumber" name="phoneNumber" placeholder="+1234567890">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editPassword">New Password (leave blank to keep current)</label>
+                        <input type="password" id="editPassword" name="password" placeholder="Min. 4 characters">
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 20px; justify-content: space-between;">
+                        <button type="button" class="btn btn-danger" id="modalLogoutBtn" style="padding: 10px 20px;">
+                            <span>🚪</span> Logout
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="btn-icon">💾</span>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>📖 My Recipe Book &copy; 2024</p>
+    </footer>
+
+    <script type="module" src="./main.js"></script>
+</body>
+
+</html>

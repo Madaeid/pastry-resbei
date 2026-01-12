@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description"
+        content="Upgrade to Premium - Unlock unlimited recipes, PDF exports, and exclusive features">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>💎 Upgrade to Premium - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate auth check to prevent unauthenticated access
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- User Header -->
+    <div class="user-header" id="userHeader">
+        <div class="user-display">
+            <span class="user-avatar">👤</span>
+            <span class="user-name" id="userName"></span>
+            <span class="premium-badge" id="premiumBadge" style="display: none;">💎 Premium</span>
+        </div>
+        <a href="./index.html" class="btn-back-home">
+            <span>🏠</span>
+            <span>Back to App</span>
+        </a>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Header Section -->
+    <div class="page-header payment-header">
+        <div class="header-icon premium-icon">
+            <span>💎</span>
+        </div>
+        <h1>Upgrade to Premium</h1>
+        <p>Unlock the full potential of your recipe collection</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Current Plan Status -->
+    <div class="current-plan-section" id="currentPlanSection">
+        <div class="current-plan-card">
+            <div class="plan-status">
+                <span class="plan-icon" id="planIcon">🆓</span>
+                <div class="plan-info">
+                    <h3 id="currentPlanName">Free Plan</h3>
+                    <p id="currentPlanDetails">Limited features</p>
+                </div>
+            </div>
+            <div class="plan-expiry" id="planExpiry" style="display: none;">
+                <span>Expires:</span>
+                <strong id="expiryDate"></strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Cards Section -->
+    <div class="pricing-section">
+        <div class="pricing-container">
+            <!-- Monthly Plan (SPECIAL OFFER!) -->
+            <div class="pricing-card monthly-offer" data-plan="monthly">
+                <div class="monthly-offer-badge">💰 80% OFF</div>
+                <div class="pricing-card-header">
+                    <span class="plan-emoji">📅</span>
+                    <h3>Monthly</h3>
+                    <p class="plan-subtitle">Great for trying out</p>
+                </div>
+                <div class="pricing-card-price">
+                    <span class="original-price">$5</span>
+                    <span class="currency">$</span>
+                    <span class="amount">2</span>
+                    <span class="cents">.00</span>
+                    <span class="period">/month</span>
+                </div>
+                <div class="savings-badge monthly-save">60% OFF! 💰</div>
+                <ul class="pricing-features">
+                    <li><span class="feature-icon">✅</span> Unlimited Recipes</li>
+                    <li><span class="feature-icon">✅</span> PDF Export</li>
+                    <li><span class="feature-icon">✅</span> All Categories</li>
+                    <li><span class="feature-icon">✅</span> Multiple Photos</li>
+                    <li><span class="feature-icon">✅</span> Priority Support</li>
+                    <li><span class="feature-icon">✅</span> Ad-Free Experience</li>
+                </ul>
+                <button class="btn btn-subscribe" id="subscribeMonthly">
+                    <span class="btn-icon">🚀</span>
+                    Subscribe Monthly
+                </button>
+            </div>
+
+            <!-- Yearly Plan (Popular) -->
+            <div class="pricing-card popular" data-plan="yearly">
+                <div class="popular-badge">🔥 Most Popular</div>
+                <div class="pricing-card-header">
+                    <span class="plan-emoji">🎯</span>
+                    <h3>Yearly</h3>
+                    <p class="plan-subtitle">Best value for bakers</p>
+                </div>
+                <div class="pricing-card-price">
+                    <span class="currency">$</span>
+                    <span class="amount">39</span>
+                    <span class="cents">.99</span>
+                    <span class="period">/year</span>
+                </div>
+                <div class="savings-badge">Save 33% 💰</div>
+                <ul class="pricing-features">
+                    <li><span class="feature-icon">✅</span> Unlimited Recipes</li>
+                    <li><span class="feature-icon">✅</span> PDF Export</li>
+                    <li><span class="feature-icon">✅</span> All Categories</li>
+                    <li><span class="feature-icon">✅</span> Multiple Photos</li>
+                    <li><span class="feature-icon">✅</span> Priority Support</li>
+                    <li><span class="feature-icon">✅</span> Ad-Free Experience</li>
+                    <li><span class="feature-icon">⭐</span> <strong>Cloud Backup</strong></li>
+                </ul>
+                <button class="btn btn-subscribe btn-popular" id="subscribeYearly">
+                    <span class="btn-icon">⭐</span>
+                    Subscribe Yearly
+                </button>
+            </div>
+
+            <!-- Lifetime Plan (SPECIAL OFFER!) -->
+            <div class="pricing-card lifetime" data-plan="lifetime">
+                <div class="lifetime-badge">🔥 LIMITED OFFER</div>
+                <div class="pricing-card-header">
+                    <span class="plan-emoji">👑</span>
+                    <h3>Lifetime</h3>
+                    <p class="plan-subtitle">One-time payment</p>
+                </div>
+                <div class="pricing-card-price">
+                    <span class="original-price">$100</span>
+                    <span class="currency">$</span>
+                    <span class="amount">5</span>
+                    <span class="cents">.00</span>
+                    <span class="period">once</span>
+                </div>
+                <div class="savings-badge lifetime-save">95% OFF! 🔥</div>
+                <ul class="pricing-features">
+                    <li><span class="feature-icon">✅</span> <strong>All Premium Features</strong></li>
+                    <li><span class="feature-icon">✅</span> <strong>Forever Access</strong></li>
+                    <li><span class="feature-icon">✅</span> <strong>All Future Updates</strong></li>
+                    <li><span class="feature-icon">✅</span> Priority Support</li>
+                    <li><span class="feature-icon">👑</span> <strong>Founder Badge</strong></li>
+                </ul>
+                <button class="btn btn-subscribe btn-lifetime" id="subscribeLifetime">
+                    <span class="btn-icon">👑</span>
+                    Get Lifetime Access - Only $5!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Comparison Section -->
+    <div class="features-section">
+        <h2 class="section-title">
+            <span>📊</span> Feature Comparison
+        </h2>
+        <div class="comparison-table-wrapper">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Free</th>
+                        <th class="premium-col">Premium</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="feature-name">📝 Add Recipes</span></td>
+                        <td>Up to 10</td>
+                        <td class="premium-col">Unlimited ✨</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">📖 View Recipes</span></td>
+                        <td>✅</td>
+                        <td class="premium-col">✅</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">📄 Export to PDF</span></td>
+                        <td>❌</td>
+                        <td class="premium-col">✅</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">📁 Categories</span></td>
+                        <td>5 Basic</td>
+                        <td class="premium-col">All 10+ ✨</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">📷 Recipe Photos</span></td>
+                        <td>1 per recipe</td>
+                        <td class="premium-col">Multiple ✨</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">☁️ Cloud Backup</span></td>
+                        <td>❌</td>
+                        <td class="premium-col">✅ (Yearly+)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">🚫 Ad-Free</span></td>
+                        <td>❌</td>
+                        <td class="premium-col">✅</td>
+                    </tr>
+                    <tr>
+                        <td><span class="feature-name">🎧 Priority Support</span></td>
+                        <td>❌</td>
+                        <td class="premium-col">✅</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="trust-section">
+        <div class="trust-badges">
+            <div class="trust-badge">
+                <span class="trust-icon">🔒</span>
+                <span>Secure Payment</span>
+            </div>
+            <div class="trust-badge">
+                <span class="trust-icon">💳</span>
+                <span>Stripe Protected</span>
+            </div>
+            <div class="trust-badge">
+                <span class="trust-icon">🔄</span>
+                <span>Cancel Anytime</span>
+            </div>
+            <div class="trust-badge">
+                <span class="trust-icon">💯</span>
+                <span>30-Day Guarantee</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="faq-section">
+        <h2 class="section-title">
+            <span>❓</span> Frequently Asked Questions
+        </h2>
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Can I cancel my subscription anytime?</span>
+                    <span class="faq-toggle">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes! You can cancel your subscription at any time. Your premium features will remain active until
+                        the end of your billing period.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What payment methods do you accept?</span>
+                    <span class="faq-toggle">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and Apple Pay
+                        through our secure Stripe payment system.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Is there a free trial?</span>
+                    <span class="faq-toggle">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>The free plan allows you to try the basic features. When you upgrade, you get a 30-day money-back
+                        guarantee if you're not satisfied!</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>What happens to my recipes if I downgrade?</span>
+                    <span class="faq-toggle">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>All your recipes are saved and remain accessible. However, if you exceed the free limit (10
+                        recipes), you won't be able to add new ones until you upgrade again or delete some recipes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal-content">
+            <button class="modal-close" id="closePaymentModal">&times;</button>
+            <div class="payment-modal-header">
+                <h2>💳 Complete Your Purchase</h2>
+                <p id="selectedPlanText">Monthly Plan - $4.99/month</p>
+            </div>
+            <div class="payment-modal-body">
+                <form id="paymentForm" class="payment-form">
+                    <!-- Card Holder Name -->
+                    <div class="form-group">
+                        <label for="cardName">Cardholder Name</label>
+                        <input type="text" id="cardName" name="cardName" placeholder="John Doe" required>
+                    </div>
+
+                    <!-- Card Number -->
+                    <div class="form-group">
+                        <label for="cardNumber">Card Number</label>
+                        <div class="card-input-wrapper">
+                            <input type="text" id="cardNumber" name="cardNumber" placeholder="4242 4242 4242 4242"
+                                maxlength="19" required>
+                            <div class="card-icons">
+                                <span class="card-icon">💳</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Expiry and CVV -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cardExpiry">Expiry Date</label>
+                            <input type="text" id="cardExpiry" name="cardExpiry" placeholder="MM/YY" maxlength="5"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardCvv">CVV</label>
+                            <input type="text" id="cardCvv" name="cardCvv" placeholder="123" maxlength="4" required>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary -->
+                    <div class="order-summary">
+                        <div class="summary-row">
+                            <span>Plan</span>
+                            <span id="summaryPlan">Monthly</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Price</span>
+                            <span id="summaryPrice">$4.99</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span id="summaryTotal">$4.99</span>
+                        </div>
+                    </div>
+
+                    <!-- Demo Notice -->
+                    <div class="demo-notice">
+                        <span>🔬</span>
+                        <p>This is a <strong>demo payment</strong>. Use test card: <code>4242 4242 4242 4242</code></p>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-pay" id="payButton">
+                        <span class="btn-icon">🔒</span>
+                        <span id="payButtonText">Pay $4.99</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content success-modal-content">
+            <div class="success-animation">
+                <div class="success-checkmark">
+                    <span>✅</span>
+                </div>
+            </div>
+            <h2>Payment Successful!</h2>
+            <p>Welcome to Premium, <span id="successUserName"></span>!</p>
+            <div class="success-details">
+                <p>🎉 Your subscription is now active</p>
+                <p id="successPlanDetails"></p>
+            </div>
+            <button class="btn btn-primary" id="successContinue">
+                <span class="btn-icon">🚀</span>
+                Start Using Premium Features
+            </button>
+        </div>
+    </div>
+
+    <!-- Manage Subscription Section (for existing subscribers) -->
+    <div class="manage-section" id="manageSection" style="display: none;">
+        <h2 class="section-title">
+            <span>⚙️</span> Manage Your Subscription
+        </h2>
+        <div class="manage-container">
+            <div class="manage-card">
+                <div class="manage-info">
+                    <h3>Your Current Plan</h3>
+                    <p id="managePlanName">Premium Yearly</p>
+                    <p id="manageNextBilling">Next billing: January 1, 2025</p>
+                </div>
+                <div class="manage-actions">
+                    <button class="btn btn-secondary" id="updatePaymentBtn">
+                        <span>💳</span> Update Payment Method
+                    </button>
+                    <button class="btn btn-danger" id="cancelSubscriptionBtn">
+                        <span>❌</span> Cancel Subscription
+                    </button>
+                </div>
+            </div>
+            <div class="billing-history">
+                <h4>Billing History</h4>
+                <div id="billingHistoryList" class="billing-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>📖 My Recipe Book © 2024 | Secure payments by Stripe</p>
+    </footer>
+
+    <script type="module" src="./payment.js"></script>
+</body>
+
+</html>
