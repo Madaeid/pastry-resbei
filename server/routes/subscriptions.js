@@ -3,6 +3,12 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import {
+    PLANS as STRIPE_PLANS,
+    createCheckoutSession,
+    verifyCheckoutSession,
+    constructWebhookEvent
+} from '../config/stripe.js';
 
 const router = express.Router();
 
@@ -341,5 +347,269 @@ function formatDate(date) {
         day: 'numeric'
     });
 }
+
+// ===== STRIPE INTEGRATION =====
+
+// Create Stripe Checkout Session
+router.post('/create-checkout-session', authenticateToken, async (req, res) => {
+    try {
+        const { planId, successUrl, cancelUrl } = req.body;
+        const db = getDatabase();
+
+        if (!PLANS[planId]) {
+            return res.status(400).json({ error: 'Invalid plan' });
+        }
+
+        // Get user email
+        const user = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Create Stripe checkout session
+        const session = await createCheckoutSession(
+            req.user.userId,
+            user.email,
+            planId,
+            successUrl || `${process.env.FRONTEND_URL}/payment-success.html`,
+            cancelUrl || `${process.env.FRONTEND_URL}/payment.html`
+        );
+
+        res.json({
+            sessionId: session.id,
+            url: session.url
+        });
+
+    } catch (error) {
+        console.error('Create checkout session error:', error);
+        res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+});
+
+// Verify Stripe Checkout Session (called after successful payment redirect)
+router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const db = getDatabase();
+
+        // Verify the session with Stripe
+        const session = await verifyCheckoutSession(sessionId);
+
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({
+                success: false,
+                error: 'Payment not completed'
+            });
+        }
+
+        // Check if this session's user matches the authenticated user
+        if (session.metadata.userId !== req.user.userId) {
+            return res.status(403).json({ error: 'Session does not belong to this user' });
+        }
+
+        const planId = session.metadata.planId;
+        const plan = PLANS[planId];
+
+        // Check if subscription already created via webhook
+        const existingSub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+
+        if (existingSub && existingSub.stripe_session_id === sessionId) {
+            return res.json({
+                success: true,
+                alreadyProcessed: true,
+                subscription: {
+                    plan: existingSub.plan,
+                    status: existingSub.status,
+                    endDate: existingSub.end_date
+                }
+            });
+        }
+
+        // Create/update subscription if not already done by webhook
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + plan.durationDays);
+
+        if (existingSub) {
+            db.prepare(`
+                UPDATE subscriptions SET
+                    plan = ?,
+                    status = 'active',
+                    start_date = ?,
+                    end_date = ?,
+                    auto_renew = ?,
+                    stripe_session_id = ?,
+                    stripe_customer_id = ?,
+                    granted_by_admin = 0,
+                    cancelled_at = NULL,
+                    updated_at = ?
+                WHERE user_id = ?
+            `).run(
+                planId,
+                startDate.toISOString(),
+                endDate.toISOString(),
+                planId !== 'lifetime' ? 1 : 0,
+                sessionId,
+                session.customer || null,
+                new Date().toISOString(),
+                req.user.userId
+            );
+        } else {
+            db.prepare(`
+                INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
+                VALUES (?, ?, 'active', ?, ?, ?, ?, ?)
+            `).run(
+                req.user.userId,
+                planId,
+                startDate.toISOString(),
+                endDate.toISOString(),
+                planId !== 'lifetime' ? 1 : 0,
+                sessionId,
+                session.customer || null
+            );
+        }
+
+        // Add transaction
+        db.prepare(`
+            INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+            VALUES (?, ?, 'subscription', ?, ?, 'completed', ?)
+        `).run(
+            req.user.userId,
+            `TXN-${Date.now()}`,
+            planId,
+            plan.price,
+            sessionId
+        );
+
+        res.json({
+            success: true,
+            subscription: {
+                plan: planId,
+                status: 'active',
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Verify session error:', error);
+        res.status(500).json({ error: 'Failed to verify session' });
+    }
+});
+
+// Stripe Webhook Handler
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+
+    let event;
+    try {
+        event = constructWebhookEvent(req.body, sig);
+    } catch (err) {
+        console.error('Webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+        case 'checkout.session.completed': {
+            const session = event.data.object;
+            const userId = session.metadata.userId;
+            const planId = session.metadata.planId;
+
+            if (!userId || !planId) {
+                console.error('Missing metadata in webhook:', session.id);
+                break;
+            }
+
+            try {
+                const db = getDatabase();
+                const plan = PLANS[planId];
+
+                const startDate = new Date();
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + plan.durationDays);
+
+                // Check for existing subscription
+                const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+
+                if (existingSub) {
+                    db.prepare(`
+                        UPDATE subscriptions SET
+                            plan = ?,
+                            status = 'active',
+                            start_date = ?,
+                            end_date = ?,
+                            auto_renew = ?,
+                            stripe_session_id = ?,
+                            stripe_customer_id = ?,
+                            granted_by_admin = 0,
+                            cancelled_at = NULL,
+                            updated_at = ?
+                        WHERE user_id = ?
+                    `).run(
+                        planId,
+                        startDate.toISOString(),
+                        endDate.toISOString(),
+                        planId !== 'lifetime' ? 1 : 0,
+                        session.id,
+                        session.customer || null,
+                        new Date().toISOString(),
+                        userId
+                    );
+                } else {
+                    db.prepare(`
+                        INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
+                        VALUES (?, ?, 'active', ?, ?, ?, ?, ?)
+                    `).run(
+                        userId,
+                        planId,
+                        startDate.toISOString(),
+                        endDate.toISOString(),
+                        planId !== 'lifetime' ? 1 : 0,
+                        session.id,
+                        session.customer || null
+                    );
+                }
+
+                // Add transaction
+                db.prepare(`
+                    INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+                    VALUES (?, ?, 'subscription', ?, ?, 'completed', ?)
+                `).run(
+                    userId,
+                    `TXN-${Date.now()}`,
+                    planId,
+                    plan.price,
+                    session.id
+                );
+
+                console.log(`Subscription created for user ${userId} - Plan: ${planId}`);
+            } catch (dbError) {
+                console.error('Database error in webhook:', dbError);
+            }
+            break;
+        }
+
+        case 'customer.subscription.deleted': {
+            // Handle subscription cancellation from Stripe
+            const subscription = event.data.object;
+            console.log('Subscription cancelled:', subscription.id);
+            // Optional: Update subscription status in database
+            break;
+        }
+
+        default:
+            console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.json({ received: true });
+});
+
+// Get Stripe publishable key (for frontend)
+router.get('/stripe-key', (req, res) => {
+    res.json({
+        publishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+    });
+});
 
 export default router;

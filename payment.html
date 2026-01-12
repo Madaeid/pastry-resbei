@@ -13,6 +13,8 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
         // Immediate auth check to prevent unauthenticated access
         if (!sessionStorage.getItem('currentUser')) {
@@ -308,75 +310,51 @@
         </div>
     </div>
 
-    <!-- Payment Modal -->
+    <!-- Payment Modal (Stripe Checkout) -->
     <div id="paymentModal" class="modal">
         <div class="modal-content payment-modal-content">
             <button class="modal-close" id="closePaymentModal">&times;</button>
             <div class="payment-modal-header">
-                <h2>💳 Complete Your Purchase</h2>
-                <p id="selectedPlanText">Monthly Plan - $4.99/month</p>
+                <h2>💳 Confirm Your Purchase</h2>
+                <p id="selectedPlanText">Monthly Plan - $2.00/month</p>
             </div>
             <div class="payment-modal-body">
-                <form id="paymentForm" class="payment-form">
-                    <!-- Card Holder Name -->
-                    <div class="form-group">
-                        <label for="cardName">Cardholder Name</label>
-                        <input type="text" id="cardName" name="cardName" placeholder="John Doe" required>
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <div class="summary-row">
+                        <span>Plan</span>
+                        <span id="summaryPlan">Monthly</span>
                     </div>
-
-                    <!-- Card Number -->
-                    <div class="form-group">
-                        <label for="cardNumber">Card Number</label>
-                        <div class="card-input-wrapper">
-                            <input type="text" id="cardNumber" name="cardNumber" placeholder="4242 4242 4242 4242"
-                                maxlength="19" required>
-                            <div class="card-icons">
-                                <span class="card-icon">💳</span>
-                            </div>
-                        </div>
+                    <div class="summary-row">
+                        <span>Price</span>
+                        <span id="summaryPrice">$2.00</span>
                     </div>
-
-                    <!-- Expiry and CVV -->
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="cardExpiry">Expiry Date</label>
-                            <input type="text" id="cardExpiry" name="cardExpiry" placeholder="MM/YY" maxlength="5"
-                                required>
-                        </div>
-                        <div class="form-group">
-                            <label for="cardCvv">CVV</label>
-                            <input type="text" id="cardCvv" name="cardCvv" placeholder="123" maxlength="4" required>
-                        </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="summaryTotal">$2.00</span>
                     </div>
+                </div>
 
-                    <!-- Order Summary -->
-                    <div class="order-summary">
-                        <div class="summary-row">
-                            <span>Plan</span>
-                            <span id="summaryPlan">Monthly</span>
-                        </div>
-                        <div class="summary-row">
-                            <span>Price</span>
-                            <span id="summaryPrice">$4.99</span>
-                        </div>
-                        <div class="summary-row total">
-                            <span>Total</span>
-                            <span id="summaryTotal">$4.99</span>
-                        </div>
+                <!-- Stripe Info -->
+                <div class="stripe-info">
+                    <p>🔒 You'll be redirected to Stripe's secure checkout to complete your payment.</p>
+                    <div class="payment-methods">
+                        <span>💳</span>
+                        <span>Credit/Debit Card</span>
+                        <span>•</span>
+                        <span>Apple Pay</span>
+                        <span>•</span>
+                        <span>Google Pay</span>
                     </div>
+                </div>
 
-                    <!-- Demo Notice -->
-                    <div class="demo-notice">
-                        <span>🔬</span>
-                        <p>This is a <strong>demo payment</strong>. Use test card: <code>4242 4242 4242 4242</code></p>
-                    </div>
+                <!-- Checkout Button -->
+                <button class="btn btn-primary btn-pay" id="payButton">
+                    <span class="btn-icon">🔒</span>
+                    <span id="payButtonText">Proceed to Checkout</span>
+                </button>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn btn-primary btn-pay" id="payButton">
-                        <span class="btn-icon">🔒</span>
-                        <span id="payButtonText">Pay $4.99</span>
-                    </button>
-                </form>
+                <p class="secure-note">🔐 Secure payment powered by Stripe</p>
             </div>
         </div>
     </div>

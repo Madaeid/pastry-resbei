@@ -77,6 +77,8 @@ db.exec(`
         payment_expiry TEXT,
         auto_renew INTEGER DEFAULT 1,
         granted_by_admin INTEGER DEFAULT 0,
+        stripe_session_id TEXT,
+        stripe_customer_id TEXT,
         cancelled_at TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -97,6 +99,7 @@ db.exec(`
         status TEXT NOT NULL,
         payment_last4 TEXT,
         payment_brand TEXT,
+        stripe_session_id TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )

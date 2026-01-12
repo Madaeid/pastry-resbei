@@ -1,6 +1,9 @@
 // Authentication Module for Pastry Recipe Book
 import './style.css';
 
+// API Configuration
+const API_URL = 'http://localhost:3001/api';
+
 // ===== Authentication Functions (available for import) =====
 
 // Simple hash function for password (SHA-256)
@@ -400,6 +403,23 @@ async function loginUser(username, password) {
     sessionStorage.setItem('currentUser', username.toLowerCase());
     sessionStorage.setItem('isAdmin', user.isAdmin ? 'true' : 'false');
 
+    // Also try to get JWT token from backend for API calls
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            if (data.token) {
+                sessionStorage.setItem('authToken', data.token);
+            }
+        }
+    } catch (err) {
+        console.log('Backend auth not available, using local auth');
+    }
+
     return { success: true, isAdmin: user.isAdmin || false };
 }
 
@@ -412,12 +432,18 @@ function isLoggedIn() {
 function logout() {
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('isAdmin');
+    sessionStorage.removeItem('authToken');
     window.location.href = './auth.html';
 }
 
 // Get current user
 function getCurrentUser() {
     return sessionStorage.getItem('currentUser');
+}
+
+// Get auth token for API calls
+function getAuthToken() {
+    return sessionStorage.getItem('authToken');
 }
 
 // ===== Auth Page Specific Code =====
@@ -805,4 +831,4 @@ function initAuthPage() {
 }
 
 // Export functions for use in main.js and admin.js
-export { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser };
+export { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser, getAuthToken };

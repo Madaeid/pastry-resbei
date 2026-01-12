@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>🎉 Payment Successful - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .success-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .success-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: bounce 1s ease-in-out;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40% {
+                transform: translateY(-20px);
+            }
+
+            60% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .success-card h1 {
+            color: #1a1a2e;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-card p {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .plan-info .plan-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .plan-info .plan-expiry {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .success-features {
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .success-features h3 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+        }
+
+        .success-features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .success-features li {
+            padding: 0.5rem 0;
+            color: #444;
+        }
+
+        .success-features li::before {
+            content: "✅ ";
+        }
+
+        .btn-continue {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading-state {
+            display: none;
+        }
+
+        .loading-state.active {
+            display: block;
+        }
+
+        .ready-state {
+            display: block;
+        }
+
+        .ready-state.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success-container">
+        <div class="success-card">
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState">
+                <div class="spinner"></div>
+                <h2>Verifying your payment...</h2>
+                <p>Please wait while we confirm your subscription.</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Success State -->
+            <div class="ready-state hidden" id="readyState">
+                <div class="success-icon">🎉</div>
+                <h1>Payment Successful!</h1>
+                <p>Welcome to Premium, <strong id="userName"></strong>!</p>
+
+                <div class="plan-info">
+                    <div class="plan-name" id="planName">Premium Plan</div>
+                    <div class="plan-expiry" id="planExpiry">Valid until: Loading...</div>
+                </div>
+
+                <div class="success-features">
+                    <h3>You now have access to:</h3>
+                    <ul>
+                        <li>Unlimited Recipes</li>
+                        <li>PDF Export</li>
+                        <li>All Categories</li>
+                        <li>Multiple Photos per Recipe</li>
+                        <li>Priority Support</li>
+                        <li>Ad-Free Experience</li>
+                    </ul>
+                </div>
+
+                <button class="btn-continue" onclick="window.location.href='./index.html'">
+                    <span>🚀</span>
+                    Start Using Premium Features
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getCurrentUser, getAuthToken } from './auth.js';
+
+        const API_URL = 'http://localhost:3001/api';
+
+        // Get session_id from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+
+        const loadingState = document.getElementById('loadingState');
+        const readyState = document.getElementById('readyState');
+        const errorMessage = document.getElementById('errorMessage');
+
+        async function verifySession() {
+            if (!sessionId) {
+                showError('No session ID found. Please try again.');
+                return;
+            }
+
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = './auth.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/subscriptions/verify-session/${sessionId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to verify payment');
+                }
+
+                if (data.success) {
+                    showSuccess(data.subscription);
+                } else {
+                    throw new Error('Payment verification failed');
+                }
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                showError(error.message || 'Failed to verify payment. Please contact support.');
+            }
+        }
+
+        function showSuccess(subscription) {
+            loadingState.classList.remove('active');
+            readyState.classList.remove('hidden');
+
+            const userName = getCurrentUser();
+            document.getElementById('userName').textContent = userName || 'User';
+
+            if (subscription) {
+                const planNames = {
+                    monthly: 'Premium Monthly',
+                    yearly: 'Premium Yearly',
+                    lifetime: 'Premium Lifetime'
+                };
+                document.getElementById('planName').textContent = planNames[subscription.plan] || 'Premium Plan';
+
+                if (subscription.endDate) {
+                    const endDate = new Date(subscription.endDate);
+                    if (subscription.plan === 'lifetime') {
+                        document.getElementById('planExpiry').textContent = 'Lifetime Access - Never expires!';
+                    } else {
+                        document.getElementById('planExpiry').textContent = `Valid until: ${endDate.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}`;
+                    }
+                }
+            }
+        }
+
+        function showError(message) {
+            loadingState.classList.remove('active');
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+
+            // Show a button to go back
+            readyState.innerHTML = `
+                <div class="success-icon">❌</div>
+                <h1>Something went wrong</h1>
+                <p>${message}</p>
+                <button class="btn-continue" onclick="window.location.href='./payment.html'">
+                    <span>🔄</span>
+                    Try Again
+                </button>
+            `;
+            readyState.classList.remove('hidden');
+        }
+
+        // Start verification
+        loadingState.classList.add('active');
+        verifySession();
+    </script>
+</body>
+
+</html>

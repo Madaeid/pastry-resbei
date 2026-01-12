@@ -1,6 +1,9 @@
 // Payment Module for Pastry Recipe Book
 import './style.css';
-import { getCurrentUser, isAdmin } from './auth.js';
+import { getCurrentUser, isAdmin, getAuthToken } from './auth.js';
+
+// API Configuration
+const API_URL = 'http://localhost:3001/api';
 
 // ===== Subscription Plans Configuration =====
 const PLANS = {
@@ -418,7 +421,7 @@ function setupEventListeners() {
     // Payment modal
     const closePaymentModal = document.getElementById('closePaymentModal');
     const paymentModal = document.getElementById('paymentModal');
-    const paymentForm = document.getElementById('paymentForm');
+    const payButton = document.getElementById('payButton');
 
     if (closePaymentModal) {
         closePaymentModal.addEventListener('click', () => {
@@ -434,8 +437,9 @@ function setupEventListeners() {
         });
     }
 
-    if (paymentForm) {
-        paymentForm.addEventListener('submit', handlePaymentSubmit);
+    // Stripe Checkout button
+    if (payButton) {
+        payButton.addEventListener('click', handleStripeCheckout);
     }
 
     // Success modal
@@ -472,12 +476,130 @@ function openPaymentModal(planId) {
     if (summaryPlan) summaryPlan.textContent = plan.name;
     if (summaryPrice) summaryPrice.textContent = `$${plan.price.toFixed(2)}`;
     if (summaryTotal) summaryTotal.textContent = `$${plan.price.toFixed(2)}`;
-    if (payButtonText) payButtonText.textContent = `Pay $${plan.price.toFixed(2)}`;
+    if (payButtonText) payButtonText.textContent = 'Proceed to Checkout';
 
     // Show modal
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) {
         paymentModal.style.display = 'flex';
+    }
+}
+
+// ===== Stripe Checkout Handler =====
+async function handleStripeCheckout(e) {
+    if (e) e.preventDefault(); // Prevent default just in case
+    console.log('handleStripeCheckout called');
+
+    if (!selectedPlan) {
+        console.error('No plan selected');
+        return;
+    }
+
+    const payButton = document.getElementById('payButton');
+    const payButtonText = document.getElementById('payButtonText');
+
+    // Disable button and show loading
+    payButton.disabled = true;
+    payButtonText.textContent = 'Redirecting to Stripe...';
+
+    try {
+        const token = getAuthToken();
+        console.log('Auth token:', token ? 'Found' : 'Missing');
+
+        if (!token) {
+            console.log('Token missing. Checking for saved credentials...');
+
+            // Attempt silent login if credentials exist
+            const savedCredentialsStr = localStorage.getItem('rememberedUser');
+            if (savedCredentialsStr) {
+                try {
+                    const credentials = JSON.parse(savedCredentialsStr);
+                    const username = credentials.username;
+                    // Password is base64 encoded in auth.js saveCredentials
+                    const password = atob(credentials.password);
+
+                    console.log('Attempting silent login for:', username);
+
+                    const loginResponse = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (loginResponse.ok) {
+                        const loginData = await loginResponse.json();
+                        if (loginData.token) {
+                            console.log('Silent login successful! Token acquired.');
+                            sessionStorage.setItem('authToken', loginData.token);
+
+                            // Recursively call handleStripeCheckout with the new token
+                            return handleStripeCheckout(e);
+                        }
+                    } else {
+                        console.warn('Silent login failed:', loginResponse.status);
+                    }
+                } catch (silentAuthErr) {
+                    console.error('Silent auth error:', silentAuthErr);
+                }
+            }
+
+            console.log('Redirecting to auth.html because token is missing and silent login failed');
+
+            // CRITICAL FIX: Clear session if token is missing but user is "logged in" locally
+            // This prevents auth.html from redirecting back to index.html immediately
+            if (sessionStorage.getItem('currentUser')) {
+                console.log('Clearing stale local session');
+                sessionStorage.removeItem('currentUser');
+                sessionStorage.removeItem('authToken');
+                sessionStorage.removeItem('isAdmin');
+            }
+
+            showNotification('Please log in again to connect with payment server', 'error');
+            // Store return URL
+            sessionStorage.setItem('returnUrl', window.location.href);
+            window.location.href = './auth.html';
+            return;
+        }
+
+        console.log('Creating checkout session for plan:', selectedPlan);
+        const frontendUrl = window.location.origin;
+        console.log('Frontend URL:', frontendUrl);
+
+        // Create checkout session via API
+        const response = await fetch(`${API_URL}/subscriptions/create-checkout-session`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                planId: selectedPlan,
+                successUrl: `${frontendUrl}/payment-success.html`,
+                cancelUrl: `${frontendUrl}/payment.html`
+            })
+        });
+
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to create checkout session');
+        }
+
+        // Redirect to Stripe Checkout
+        if (data.url) {
+            console.log('Redirecting to Stripe URL:', data.url);
+            window.location.href = data.url;
+        } else {
+            throw new Error('No checkout URL received');
+        }
+
+    } catch (error) {
+        console.error('Stripe checkout error:', error);
+        showNotification(error.message || 'Failed to start checkout. Please try again.', 'error');
+        payButton.disabled = false;
+        payButtonText.textContent = 'Proceed to Checkout';
     }
 }
 
