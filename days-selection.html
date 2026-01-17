@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>📅 Daily Menu - Select Day</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate auth check
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Page Header -->
+    <div class="daily-menu-header">
+        <div class="header-brand">
+            <a href="./index.html" class="back-link">
+                <span>←</span>
+                <span>Back to Recipes</span>
+            </a>
+        </div>
+        <div class="header-title">
+            <span class="header-icon-emoji">📅</span>
+            <h1>Daily Menu</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-logout" id="logoutBtn">
+                <span>🚪</span>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Main Content -->
+    <div class="days-selection-container">
+        <div class="days-selection-header">
+            <h2>🗓️ Choose a Day</h2>
+            <p>Select a day to view or add your recipes</p>
+        </div>
+
+        <div class="days-grid" id="daysGrid">
+            <!-- Days will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <footer>
+        <p>📅 Daily Menu - My Recipe Book © 2024</p>
+    </footer>
+
+    <script type="module" src="./days-selection.js"></script>
+</body>
+
+</html>

@@ -17,6 +17,7 @@ import userRoutes from './routes/users.js';
 import recipeRoutes from './routes/recipes.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import adminRoutes from './routes/admin.js';
+import dailyMenuRoutes from './routes/dailyMenu.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -56,6 +57,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/daily-menu', dailyMenuRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

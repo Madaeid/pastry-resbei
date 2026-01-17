@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>📅 Daily Menu - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate auth check
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Page Header -->
+    <div class="daily-menu-header">
+        <div class="header-brand">
+            <a href="./days-selection.html" class="back-link">
+                <span>←</span>
+                <span>Back to Days</span>
+            </a>
+        </div>
+        <div class="header-title">
+            <span class="header-icon-emoji" id="dayEmoji">📅</span>
+            <h1 id="dayTitle">Loading...</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-logout" id="logoutBtn">
+                <span>🚪</span>
+                <span>Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Main Content -->
+    <div class="day-recipes-container">
+        <!-- Add Recipe Section -->
+        <div class="add-recipe-section">
+            <button class="btn-add-recipe" id="addRecipeBtn">
+                <span class="add-icon">➕</span>
+                <span>Add Recipe</span>
+            </button>
+        </div>
+
+        <!-- Recipes Grid -->
+        <div class="day-recipes-grid" id="recipesGrid">
+            <!-- Recipes will be dynamically inserted here -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-day-state" id="emptyState">
+            <div class="empty-icon">🍰</div>
+            <h3>No recipes for this day yet</h3>
+            <p>Click the "Add Recipe" button to add your first recipe!</p>
+        </div>
+    </div>
+
+    <!-- Add Recipe Modal -->
+    <div id="addRecipeModal" class="modal">
+        <div class="modal-content modal-md">
+            <button class="modal-close" id="closeAddRecipeModal">&times;</button>
+            <div class="modal-header">
+                <h2>➕ Add Recipe for <span id="modalDayName">Day</span></h2>
+            </div>
+
+            <form id="addRecipeForm">
+                <div class="form-group cover-upload">
+                    <label>Recipe Photo</label>
+                    <div class="cover-preview" id="recipePhotoPreview">
+                        <span class="upload-icon">📷</span>
+                        <span class="upload-text">Click to upload photo</span>
+                    </div>
+                    <input type="file" id="recipePhoto" accept="image/*" hidden>
+                </div>
+                <div class="form-group">
+                    <label for="recipeName">Recipe Name *</label>
+                    <input type="text" id="recipeName" placeholder="e.g., Chocolate Croissant" required>
+                </div>
+                <div class="form-group">
+                    <label for="recipeIngredients">Ingredients (optional)</label>
+                    <textarea id="recipeIngredients" rows="4"
+                        placeholder="e.g., 2 cups flour, 1 cup sugar, 3 eggs..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="recipeInstructions">Instructions (optional)</label>
+                    <textarea id="recipeInstructions" rows="5"
+                        placeholder="e.g., Step 1: Preheat oven to 350°F..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddRecipe">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">✨</span>
+                        Add Recipe
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Select Recipe Modal -->
+    <div id="selectRecipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeSelectRecipeModal">&times;</button>
+            <div class="modal-header">
+                <h2>📖 Select from My Recipes</h2>
+            </div>
+            <div class="recipe-search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="selectRecipeSearch" class="search-input" placeholder="Search recipes...">
+            </div>
+            <div id="selectRecipeList" class="select-recipe-list">
+                <!-- Recipes will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- View Recipe Modal -->
+    <div id="viewRecipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeViewRecipeModal">&times;</button>
+            <div id="recipeModalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>📅 Daily Menu - My Recipe Book © 2024</p>
+    </footer>
+
+    <script type="module" src="./daily-menu.js"></script>
+</body>
+
+</html>

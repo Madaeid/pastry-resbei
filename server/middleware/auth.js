@@ -41,6 +41,30 @@ export function requireAdmin(req, res, next) {
     next();
 }
 
+// Check if user has premium subscription
+export function requirePremium(req, res, next) {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const db = getDatabase();
+
+    // Check for active subscription
+    const subscription = db.prepare(`
+        SELECT * FROM subscriptions 
+        WHERE user_id = ? AND status = 'active' AND end_date > datetime('now')
+    `).get(req.user.userId);
+
+    // Also check if user is admin (admins have access to everything)
+    const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.userId);
+
+    if (!subscription && (!user || !user.is_admin)) {
+        return res.status(403).json({ error: 'Premium subscription required' });
+    }
+
+    next();
+}
+
 // Generate JWT token
 export function generateToken(userId, username, isAdmin = false) {
     return jwt.sign(
@@ -66,6 +90,7 @@ export function generateRefreshToken(userId) {
 export default {
     authenticateToken,
     requireAdmin,
+    requirePremium,
     generateToken,
     generateRefreshToken
 };

@@ -23,14 +23,19 @@
     <!-- User Header (shows when logged in) -->
     <div class="user-header" id="userHeader" style="display: none;">
         <div class="user-display">
-            <span class="user-avatar">👤</span>
+            <img id="userProfilePic" src="" alt="Profile" class="user-avatar-img" style="display: none;">
+            <span class="user-avatar" id="userDefaultAvatar">👤</span>
             <span class="user-name" id="userName"></span>
             <span class="premium-badge" id="premiumBadge" style="display: none;">💎 Premium</span>
         </div>
 
         <a href="./payment.html" id="upgradeBtn" class="btn-upgrade">
             <span>💎</span>
-            <span>Upgrade</span>
+            <span>Upgrade (80% OFF)</span>
+        </a>
+        <a href="./days-selection.html" id="dailyMenuBtn" class="btn-daily-menu" style="display: none;">
+            <span>📅</span>
+            <span>Daily Menu</span>
         </a>
         <a href="./admin.html" id="adminDashboardBtn" class="btn-dashboard" style="display: none;">
             <span>👑</span>
@@ -95,7 +100,7 @@
             <form id="addRecipeForm" class="recipe-form">
                 <!-- Recipe Photo Upload -->
                 <div class="form-group cover-upload">
-                    <label>Recipe Photo</label>
+                    <label>Recipe Photo (Optional)</label>
                     <div class="cover-preview" id="photoPreview">
                         <span class="upload-icon">📷</span>
                         <span class="upload-text">Click to upload photo</span>
@@ -245,6 +250,15 @@
             </div>
             <div class="modal-body">
                 <form id="editUserForm" class="edit-user-form">
+                    <!-- Profile Photo Upload -->
+                    <div class="form-group profile-upload-group">
+                        <label>Profile Photo</label>
+                        <div class="user-avatar-preview" id="editProfilePreview">
+                            <span class="upload-icon">📷</span>
+                        </div>
+                        <p class="upload-hint">Click to upload</p>
+                        <input type="file" id="editProfilePhoto" accept="image/*" hidden>
+                    </div>
                     <div class="form-group">
                         <label for="editUsername">Username</label>
                         <input type="text" id="editUsername" name="username" required>
@@ -280,6 +294,48 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Day Picker Modal (for Add to Menu) -->
+    </div>
+
+    <div id="dayPickerModal" class="modal">
+        <div class="modal-content modal-sm">
+            <button class="modal-close" id="closeDayPickerModal">&times;</button>
+            <div class="modal-header">
+                <h2>📅 Add to Daily Menu</h2>
+            </div>
+            <p class="day-picker-subtitle" id="dayPickerRecipeName">Select a day for this recipe</p>
+            <div class="day-picker-grid">
+                <button class="day-picker-btn" data-day="Saturday" style="--day-color: #ff6b8a;">
+                    <span class="day-emoji">🌟</span>
+                    <span class="day-name">Saturday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Sunday" style="--day-color: #ffb347;">
+                    <span class="day-emoji">☀️</span>
+                    <span class="day-name">Sunday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Monday" style="--day-color: #a855f7;">
+                    <span class="day-emoji">🌙</span>
+                    <span class="day-name">Monday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Tuesday" style="--day-color: #ef4444;">
+                    <span class="day-emoji">🔥</span>
+                    <span class="day-name">Tuesday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Wednesday" style="--day-color: #22c55e;">
+                    <span class="day-emoji">💚</span>
+                    <span class="day-name">Wednesday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Thursday" style="--day-color: #3b82f6;">
+                    <span class="day-emoji">⚡</span>
+                    <span class="day-name">Thursday</span>
+                </button>
+                <button class="day-picker-btn" data-day="Friday" style="--day-color: #ec4899;">
+                    <span class="day-emoji">🎉</span>
+                    <span class="day-name">Friday</span>
+                </button>
             </div>
         </div>
     </div>

@@ -6,8 +6,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = process.env.DATABASE_PATH || './database/pastry.db';
-const fullPath = path.join(__dirname, '..', dbPath.replace('./', ''));
+// Database file is in the same directory as this file
+const fullPath = path.join(__dirname, 'pastry.db');
+
 
 let db;
 

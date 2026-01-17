@@ -17,12 +17,12 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 2.00,
+        price: 1.00,
         originalPrice: 5.00,
-        discount: 60,
+        discount: 80,
         period: 'month',
         durationDays: 30,
-        displayPrice: '$2.00/month'
+        displayPrice: '$1.00/month'
     },
     yearly: {
         id: 'yearly',

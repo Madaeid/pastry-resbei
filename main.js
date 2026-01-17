@@ -11,7 +11,10 @@ const FREE_RECIPE_LIMIT = 10;
 let tabs, tabContents, form, photoPreview, photoInput, recipesGrid, emptyState, recipeCount;
 let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
 let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn;
+let editProfilePreview, editProfilePhoto;
+let dayPickerModal, closeDayPickerModalBtn;
 let editingRecipeId = null;
+let selectedRecipeForMenu = null;
 
 
 // Wait for DOM to be fully loaded, or run immediately if already loaded
@@ -44,7 +47,12 @@ function initApp() {
     editUserModal = document.getElementById('editUserModal');
     closeEditUserModal = document.getElementById('closeEditUserModal');
     editUserForm = document.getElementById('editUserForm');
+    editUserForm = document.getElementById('editUserForm');
     modalLogoutBtn = document.getElementById('modalLogoutBtn');
+    editProfilePreview = document.getElementById('editProfilePreview');
+    editProfilePhoto = document.getElementById('editProfilePhoto');
+    dayPickerModal = document.getElementById('dayPickerModal');
+    closeDayPickerModalBtn = document.getElementById('closeDayPickerModal');
 
 
     // Setup all event listeners
@@ -72,10 +80,24 @@ function getUserRecipes() {
 }
 
 // Save current user's recipes
+// Save current user's recipes
 function saveUserRecipes(recipes) {
     const key = getUserRecipeKey();
     if (!key) return;
-    localStorage.setItem(key, JSON.stringify(recipes));
+
+    try {
+        localStorage.setItem(key, JSON.stringify(recipes));
+        return true;
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+            alert('Storage full! The recipe image might be too large. Please try a smaller image or delete some old recipes.');
+            showNotification('❌ Storage full! Image too large.', 'error');
+        } else {
+            console.error('Error saving recipes:', e);
+            showNotification('❌ Error saving recipe.', 'error');
+        }
+        return false;
+    }
 }
 
 function setupEventListeners() {
@@ -120,6 +142,14 @@ function setupEventListeners() {
         photoInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
+                // Check file size (max 200KB)
+                const maxSize = 200 * 1024; // 200KB in bytes
+                if (file.size > maxSize) {
+                    showNotification('❌ Image is too large! Please choose an image under 200KB.', 'error');
+                    photoInput.value = ''; // Clear the input
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     const existingImg = photoPreview.querySelector('img');
@@ -196,6 +226,26 @@ function setupEventListeners() {
     if (modalLogoutBtn) {
         modalLogoutBtn.addEventListener('click', logout);
     }
+
+    // Edit Profile Picture Upload
+    if (editProfilePreview && editProfilePhoto) {
+        editProfilePreview.addEventListener('click', () => editProfilePhoto.click());
+
+        editProfilePhoto.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    editProfilePreview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview">`;
+                    editProfilePreview.style.border = '2px solid var(--accent-pink)';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Day Picker Modal Triggers
+    setupDayPickerModal();
 }
 
 // Open Edit User Modal
@@ -213,6 +263,13 @@ function openEditUserModal() {
     document.getElementById('editPhoneNumber').value = user.phoneNumber || '';
     document.getElementById('editPassword').value = '';
 
+    // Handle profile picture preview
+    if (user.profilePicture) {
+        editProfilePreview.innerHTML = `<img src="${user.profilePicture}" alt="Profile">`;
+    } else {
+        editProfilePreview.innerHTML = '<span class="upload-icon">📷</span>';
+    }
+
     editUserModal.classList.add('show');
 }
 
@@ -226,6 +283,7 @@ async function handleEditUserSubmit(e) {
     const email = document.getElementById('editEmail').value.trim();
     const phoneNumber = document.getElementById('editPhoneNumber').value.trim();
     const password = document.getElementById('editPassword').value;
+    const profilePhotoInput = document.getElementById('editProfilePhoto');
 
     const updateData = {
         displayName: displayName,
@@ -241,26 +299,47 @@ async function handleEditUserSubmit(e) {
         updateData.password = password;
     }
 
-    const result = await updateUser(currentUser, updateData);
+    // Function to proceed with update
+    const proceedWithUpdate = async () => {
+        const result = await updateUser(currentUser, updateData);
 
-    if (result.success) {
-        showNotification('✅ Profile updated successfully!', 'success');
-        editUserModal.classList.remove('show');
+        if (result.success) {
+            showNotification('✅ Profile updated successfully!', 'success');
+            editUserModal.classList.remove('show');
 
-        // If username was changed, current user session is different now (updated in updateUser if self)
-        // We should reload to reflect everything properly or update the session check
-        if (updateData.newUsername) {
-            setTimeout(() => window.location.reload(), 1500);
-            return;
+            if (updateData.newUsername) {
+                setTimeout(() => window.location.reload(), 1500);
+                return;
+            }
+
+            // Update header display
+            const userNameElement = document.getElementById('userName');
+            const userProfilePic = document.getElementById('userProfilePic');
+            const userDefaultAvatar = document.getElementById('userDefaultAvatar');
+
+            if (userNameElement) userNameElement.textContent = displayName;
+
+            if (updateData.profilePicture && userProfilePic && userDefaultAvatar) {
+                userProfilePic.src = updateData.profilePicture;
+                userProfilePic.style.display = 'block';
+                userDefaultAvatar.style.display = 'none';
+            }
+            // If data didn't have new picture but user previously had one, we don't necessarily clear it here unless we explicity support removing it.
+        } else {
+            showNotification(result.error || 'Failed to update profile', 'error');
         }
+    };
 
-        // Update header display name immediately
-        const userNameElement = document.getElementById('userName');
-        if (userNameElement) {
-            userNameElement.textContent = displayName;
-        }
+    // Handle Profile Picture
+    if (profilePhotoInput.files && profilePhotoInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            updateData.profilePicture = e.target.result;
+            proceedWithUpdate();
+        };
+        reader.readAsDataURL(profilePhotoInput.files[0]);
     } else {
-        showNotification(result.error || 'Failed to update profile', 'error');
+        proceedWithUpdate();
     }
 }
 
@@ -287,6 +366,139 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
+// ===== Day Picker Modal Functions =====
+function setupDayPickerModal() {
+    if (!dayPickerModal) return;
+
+    // Close button
+    if (closeDayPickerModalBtn) {
+        closeDayPickerModalBtn.addEventListener('click', closeDayPickerModal);
+    }
+
+    // Click outside to close
+    dayPickerModal.addEventListener('click', (e) => {
+        if (e.target === dayPickerModal) closeDayPickerModal();
+    });
+
+    // Day button clicks
+    const dayButtons = dayPickerModal.querySelectorAll('.day-picker-btn');
+    dayButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const day = btn.getAttribute('data-day');
+            if (selectedRecipeForMenu) {
+                addRecipeToDay(selectedRecipeForMenu, day);
+            }
+        });
+    });
+}
+
+function openDayPickerModal(recipe) {
+    selectedRecipeForMenu = recipe;
+
+    // Check free user limit first
+    if (!isPremium()) {
+        const totalRecipes = getTotalDailyMenuRecipesCount();
+        if (totalRecipes >= 1) {
+            showPremiumUpgradeModal('Free users can only add 1 recipe to the Daily Menu. Upgrade to Premium for unlimited recipes!');
+            return;
+        }
+    }
+
+    // Update modal with recipe name
+    const recipeName = document.getElementById('dayPickerRecipeName');
+    if (recipeName) {
+        recipeName.textContent = `Select a day for "${recipe.name}"`;
+    }
+
+    dayPickerModal.classList.add('show');
+}
+
+function closeDayPickerModal() {
+    dayPickerModal.classList.remove('show');
+    selectedRecipeForMenu = null;
+}
+
+function getTotalDailyMenuRecipesCount() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return 0;
+
+    let total = 0;
+    const days = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+    days.forEach(day => {
+        const key = `dayRecipes_${day}_${currentUser}`;
+        const recipes = localStorage.getItem(key);
+        if (recipes) {
+            total += JSON.parse(recipes).length;
+        }
+    });
+
+    return total;
+}
+
+function addRecipeToDay(recipe, day) {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+
+    // Get existing day recipes
+    const key = `dayRecipes_${day}_${currentUser}`;
+    let dayRecipes = [];
+    const stored = localStorage.getItem(key);
+    if (stored) {
+        dayRecipes = JSON.parse(stored);
+    }
+
+    // Create new recipe entry for daily menu
+    const newRecipe = {
+        id: Date.now(),
+        sourceRecipeId: recipe.id,
+        name: recipe.name,
+        photo: recipe.photo || null,
+        ingredients: recipe.ingredients || '',
+        instructions: recipe.instructions || '',
+        category: recipe.category || 'Recipe',
+        createdAt: new Date().toISOString()
+    };
+
+    // Add to array and save
+    dayRecipes.push(newRecipe);
+    localStorage.setItem(key, JSON.stringify(dayRecipes));
+
+    closeDayPickerModal();
+    showNotification(`✅ "${recipe.name}" added to ${day}'s menu!`, 'success');
+}
+
+function showPremiumUpgradeModal(message) {
+    const existing = document.getElementById('premiumUpgradeModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'premiumUpgradeModal';
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content modal-sm premium-upgrade-modal">
+            <div class="premium-icon">👑</div>
+            <h2>Upgrade to Premium</h2>
+            <p class="premium-message">${message}</p>
+            <div class="premium-benefits">
+                <div class="benefit-item">✅ Unlimited recipes in Daily Menu</div>
+                <div class="benefit-item">✅ Plan meals for the entire week</div>
+                <div class="benefit-item">✅ Access all premium features</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="document.getElementById('premiumUpgradeModal').remove()">Maybe Later</button>
+                <button class="btn btn-primary btn-premium" onclick="window.location.href='./payment.html'">
+                    ⭐ Upgrade Now
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
 
 function checkAuth() {
     if (!isLoggedIn()) {
@@ -308,6 +520,21 @@ function checkAuth() {
         const currentUserObj = users.find(u => u.username === currentUsername);
         userNameElement.textContent = currentUserObj ? currentUserObj.displayName : currentUsername;
 
+        // Profile Picture Display
+        const userProfilePic = document.getElementById('userProfilePic');
+        const userDefaultAvatar = document.getElementById('userDefaultAvatar');
+
+        if (userProfilePic && userDefaultAvatar) {
+            if (currentUserObj && currentUserObj.profilePicture) {
+                userProfilePic.src = currentUserObj.profilePicture;
+                userProfilePic.style.display = 'block';
+                userDefaultAvatar.style.display = 'none';
+            } else {
+                userProfilePic.style.display = 'none';
+                userDefaultAvatar.style.display = 'block';
+            }
+        }
+
         // Show dashboard button if admin
         const adminDashboardBtn = document.getElementById('adminDashboardBtn');
         if (adminDashboardBtn) {
@@ -321,6 +548,7 @@ function checkAuth() {
         // Handle premium status display
         const upgradeBtn = document.getElementById('upgradeBtn');
         const premiumBadge = document.getElementById('premiumBadge');
+        const dailyMenuBtn = document.getElementById('dailyMenuBtn');
 
         if (isPremium()) {
             // User is premium - hide upgrade button, show badge
@@ -331,6 +559,9 @@ function checkAuth() {
             if (upgradeBtn) upgradeBtn.style.display = 'inline-flex';
             if (premiumBadge) premiumBadge.style.display = 'none';
         }
+
+        // Always show Daily Menu button if logged in
+        if (dailyMenuBtn) dailyMenuBtn.style.display = 'inline-flex';
     }
 
     if (logoutBtn) {
@@ -360,6 +591,12 @@ function handleFormSubmit(e) {
     // Get photo as base64
     const photoFile = photoInput.files[0];
     if (photoFile) {
+        // Check file size (limit to 200KB)
+        if (photoFile.size > 200 * 1024) {
+            showNotification('❌ Image is too large! Please choose an image under 200KB.', 'error');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = function (e) {
             recipe.photo = e.target.result;
@@ -422,6 +659,7 @@ function filterRecipes(searchTerm) {
 // Save Recipe
 function saveRecipe(recipe) {
     let recipes = getUserRecipes();
+    let isNew = false;
 
     if (editingRecipeId) {
         // Update existing recipe
@@ -430,7 +668,6 @@ function saveRecipe(recipe) {
             recipe.id = editingRecipeId; // Keep original ID
             recipe.dateAdded = recipes[index].dateAdded; // Keep original date
             recipes[index] = recipe;
-            showNotification('✅ Recipe updated successfully! 🧁', 'success');
         }
         editingRecipeId = null; // Reset editing state
     } else {
@@ -442,25 +679,42 @@ function saveRecipe(recipe) {
 
         // Add new recipe
         recipes.push(recipe);
-        showNotification('✅ Recipe saved to your collection! 🧁', 'success');
+        isNew = true;
     }
 
-    saveUserRecipes(recipes);
+    // Try to save to storage
+    const saveSuccess = saveUserRecipes(recipes);
 
-    // Reset form
-    form.reset();
-    photoPreview.classList.remove('has-image');
-    const img = photoPreview.querySelector('img');
-    if (img) img.remove();
+    if (saveSuccess) {
+        if (isNew) {
+            showNotification('✅ Recipe saved to your collection! 🧁', 'success');
+        } else {
+            showNotification('✅ Recipe updated successfully! 🧁', 'success');
+        }
 
-    // Reset button text
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<span class="btn-icon">✨</span> Add Recipe';
+        // Reset form
+        form.reset();
+        photoPreview.classList.remove('has-image');
+        const img = photoPreview.querySelector('img');
+        if (img) img.remove();
 
-    // Switch to My Recipes tab
-    setTimeout(() => {
-        document.querySelector('[data-tab="my-recipes"]').click();
-    }, 1000);
+        // Reset button text
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<span class="btn-icon">✨</span> Add Recipe';
+
+        // Switch to My Recipes tab
+        setTimeout(() => {
+            document.querySelector('[data-tab="my-recipes"]').click();
+        }, 1000);
+    } else {
+        // If save failed, restore editing state if needed so user doesn't lose data
+        // For new recipes, they just stay on the form
+        if (!isNew) {
+            // If update failed, we might want to let them stay in "edit mode".
+            // But we already set editingRecipeId = null above.
+            // Ideally we should warn them. The saveUserRecipes already alerted.
+        }
+    }
 }
 
 // Load Recipes
@@ -512,6 +766,7 @@ function createRecipeCard(recipe) {
             </div>
             <div class="recipe-card-actions">
                 <button class="btn-view" data-action="view" data-id="${recipe.id}">View</button>
+                <button class="btn-menu" data-action="menu" data-id="${recipe.id}">Menu</button>
                 <button class="btn-view" data-action="pdf" data-id="${recipe.id}">PDF</button>
                 <button class="btn-edit" data-action="edit" data-id="${recipe.id}">Edit</button>
                 <button class="btn-delete" data-action="delete" data-id="${recipe.id}">Delete</button>
@@ -521,6 +776,10 @@ function createRecipeCard(recipe) {
 
     // Add event listeners
     card.querySelector('[data-action="view"]').addEventListener('click', () => viewRecipe(recipe.id));
+    card.querySelector('[data-action="menu"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDayPickerModal(recipe);
+    });
     card.querySelector('[data-action="pdf"]').addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent card click if any
         saveRecipeAsPdf(recipe);

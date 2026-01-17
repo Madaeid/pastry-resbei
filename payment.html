@@ -18,6 +18,7 @@
     <script>
         // Immediate auth check to prevent unauthenticated access
         if (!sessionStorage.getItem('currentUser')) {
+            sessionStorage.setItem('returnUrl', window.location.href);
             window.location.replace('./auth.html');
         }
     </script>
@@ -90,7 +91,7 @@
         <div class="pricing-container">
             <!-- Monthly Plan (SPECIAL OFFER!) -->
             <div class="pricing-card monthly-offer" data-plan="monthly">
-                <div class="monthly-offer-badge">💰 80% OFF</div>
+                <div class="monthly-offer-badge">💰 40% OFF</div>
                 <div class="pricing-card-header">
                     <span class="plan-emoji">📅</span>
                     <h3>Monthly</h3>
@@ -99,11 +100,11 @@
                 <div class="pricing-card-price">
                     <span class="original-price">$5</span>
                     <span class="currency">$</span>
-                    <span class="amount">2</span>
+                    <span class="amount">3</span>
                     <span class="cents">.00</span>
                     <span class="period">/month</span>
                 </div>
-                <div class="savings-badge monthly-save">60% OFF! 💰</div>
+                <div class="savings-badge monthly-save">40% OFF! 💰</div>
                 <ul class="pricing-features">
                     <li><span class="feature-icon">✅</span> Unlimited Recipes</li>
                     <li><span class="feature-icon">✅</span> PDF Export</li>
@@ -159,11 +160,11 @@
                 <div class="pricing-card-price">
                     <span class="original-price">$100</span>
                     <span class="currency">$</span>
-                    <span class="amount">5</span>
+                    <span class="amount">20</span>
                     <span class="cents">.00</span>
                     <span class="period">once</span>
                 </div>
-                <div class="savings-badge lifetime-save">95% OFF! 🔥</div>
+                <div class="savings-badge lifetime-save">80% OFF! 🔥</div>
                 <ul class="pricing-features">
                     <li><span class="feature-icon">✅</span> <strong>All Premium Features</strong></li>
                     <li><span class="feature-icon">✅</span> <strong>Forever Access</strong></li>
@@ -173,7 +174,7 @@
                 </ul>
                 <button class="btn btn-subscribe btn-lifetime" id="subscribeLifetime">
                     <span class="btn-icon">👑</span>
-                    Get Lifetime Access - Only $5!
+                    Get Lifetime Access - Only $20!
                 </button>
             </div>
         </div>
@@ -316,7 +317,7 @@
             <button class="modal-close" id="closePaymentModal">&times;</button>
             <div class="payment-modal-header">
                 <h2>💳 Confirm Your Purchase</h2>
-                <p id="selectedPlanText">Monthly Plan - $2.00/month</p>
+                <p id="selectedPlanText">Monthly Plan - $1.00/month</p>
             </div>
             <div class="payment-modal-body">
                 <!-- Order Summary -->
@@ -327,11 +328,11 @@
                     </div>
                     <div class="summary-row">
                         <span>Price</span>
-                        <span id="summaryPrice">$2.00</span>
+                        <span id="summaryPrice">$1.00</span>
                     </div>
                     <div class="summary-row total">
                         <span>Total</span>
-                        <span id="summaryTotal">$2.00</span>
+                        <span id="summaryTotal">$1.00</span>
                     </div>
                 </div>
 

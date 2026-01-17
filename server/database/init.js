@@ -119,6 +119,39 @@ db.exec(`
 `);
 console.log('✅ Sessions table created');
 
+// Daily Menus Table (Premium Feature)
+db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_menus (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        menu_date TEXT NOT NULL,
+        title TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(user_id, menu_date)
+    )
+`);
+console.log('✅ Daily menus table created');
+
+// Daily Menu Items Table
+db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_menu_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_id INTEGER NOT NULL,
+        recipe_id INTEGER,
+        name TEXT NOT NULL,
+        photo TEXT,
+        ingredients TEXT,
+        instructions TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (menu_id) REFERENCES daily_menus(id) ON DELETE CASCADE,
+        FOREIGN KEY (recipe_id) REFERENCES recipes(id) ON DELETE SET NULL
+    )
+`);
+console.log('✅ Daily menu items table created');
+
 // ===== Create Indexes =====
 db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -126,6 +159,9 @@ db.exec(`
     CREATE INDEX IF NOT EXISTS idx_recipes_user_id ON recipes(user_id);
     CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
+    CREATE INDEX IF NOT EXISTS idx_daily_menus_user_id ON daily_menus(user_id);
+    CREATE INDEX IF NOT EXISTS idx_daily_menus_date ON daily_menus(menu_date);
+    CREATE INDEX IF NOT EXISTS idx_daily_menu_items_menu_id ON daily_menu_items(menu_id);
 `);
 console.log('✅ Indexes created');
 

@@ -11,7 +11,7 @@ router.get('/profile', authenticateToken, (req, res) => {
     try {
         const db = getDatabase();
         const user = db.prepare(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
             FROM users WHERE id = ?
         `).get(req.user.userId);
 
@@ -27,6 +27,7 @@ router.get('/profile', authenticateToken, (req, res) => {
             phone: user.phone,
             birthday: user.birthday,
             isAdmin: user.is_admin === 1,
+            profilePicture: user.profile_picture,
             createdAt: user.created_at
         });
 
@@ -39,7 +40,7 @@ router.get('/profile', authenticateToken, (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername } = req.body;
+        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture } = req.body;
         const db = getDatabase();
         const userId = req.user.userId;
 
@@ -72,6 +73,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
         if (phoneValue !== undefined) {
             updates.push('phone = ?');
             params.push(phoneValue || null);
+        }
+
+        // Update profile picture
+        if (profilePicture !== undefined) {
+            updates.push('profile_picture = ?');
+            params.push(profilePicture);
         }
 
         // Update password
@@ -109,7 +116,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         // Get updated user
         const updatedUser = db.prepare(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
             FROM users WHERE id = ?
         `).get(userId);
 
@@ -123,7 +130,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 email: updatedUser.email,
                 phone: updatedUser.phone,
                 birthday: updatedUser.birthday,
-                isAdmin: updatedUser.is_admin === 1
+                isAdmin: updatedUser.is_admin === 1,
+                profilePicture: updatedUser.profile_picture
             }
         });
 

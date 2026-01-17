@@ -71,42 +71,61 @@ function getAllUsers() {
         phone: users[key].phone || 'N/A',
         birthday: users[key].birthday || 'N/A',
         isAdmin: users[key].isAdmin || false,
+        profilePicture: users[key].profilePicture || null,
         createdAt: users[key].createdAt
     }));
 }
 
 // Delete user (admin function)
 function deleteUser(username) {
-    if (username.toLowerCase() === 'admin') {
-        return { success: false, error: 'Cannot delete admin user' };
+    const users = getUsers();
+    const userKey = username.toLowerCase();
+
+    // Cannot delete main admin
+    if (userKey === 'admin') {
+        return { success: false, error: 'Cannot delete the main admin account' };
     }
 
-    const users = getUsers();
-    if (!users[username.toLowerCase()]) {
+    // Check if user exists
+    if (!users[userKey]) {
         return { success: false, error: 'User not found' };
     }
 
-    delete users[username.toLowerCase()];
+    // Delete user's recipes
+    const recipeKey = `pastryRecipes_${userKey}`;
+    localStorage.removeItem(recipeKey);
+
+    // Delete user
+    delete users[userKey];
     saveUsers(users);
-    return { success: true };
+
+    return { success: true, message: 'User deleted successfully' };
 }
 
 // Toggle admin status (admin function)
 function toggleAdminStatus(username) {
-    if (username.toLowerCase() === 'admin') {
-        return { success: false, error: 'Cannot modify main admin user' };
+    const users = getUsers();
+    const userKey = username.toLowerCase();
+
+    // Cannot modify main admin
+    if (userKey === 'admin') {
+        return { success: false, error: 'Cannot modify the main admin account' };
     }
 
-    const users = getUsers();
-    if (!users[username.toLowerCase()]) {
+    // Check if user exists
+    if (!users[userKey]) {
         return { success: false, error: 'User not found' };
     }
 
-    users[username.toLowerCase()].isAdmin = !users[username.toLowerCase()].isAdmin;
+    // Toggle admin status
+    users[userKey].isAdmin = !users[userKey].isAdmin;
     saveUsers(users);
-    return { success: true, isAdmin: users[username.toLowerCase()].isAdmin };
-    saveUsers(users);
-    return { success: true, isAdmin: users[username.toLowerCase()].isAdmin };
+
+    return {
+        success: true,
+        isAdmin: users[userKey].isAdmin,
+        message: users[userKey].isAdmin ? 'User is now an admin' : 'Admin rights removed'
+    };
 }
 
 // Update user details (admin function or self-update)
@@ -147,7 +166,13 @@ async function updateUser(username, data) {
         user.passwordHash = await hashPassword(data.password);
     }
 
-    // 5. Handle Username Update (Renaming User)
+    // 5. Handle Profile Picture Update
+    if (data.profilePicture) {
+        user.profilePicture = data.profilePicture;
+    }
+
+    // 6. Handle Username Update (Renaming User)
+    let newUsernameForSession = null;
     if (data.newUsername && data.newUsername.toLowerCase() !== username.toLowerCase()) {
         const newUsername = data.newUsername.toLowerCase();
 
@@ -176,13 +201,50 @@ async function updateUser(username, data) {
             localStorage.removeItem(oldRecipeKey);
         }
 
-        // If this is the currently logged-in user, update session
+        // If this is the currently logged-in user, session will be updated below
         if (sessionStorage.getItem('currentUser') === username.toLowerCase()) {
-            sessionStorage.setItem('currentUser', newUsername);
+            newUsernameForSession = newUsername;
         }
     }
 
     saveUsers(users);
+
+    // Update session if username changed
+    if (newUsernameForSession) {
+        sessionStorage.setItem('currentUser', newUsernameForSession);
+    }
+
+    // Sync with Backend if logged in as this user
+    const authToken = sessionStorage.getItem('authToken');
+    const currentUser = sessionStorage.getItem('currentUser');
+
+    if (authToken && (currentUser === username.toLowerCase() || newUsernameForSession)) {
+        try {
+            const backendData = {
+                displayName: data.displayName,
+                email: data.email,
+                phone: data.phoneNumber,
+                password: data.password,
+                newUsername: data.newUsername,
+                profilePicture: data.profilePicture
+            };
+
+            fetch(`${API_URL}/users/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(backendData)
+            }).then(res => {
+                if (!res.ok) console.warn('Backend profile update failed:', res.status);
+                else console.log('Backend profile synced successfully');
+            }).catch(err => console.error('Backend sync error:', err));
+        } catch (e) {
+            console.warn('Skipping backend sync', e);
+        }
+    }
+
     return { success: true };
 }
 
@@ -220,7 +282,6 @@ function hasRememberedCredentials() {
     return localStorage.getItem('rememberedUser') !== null;
 }
 
-// Register new user
 // Register new user
 async function registerUser(username, email, phone, birthday, password) {
     // Validate username
@@ -264,24 +325,50 @@ async function registerUser(username, email, phone, birthday, password) {
 
     const users = getUsers();
 
-    // Check if username exists
+    // Check if username exists locally
     if (users[username.toLowerCase()]) {
         return { success: false, error: 'Username already exists' };
     }
 
-    // Check if email exists (simple iteration check)
+    // Check if email exists locally
     const emailExists = Object.values(users).some(u => u.email && u.email.toLowerCase() === email.toLowerCase());
     if (emailExists) {
         return { success: false, error: 'Email already registered' };
     }
 
-    // Check if phone exists
+    // Check if phone exists locally
     const phoneExists = Object.values(users).some(u => u.phone && u.phone.replace(/\s/g, '') === phone.replace(/\s/g, ''));
     if (phoneExists) {
         return { success: false, error: 'Phone number already registered' };
     }
 
-    // Hash password and save user
+    // Try to register with backend first (for Stripe payment support)
+    try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, phone, birthday, password })
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            // If backend says user exists, return that error
+            if (data.error) {
+                console.log('Backend registration error:', data.error);
+                // Only fail if it's a duplicate error from backend
+                if (data.error.includes('already')) {
+                    return { success: false, error: data.error };
+                }
+            }
+        } else {
+            console.log('User registered with backend successfully');
+        }
+    } catch (err) {
+        // Backend not available - continue with local registration
+        console.log('Backend registration not available, using local only:', err.message);
+    }
+
+    // Hash password and save user locally
     const passwordHash = await hashPassword(password);
     users[username.toLowerCase()] = {
         displayName: username,
@@ -405,15 +492,56 @@ async function loginUser(username, password) {
 
     // Also try to get JWT token from backend for API calls
     try {
-        const response = await fetch(`${API_URL}/auth/login`, {
+        let response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password })
         });
+
         if (response.ok) {
             const data = await response.json();
             if (data.token) {
                 sessionStorage.setItem('authToken', data.token);
+            }
+        } else {
+            // If backend login failed (e.g. 401/404) but local success, user might not exist on backend
+            // Try to sync user to backend
+            console.log('Backend login failed, attempting to sync user...');
+
+            try {
+                // Register user on backend
+                const regResponse = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        email: user.email,
+                        phone: user.phone || 'N/A',
+                        birthday: user.birthday || '2000-01-01', // Fallback
+                        password: password
+                    })
+                });
+
+                if (regResponse.ok || regResponse.status === 409) {
+                    // Registration success or already exists (but maybe failed login before?)
+                    // Retry login
+                    console.log('Sync success/exists, retrying login...');
+                    response = await fetch(`${API_URL}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.token) {
+                            sessionStorage.setItem('authToken', data.token);
+                            console.log('Backend token acquired after sync');
+                        }
+                    }
+                }
+            } catch (syncErr) {
+                console.error('Failed to sync user to backend:', syncErr);
             }
         }
     } catch (err) {
@@ -433,6 +561,7 @@ function logout() {
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('returnUrl');
     window.location.href = './auth.html';
 }
 
@@ -465,7 +594,15 @@ function initAuthPage() {
     const rememberMeCheckbox = document.getElementById('rememberMe');
 
     // Check if already logged in - redirect appropriately
+    // Check if already logged in - redirect appropriately
     if (isLoggedIn()) {
+        const returnUrl = sessionStorage.getItem('returnUrl');
+        if (returnUrl) {
+            sessionStorage.removeItem('returnUrl');
+            window.location.href = returnUrl;
+            return;
+        }
+
         if (isAdmin()) {
             window.location.href = './admin.html';
         } else {
@@ -605,6 +742,14 @@ function initAuthPage() {
 
             showMessage('Login successful! Redirecting...', 'success');
             setTimeout(() => {
+                // Check for return URL
+                const returnUrl = sessionStorage.getItem('returnUrl');
+                if (returnUrl) {
+                    sessionStorage.removeItem('returnUrl');
+                    window.location.href = returnUrl;
+                    return;
+                }
+
                 // Redirect admin to admin dashboard, others to main page
                 if (result.isAdmin) {
                     window.location.href = './admin.html';

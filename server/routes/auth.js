@@ -58,14 +58,20 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
-        // Check if phone exists
+        // Check if phone exists (simplified check)
         if (phone) {
             const normalizedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
-            const existingPhone = db.prepare('SELECT id FROM users WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, " ", ""), "-", ""), "(", ""), ")", ""), ".", "") = ?').get(normalizedPhone);
-            if (existingPhone) {
+            // Simple check - normalize and compare digits only
+            const allUsers = db.prepare('SELECT id, phone FROM users WHERE phone IS NOT NULL').all();
+            const phoneExists = allUsers.some(u => {
+                const userPhone = (u.phone || '').replace(/[\s\-\(\)\.]/g, '');
+                return userPhone === normalizedPhone;
+            });
+            if (phoneExists) {
                 return res.status(400).json({ error: 'Phone number already registered' });
             }
         }
+
 
         // Hash password and create user
         const passwordHash = await bcrypt.hash(password, 10);

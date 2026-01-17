@@ -10,12 +10,12 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 2.00,
+        price: 3.00,
         originalPrice: 5.00,
-        discount: 60, // 60% off
+        discount: 40, // 40% off
         period: 'month',
         durationDays: 30,
-        displayPrice: '$2.00/month',
+        displayPrice: '$3.00/month',
         originalDisplayPrice: '$5.00/month'
     },
     yearly: {
@@ -29,13 +29,13 @@ const PLANS = {
     lifetime: {
         id: 'lifetime',
         name: 'Lifetime',
-        price: 5.00,
+        price: 20.00,
         originalPrice: 100.00,
-        discount: 95, // 95% off
+        discount: 80, // 80% off
         period: 'lifetime',
         durationDays: 36500, // ~100 years
-        displayPrice: '$5.00 one-time',
-        originalDisplayPrice: '$15.00'
+        displayPrice: '$20.00 one-time',
+        originalDisplayPrice: '$100.00'
     }
 };
 
@@ -543,21 +543,20 @@ async function handleStripeCheckout(e) {
                 }
             }
 
-            console.log('Redirecting to auth.html because token is missing and silent login failed');
+            console.log('Token is missing - redirecting to login');
 
-            // CRITICAL FIX: Clear session if token is missing but user is "logged in" locally
-            // This prevents auth.html from redirecting back to index.html immediately
-            if (sessionStorage.getItem('currentUser')) {
-                console.log('Clearing stale local session');
-                sessionStorage.removeItem('currentUser');
-                sessionStorage.removeItem('authToken');
-                sessionStorage.removeItem('isAdmin');
-            }
+            // Show message and redirect
+            showNotification('Please log in to continue. Redirecting...', 'error');
 
-            showNotification('Please log in again to connect with payment server', 'error');
-            // Store return URL
+            // Save return URL
             sessionStorage.setItem('returnUrl', window.location.href);
-            window.location.href = './auth.html';
+
+            setTimeout(() => {
+                window.location.href = './auth.html';
+            }, 1500);
+
+            payButton.disabled = false;
+            payButtonText.textContent = 'Proceed to Checkout';
             return;
         }
 
