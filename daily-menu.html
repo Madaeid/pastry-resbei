@@ -40,6 +40,20 @@
         </div>
     </div>
 
+    <!-- Day Cover Photo Section -->
+    <div class="day-cover-section">
+        <div class="day-cover-container" id="dayCoverContainer">
+            <div class="day-cover-preview" id="dayCoverPreview">
+                <span class="cover-upload-icon">🖼️</span>
+                <span class="cover-upload-text">Click to add a cover photo for this day</span>
+            </div>
+            <input type="file" id="dayCoverInput" accept="image/*" hidden>
+            <button class="btn-remove-cover" id="removeCoverBtn" style="display: none;">
+                <span>🗑️</span> Remove Photo
+            </button>
+        </div>
+    </div>
+
     <!-- Floating Particles Background -->
     <div class="particles">
         <div class="particle"></div>
@@ -65,6 +79,10 @@
                 <span class="add-icon">➕</span>
                 <span>Add Recipe</span>
             </button>
+            <button class="btn-download-pdf" id="downloadPdfBtn">
+                <span class="pdf-icon">📥</span>
+                <span>Download PDF</span>
+            </button>
         </div>
 
         <!-- Recipes Grid -->
@@ -86,6 +104,15 @@
             <button class="modal-close" id="closeAddRecipeModal">&times;</button>
             <div class="modal-header">
                 <h2>➕ Add Recipe for <span id="modalDayName">Day</span></h2>
+            </div>
+
+            <!-- Select from My Recipes Option -->
+            <div class="select-from-recipes-section">
+                <p class="section-divider-text">Choose from your saved recipes</p>
+                <button type="button" class="btn btn-secondary btn-select-recipes" id="selectFromMyRecipesBtn">
+                    <span>📖</span> Select from My Recipes
+                </button>
+                <p class="section-divider-text">— or create a new recipe —</p>
             </div>
 
             <form id="addRecipeForm">

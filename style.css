@@ -4532,6 +4532,50 @@ footer {
     transform: scale(1.1);
 }
 
+/* Recipe Card Actions Container */
+.recipe-card-actions {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.recipe-card-actions .btn-delete-recipe,
+.recipe-card-actions .btn-edit-recipe {
+    position: static;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.day-recipe-card:hover .recipe-card-actions .btn-delete-recipe,
+.day-recipe-card:hover .recipe-card-actions .btn-edit-recipe {
+    opacity: 1;
+}
+
+/* Edit Recipe Button */
+.btn-edit-recipe {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-edit-recipe:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
 /* Empty Day State */
 .empty-day-state {
     display: flex;
@@ -4985,4 +5029,222 @@ footer {
 /* Last item (Friday) spans full width when odd number */
 .day-picker-grid .day-picker-btn:last-child:nth-child(odd) {
     grid-column: 1 / -1;
+}
+
+/* ===== Select from My Recipes Section ===== */
+.select-from-recipes-section {
+    text-align: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+}
+
+.section-divider-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 15px 0;
+    position: relative;
+}
+
+.section-divider-text:last-of-type {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.section-divider-text:last-of-type::before,
+.section-divider-text:last-of-type::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 107, 138, 0.3), transparent);
+}
+
+.btn-select-recipes {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
+    border: 2px solid rgba(255, 107, 138, 0.4);
+    border-radius: 50px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-select-recipes:hover {
+    border-color: var(--accent-pink);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255, 107, 138, 0.3);
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.95), rgba(30, 30, 45, 0.98));
+}
+
+.btn-select-recipes span {
+    font-size: 1.2rem;
+}
+
+.select-recipe-action {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.select-recipe-action:hover {
+    background: rgba(255, 107, 138, 0.2);
+}
+
+.select-recipe-action .add-icon {
+    font-size: 1.3rem;
+}
+
+/* ===== Download PDF Button ===== */
+.btn-download-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    border: none;
+    border-radius: 50px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-download-pdf:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.btn-download-pdf:active {
+    transform: translateY(-1px);
+}
+
+.btn-download-pdf .pdf-icon {
+    font-size: 1.2rem;
+}
+
+/* Update add-recipe-section to handle multiple buttons */
+.add-recipe-section {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+/* ===== Day Cover Photo Section ===== */
+.day-cover-section {
+    max-width: 800px;
+    margin: 0 auto 30px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.day-cover-container {
+    text-align: center;
+}
+
+.day-cover-preview {
+    width: 100%;
+    max-width: 600px;
+    height: 200px;
+    margin: 0 auto;
+    background: linear-gradient(145deg, rgba(25, 25, 45, 0.95), rgba(15, 15, 30, 0.98));
+    border: 2px dashed rgba(255, 107, 138, 0.4);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.day-cover-preview:hover {
+    border-color: var(--accent-pink);
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 107, 138, 0.15);
+}
+
+.day-cover-preview .cover-upload-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+.day-cover-preview .cover-upload-text {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.day-cover-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 18px;
+}
+
+.day-cover-preview.has-cover {
+    border-style: solid;
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+.day-cover-preview.has-cover:hover {
+    border-color: var(--accent-pink);
+}
+
+.day-cover-preview.has-cover::after {
+    content: '📷 Click to change photo';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.day-cover-preview.has-cover:hover::after {
+    opacity: 1;
+}
+
+.btn-remove-cover {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-family: inherit;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-remove-cover:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    transform: translateY(-2px);
 }
