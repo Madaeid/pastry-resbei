@@ -5248,3 +5248,96 @@ footer {
     border-color: rgba(239, 68, 68, 0.5);
     transform: translateY(-2px);
 }
+
+/* ===== Logout Confirmation Modal ===== */
+.logout-confirm-modal {
+    text-align: center;
+    padding: 40px 30px;
+    max-width: 400px;
+}
+
+.logout-confirm-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: doorWiggle 1s ease-in-out infinite;
+}
+
+@keyframes doorWiggle {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-5deg);
+    }
+
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+.logout-confirm-modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logout-confirm-message {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.logout-confirm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.logout-confirm-actions .btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.logout-confirm-actions .btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.logout-confirm-actions .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--text-primary);
+}
+
+.logout-confirm-actions .btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+}
+
+.logout-confirm-actions .btn-danger:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+/* Modal Small Size */
+.modal-content.modal-sm {
+    max-width: 400px;
+}

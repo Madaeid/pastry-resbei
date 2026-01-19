@@ -556,13 +556,63 @@ function isLoggedIn() {
     return sessionStorage.getItem('currentUser') !== null;
 }
 
-// Logout user
+// Logout user - Shows confirmation modal
 function logout() {
+    showLogoutConfirmModal();
+}
+
+// Actually perform the logout
+function performLogout() {
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('authToken');
     sessionStorage.removeItem('returnUrl');
     window.location.href = './auth.html';
+}
+
+// Show logout confirmation modal
+function showLogoutConfirmModal() {
+    // Remove existing modal if any
+    const existing = document.getElementById('logoutConfirmModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'logoutConfirmModal';
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content modal-sm logout-confirm-modal">
+            <div class="logout-confirm-icon">🚪</div>
+            <h2>Logout Confirmation</h2>
+            <p class="logout-confirm-message">Are you sure you want to logout?</p>
+            <div class="logout-confirm-actions">
+                <button class="btn btn-secondary" id="logoutCancelBtn">
+                    <span>✖</span> No
+                </button>
+                <button class="btn btn-danger" id="logoutConfirmBtn">
+                    <span>✔</span> Yes
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Event listeners
+    document.getElementById('logoutConfirmBtn').addEventListener('click', () => {
+        closeLogoutModal();
+        performLogout();
+    });
+
+    document.getElementById('logoutCancelBtn').addEventListener('click', closeLogoutModal);
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeLogoutModal();
+    });
+}
+
+// Close logout confirmation modal
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutConfirmModal');
+    if (modal) modal.remove();
 }
 
 // Get current user
