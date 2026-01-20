@@ -30,12 +30,12 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 2.00,
+        price: 3.00,
         originalPrice: 5.00,
-        discount: 60,
+        discount: 40,
         period: 'month',
         durationDays: 30,
-        displayPrice: '$2.00/month',
+        displayPrice: '$3.00/month',
         stripeMode: 'subscription',
         stripePriceId: STRIPE_PRICES.monthly
     },
@@ -52,12 +52,12 @@ const PLANS = {
     lifetime: {
         id: 'lifetime',
         name: 'Lifetime',
-        price: 5.00,
+        price: 20.00,
         originalPrice: 100.00,
-        discount: 95,
+        discount: 80,
         period: 'lifetime',
         durationDays: 36500,
-        displayPrice: '$5.00 one-time',
+        displayPrice: '$20.00 one-time',
         stripeMode: 'payment', // One-time payment
         stripePriceId: STRIPE_PRICES.lifetime
     }

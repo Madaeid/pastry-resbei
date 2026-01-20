@@ -17,12 +17,12 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 1.00,
+        price: 3.00,
         originalPrice: 5.00,
-        discount: 80,
+        discount: 40,
         period: 'month',
         durationDays: 30,
-        displayPrice: '$1.00/month'
+        displayPrice: '$3.00/month'
     },
     yearly: {
         id: 'yearly',
@@ -35,12 +35,12 @@ const PLANS = {
     lifetime: {
         id: 'lifetime',
         name: 'Lifetime',
-        price: 5.00,
+        price: 20.00,
         originalPrice: 100.00,
-        discount: 95,
+        discount: 80,
         period: 'lifetime',
         durationDays: 36500, // ~100 years
-        displayPrice: '$5.00 one-time'
+        displayPrice: '$20.00 one-time'
     }
 };
 
@@ -403,7 +403,8 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         }
 
         // Check if this session's user matches the authenticated user
-        if (session.metadata.userId !== req.user.userId) {
+        // Convert both to strings to handle type mismatch (Stripe stores metadata as strings)
+        if (String(session.metadata.userId) !== String(req.user.userId)) {
             return res.status(403).json({ error: 'Session does not belong to this user' });
         }
 
