@@ -584,6 +584,193 @@ body {
     box-shadow: 0 0 0 2px rgba(255, 107, 138, 0.3);
 }
 
+/* ===== Phone Input with Country Selector ===== */
+.phone-input-wrapper {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+}
+
+.phone-input-wrapper input[type="tel"] {
+    flex: 1;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+
+.country-selector {
+    position: relative;
+    min-width: 120px;
+}
+
+.country-selected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.95), rgba(30, 30, 45, 0.98));
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.country-selected:hover {
+    background: linear-gradient(145deg, rgba(50, 50, 70, 0.95), rgba(40, 40, 55, 0.98));
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+.country-selected.active {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+.country-flag {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.country-code {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dropdown-arrow {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.country-selected.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.country-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 280px;
+    max-height: 350px;
+    background: linear-gradient(145deg, rgba(25, 25, 40, 0.98), rgba(15, 15, 28, 0.99));
+    border: 1px solid rgba(255, 107, 138, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 107, 138, 0.1);
+    z-index: 1000;
+    overflow: hidden;
+    animation: dropdownSlide 0.25s ease-out;
+}
+
+.country-dropdown.show {
+    display: block;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.country-search {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    background: rgba(30, 30, 50, 0.8);
+    border: none;
+    border-bottom: 1px solid rgba(255, 107, 138, 0.15);
+    outline: none;
+    font-family: inherit;
+}
+
+.country-search::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.country-search:focus {
+    background: rgba(40, 40, 60, 0.9);
+    border-bottom-color: rgba(255, 107, 138, 0.3);
+}
+
+.country-list {
+    max-height: 280px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 107, 138, 0.3) transparent;
+}
+
+.country-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.country-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.country-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 138, 0.3);
+    border-radius: 3px;
+}
+
+.country-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 138, 0.5);
+}
+
+.country-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.country-item:hover {
+    background: rgba(255, 107, 138, 0.1);
+}
+
+.country-item.selected {
+    background: rgba(255, 107, 138, 0.15);
+    border-left: 3px solid var(--accent-pink);
+}
+
+.country-item .country-flag {
+    font-size: 1.3rem;
+}
+
+.country-item .country-name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.country-item .country-dial-code {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 50px;
+    text-align: right;
+}
+
+.country-item:last-child {
+    border-bottom: none;
+}
+
 /* ===== Form Row ===== */
 .form-row {
     display: grid;

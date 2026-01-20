@@ -4,6 +4,85 @@ import './style.css';
 // API Configuration
 const API_URL = 'http://localhost:3001/api';
 
+// ===== Country Data with Flags and Dial Codes =====
+const countries = [
+    { name: "Afghanistan", code: "AF", dialCode: "+93", flag: "🇦🇫" },
+    { name: "Albania", code: "AL", dialCode: "+355", flag: "🇦🇱" },
+    { name: "Algeria", code: "DZ", dialCode: "+213", flag: "🇩🇿" },
+    { name: "Argentina", code: "AR", dialCode: "+54", flag: "🇦🇷" },
+    { name: "Australia", code: "AU", dialCode: "+61", flag: "🇦🇺" },
+    { name: "Austria", code: "AT", dialCode: "+43", flag: "🇦🇹" },
+    { name: "Bahrain", code: "BH", dialCode: "+973", flag: "🇧🇭" },
+    { name: "Bangladesh", code: "BD", dialCode: "+880", flag: "🇧🇩" },
+    { name: "Belgium", code: "BE", dialCode: "+32", flag: "🇧🇪" },
+    { name: "Brazil", code: "BR", dialCode: "+55", flag: "🇧🇷" },
+    { name: "Canada", code: "CA", dialCode: "+1", flag: "🇨🇦" },
+    { name: "Chile", code: "CL", dialCode: "+56", flag: "🇨🇱" },
+    { name: "China", code: "CN", dialCode: "+86", flag: "🇨🇳" },
+    { name: "Colombia", code: "CO", dialCode: "+57", flag: "🇨🇴" },
+    { name: "Croatia", code: "HR", dialCode: "+385", flag: "🇭🇷" },
+    { name: "Czech Republic", code: "CZ", dialCode: "+420", flag: "🇨🇿" },
+    { name: "Denmark", code: "DK", dialCode: "+45", flag: "🇩🇰" },
+    { name: "Egypt", code: "EG", dialCode: "+20", flag: "🇪🇬" },
+    { name: "Finland", code: "FI", dialCode: "+358", flag: "🇫🇮" },
+    { name: "France", code: "FR", dialCode: "+33", flag: "🇫🇷" },
+    { name: "Germany", code: "DE", dialCode: "+49", flag: "🇩🇪" },
+    { name: "Greece", code: "GR", dialCode: "+30", flag: "🇬🇷" },
+    { name: "Hong Kong", code: "HK", dialCode: "+852", flag: "🇭🇰" },
+    { name: "Hungary", code: "HU", dialCode: "+36", flag: "🇭🇺" },
+    { name: "India", code: "IN", dialCode: "+91", flag: "🇮🇳" },
+    { name: "Indonesia", code: "ID", dialCode: "+62", flag: "🇮🇩" },
+    { name: "Iran", code: "IR", dialCode: "+98", flag: "🇮🇷" },
+    { name: "Iraq", code: "IQ", dialCode: "+964", flag: "🇮🇶" },
+    { name: "Ireland", code: "IE", dialCode: "+353", flag: "🇮🇪" },
+    { name: "Israel", code: "IL", dialCode: "+972", flag: "🇮🇱" },
+    { name: "Italy", code: "IT", dialCode: "+39", flag: "🇮🇹" },
+    { name: "Japan", code: "JP", dialCode: "+81", flag: "🇯🇵" },
+    { name: "Jordan", code: "JO", dialCode: "+962", flag: "🇯🇴" },
+    { name: "Kenya", code: "KE", dialCode: "+254", flag: "🇰🇪" },
+    { name: "Kuwait", code: "KW", dialCode: "+965", flag: "🇰🇼" },
+    { name: "Lebanon", code: "LB", dialCode: "+961", flag: "🇱🇧" },
+    { name: "Libya", code: "LY", dialCode: "+218", flag: "🇱🇾" },
+    { name: "Malaysia", code: "MY", dialCode: "+60", flag: "🇲🇾" },
+    { name: "Mexico", code: "MX", dialCode: "+52", flag: "🇲🇽" },
+    { name: "Morocco", code: "MA", dialCode: "+212", flag: "🇲🇦" },
+    { name: "Netherlands", code: "NL", dialCode: "+31", flag: "🇳🇱" },
+    { name: "New Zealand", code: "NZ", dialCode: "+64", flag: "🇳🇿" },
+    { name: "Nigeria", code: "NG", dialCode: "+234", flag: "🇳🇬" },
+    { name: "Norway", code: "NO", dialCode: "+47", flag: "🇳🇴" },
+    { name: "Oman", code: "OM", dialCode: "+968", flag: "🇴🇲" },
+    { name: "Pakistan", code: "PK", dialCode: "+92", flag: "🇵🇰" },
+    { name: "Palestine", code: "PS", dialCode: "+970", flag: "🇵🇸" },
+    { name: "Philippines", code: "PH", dialCode: "+63", flag: "🇵🇭" },
+    { name: "Poland", code: "PL", dialCode: "+48", flag: "🇵🇱" },
+    { name: "Portugal", code: "PT", dialCode: "+351", flag: "🇵🇹" },
+    { name: "Qatar", code: "QA", dialCode: "+974", flag: "🇶🇦" },
+    { name: "Romania", code: "RO", dialCode: "+40", flag: "🇷🇴" },
+    { name: "Russia", code: "RU", dialCode: "+7", flag: "🇷🇺" },
+    { name: "Saudi Arabia", code: "SA", dialCode: "+966", flag: "🇸🇦" },
+    { name: "Singapore", code: "SG", dialCode: "+65", flag: "🇸🇬" },
+    { name: "South Africa", code: "ZA", dialCode: "+27", flag: "🇿🇦" },
+    { name: "South Korea", code: "KR", dialCode: "+82", flag: "🇰🇷" },
+    { name: "Spain", code: "ES", dialCode: "+34", flag: "🇪🇸" },
+    { name: "Sudan", code: "SD", dialCode: "+249", flag: "🇸🇩" },
+    { name: "Sweden", code: "SE", dialCode: "+46", flag: "🇸🇪" },
+    { name: "Switzerland", code: "CH", dialCode: "+41", flag: "🇨🇭" },
+    { name: "Syria", code: "SY", dialCode: "+963", flag: "🇸🇾" },
+    { name: "Taiwan", code: "TW", dialCode: "+886", flag: "🇹🇼" },
+    { name: "Thailand", code: "TH", dialCode: "+66", flag: "🇹🇭" },
+    { name: "Tunisia", code: "TN", dialCode: "+216", flag: "🇹🇳" },
+    { name: "Turkey", code: "TR", dialCode: "+90", flag: "🇹🇷" },
+    { name: "Ukraine", code: "UA", dialCode: "+380", flag: "🇺🇦" },
+    { name: "United Arab Emirates", code: "AE", dialCode: "+971", flag: "🇦🇪" },
+    { name: "United Kingdom", code: "GB", dialCode: "+44", flag: "🇬🇧" },
+    { name: "United States", code: "US", dialCode: "+1", flag: "🇺🇸" },
+    { name: "Vietnam", code: "VN", dialCode: "+84", flag: "🇻🇳" },
+    { name: "Yemen", code: "YE", dialCode: "+967", flag: "🇾🇪" }
+];
+
+// Selected country state
+let selectedCountry = countries.find(c => c.code === 'US') || countries[0];
+
 // ===== Authentication Functions (available for import) =====
 
 // Simple hash function for password (SHA-256)
@@ -717,335 +796,439 @@ function initAuthPage() {
                 }
             }
         });
-    });
 
-    // UI Helper Functions
-    function showMessage(message, type) {
-        authMessage.textContent = message;
-        authMessage.className = `auth-message ${type}`;
-        authMessage.style.display = 'block';
-    }
+        // ===== Country Selector for Phone Number =====
+        const countrySelector = document.getElementById('countrySelector');
+        const countrySelected = document.getElementById('countrySelected');
+        const countryDropdown = document.getElementById('countryDropdown');
+        const countrySearch = document.getElementById('countrySearch');
+        const countryList = document.getElementById('countryList');
+        const phoneInput = document.getElementById('registerPhone');
+        const fullPhoneInput = document.getElementById('fullPhoneNumber');
 
-    function hideMessage() {
-        authMessage.style.display = 'none';
-    }
+        if (countrySelector && countryList) {
+            // Populate country list
+            function renderCountryList(filter = '') {
+                const filtered = countries.filter(c =>
+                    c.name.toLowerCase().includes(filter.toLowerCase()) ||
+                    c.dialCode.includes(filter)
+                );
 
-    // Tab Navigation
-    authTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetTab = tab.dataset.tab;
+                countryList.innerHTML = filtered.map(country => `
+                <div class="country-item ${country.code === selectedCountry.code ? 'selected' : ''}" 
+                     data-code="${country.code}">
+                    <span class="country-flag">${country.flag}</span>
+                    <span class="country-name">${country.name}</span>
+                    <span class="country-dial-code">${country.dialCode}</span>
+                </div>
+            `).join('');
 
-            // Update active tab
-            authTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
+                // Add click handlers to country items
+                countryList.querySelectorAll('.country-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const code = item.dataset.code;
+                        selectedCountry = countries.find(c => c.code === code);
+                        updateSelectedCountry();
+                        closeDropdown();
+                    });
+                });
+            }
 
-            // Show corresponding content
-            authContents.forEach(content => {
-                content.classList.remove('active');
-                if (content.id === targetTab) {
-                    content.classList.add('active');
+            // Update the selected country display
+            function updateSelectedCountry() {
+                countrySelected.querySelector('.country-flag').textContent = selectedCountry.flag;
+                countrySelected.querySelector('.country-code').textContent = selectedCountry.dialCode;
+                updateFullPhoneNumber();
+                renderCountryList(countrySearch.value);
+            }
+
+            // Update the hidden full phone number input
+            function updateFullPhoneNumber() {
+                const phoneNumber = phoneInput.value.replace(/^\+?\d*\s*/, '').replace(/\D/g, '');
+                fullPhoneInput.value = selectedCountry.dialCode + phoneNumber;
+            }
+
+            // Toggle dropdown
+            function toggleDropdown() {
+                const isOpen = countryDropdown.classList.contains('show');
+                if (isOpen) {
+                    closeDropdown();
+                } else {
+                    openDropdown();
+                }
+            }
+
+            function openDropdown() {
+                countryDropdown.classList.add('show');
+                countrySelected.classList.add('active');
+                countrySearch.value = '';
+                renderCountryList();
+                countrySearch.focus();
+            }
+
+            function closeDropdown() {
+                countryDropdown.classList.remove('show');
+                countrySelected.classList.remove('active');
+            }
+
+            // Event listeners
+            countrySelected.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleDropdown();
+            });
+
+            countrySearch.addEventListener('input', (e) => {
+                renderCountryList(e.target.value);
+            });
+
+            countrySearch.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!countrySelector.contains(e.target)) {
+                    closeDropdown();
                 }
             });
 
-            // Clear messages
-            hideMessage();
-        });
-    });
+            // Update full phone number when phone input changes
+            phoneInput.addEventListener('input', updateFullPhoneNumber);
 
-    // Switch Auth Links
-    const switchLinks = document.querySelectorAll('.switch-auth');
-    switchLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetTab = link.dataset.target;
-
-            // Handle switching back from Forgot Password page
-            if (targetTab === 'login') {
-                document.getElementById('forgot-password').classList.remove('active');
-                // Reset form state
-                document.getElementById('resetStep1').style.display = 'block';
-                document.getElementById('resetStep2').style.display = 'none';
-                document.getElementById('forgotPasswordForm').reset();
-
-                // Ensure tabs are visible again
-                document.querySelector('.auth-tabs').style.display = 'flex';
-            }
-
-            // Find and click the corresponding tab
-            const tabToClick = document.querySelector(`.auth-tab[data-tab="${targetTab}"]`);
-            if (tabToClick) {
-                tabToClick.click();
-            }
-        });
-    });
-
-    // Forgot Password Link Handler
-    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-    if (forgotPasswordLink) {
-        forgotPasswordLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Hide all content
-            authContents.forEach(c => c.classList.remove('active'));
-            // Hide tabs to avoid confusion
-            document.querySelector('.auth-tabs').style.display = 'none';
-            // Show forgot password form
-            document.getElementById('forgot-password').classList.add('active');
-            hideMessage();
-        });
-    }
-
-    // Login Form Handler
-    loginForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const username = document.getElementById('loginUsername').value.trim();
-        const password = document.getElementById('loginPassword').value;
-        const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
-
-        const result = await loginUser(username, password);
-
-        if (result.success) {
-            // Handle Remember Me
-            if (rememberMe) {
-                saveCredentials(username, password);
-            } else {
-                clearCredentials();
-            }
-
-            showMessage('Login successful! Redirecting...', 'success');
-            setTimeout(() => {
-                // Check for return URL
-                const returnUrl = sessionStorage.getItem('returnUrl');
-                if (returnUrl) {
-                    sessionStorage.removeItem('returnUrl');
-                    window.location.href = returnUrl;
-                    return;
-                }
-
-                // Redirect admin to admin dashboard, others to main page
-                if (result.isAdmin) {
-                    window.location.href = './admin.html';
-                } else {
-                    window.location.href = './index.html';
-                }
-            }, 1000);
-        } else {
-            showMessage(result.error, 'error');
-        }
-    });
-
-    // Register Form Handler
-    registerForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const username = document.getElementById('registerUsername').value.trim();
-        const email = document.getElementById('registerEmail').value.trim();
-        const phone = document.getElementById('registerPhone').value.trim();
-        const birthday = document.getElementById('registerBirthday').value;
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        // Validate password match
-        if (password !== confirmPassword) {
-            showMessage('Passwords do not match!', 'error');
-            return;
+            // Initialize
+            renderCountryList();
+            updateSelectedCountry();
         }
 
-        const result = await registerUser(username, email, phone, birthday, password);
-
-        if (result.success) {
-            showMessage('Account created! You can now sign in.', 'success');
-
-            // Switch to login tab
-            setTimeout(() => {
-                document.querySelector('[data-tab="login"]').click();
-                document.getElementById('loginUsername').value = username;
-                document.getElementById('loginPassword').focus();
-            }, 1500);
-
-            // Clear register form
-            registerForm.reset();
-        } else {
-            showMessage(result.error, 'error');
+        // UI Helper Functions
+        function showMessage(message, type) {
+            authMessage.textContent = message;
+            authMessage.className = `auth-message ${type}`;
+            authMessage.style.display = 'block';
         }
-    });
 
-    // Forgot Password Form Handler
-    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-    const sendCodeBtn = document.getElementById('sendCodeBtn');
-    const resendCodeBtn = document.getElementById('resendCodeBtn');
-    const methodEmailBtn = document.getElementById('methodEmail');
-    const methodPhoneBtn = document.getElementById('methodPhone');
-    const emailInputGroup = document.getElementById('emailInputGroup');
-    const phoneInputGroup = document.getElementById('phoneInputGroup');
-    const sendCodeIcon = document.getElementById('sendCodeIcon');
-    const sendCodeText = document.getElementById('sendCodeText');
-    const otpSentMessage = document.getElementById('otpSentMessage');
+        function hideMessage() {
+            authMessage.style.display = 'none';
+        }
 
-    let selectedMethod = 'email';
-    let resendCooldown = 0;
-    let resendInterval = null;
+        // Tab Navigation
+        authTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
 
-    // Method selector handlers
-    if (methodEmailBtn) {
-        methodEmailBtn.addEventListener('click', function () {
-            selectedMethod = 'email';
-            methodEmailBtn.classList.add('active');
-            methodPhoneBtn.classList.remove('active');
-            emailInputGroup.style.display = 'block';
-            phoneInputGroup.style.display = 'none';
-            sendCodeIcon.textContent = '📧';
-            sendCodeText.textContent = 'Send OTP to Email';
+                // Update active tab
+                authTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Show corresponding content
+                authContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    }
+                });
+
+                // Clear messages
+                hideMessage();
+            });
         });
-    }
 
-    if (methodPhoneBtn) {
-        methodPhoneBtn.addEventListener('click', function () {
-            selectedMethod = 'phone';
-            methodPhoneBtn.classList.add('active');
-            methodEmailBtn.classList.remove('active');
-            phoneInputGroup.style.display = 'block';
-            emailInputGroup.style.display = 'none';
-            sendCodeIcon.textContent = '📱';
-            sendCodeText.textContent = 'Send OTP to Phone';
-        });
-    }
+        // Switch Auth Links
+        const switchLinks = document.querySelectorAll('.switch-auth');
+        switchLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetTab = link.dataset.target;
 
-    // Function to send code
-    function handleSendCode() {
-        const username = document.getElementById('resetUsername').value.trim();
-        let contactValue = '';
-
-        if (selectedMethod === 'email') {
-            contactValue = document.getElementById('resetEmail').value.trim();
-            if (!contactValue) {
-                showMessage('Please enter your email address', 'error');
-                return;
-            }
-        } else {
-            contactValue = document.getElementById('resetPhone').value.trim();
-            if (!contactValue) {
-                showMessage('Please enter your phone number', 'error');
-                return;
-            }
-        }
-
-        if (!username) {
-            showMessage('Please enter your username', 'error');
-            return;
-        }
-
-        const result = sendResetCode(username, contactValue, selectedMethod);
-        if (result.success) {
-            const methodLabel = selectedMethod === 'email' ? 'email' : 'phone';
-            showMessage(`Verification code sent to your ${methodLabel}!`, 'success');
-
-            // Update message in step 2
-            if (otpSentMessage) {
-                otpSentMessage.textContent = `We sent a 6-digit code to ${result.maskedContact}`;
-            }
-
-            // Switch to step 2
-            document.getElementById('resetStep1').style.display = 'none';
-            document.getElementById('resetStep2').style.display = 'block';
-
-            // Start resend cooldown (60 seconds)
-            startResendCooldown(60);
-        } else {
-            showMessage(result.error, 'error');
-        }
-    }
-
-    // Resend cooldown function
-    function startResendCooldown(seconds) {
-        resendCooldown = seconds;
-        const resendText = document.getElementById('resendText');
-
-        if (resendCodeBtn) resendCodeBtn.disabled = true;
-
-        if (resendInterval) clearInterval(resendInterval);
-
-        resendInterval = setInterval(() => {
-            resendCooldown--;
-            if (resendText) {
-                resendText.textContent = `Resend Code (${resendCooldown}s)`;
-            }
-
-            if (resendCooldown <= 0) {
-                clearInterval(resendInterval);
-                if (resendCodeBtn) resendCodeBtn.disabled = false;
-                if (resendText) resendText.textContent = 'Resend Code';
-            }
-        }, 1000);
-    }
-
-    if (sendCodeBtn) {
-        sendCodeBtn.addEventListener('click', handleSendCode);
-    }
-
-    // Resend code handler
-    if (resendCodeBtn) {
-        resendCodeBtn.addEventListener('click', function () {
-            // Go back to step 1 to change method if needed, or resend
-            handleSendCode();
-        });
-    }
-
-    if (forgotPasswordForm) {
-        forgotPasswordForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const username = document.getElementById('resetUsername').value.trim();
-            const code = document.getElementById('resetCode').value.trim();
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmNewPassword = document.getElementById('confirmNewPassword').value;
-
-            // Validate passwords match
-            if (newPassword !== confirmNewPassword) {
-                showMessage('Passwords do not match', 'error');
-                return;
-            }
-
-            if (newPassword.length < 4) {
-                showMessage('Password must be at least 4 characters', 'error');
-                return;
-            }
-
-            const result = await resetPasswordWithCode(username, code, newPassword);
-
-            if (result.success) {
-                showMessage('Password reset successfully! Please login.', 'success');
-
-                // Clear cooldown
-                if (resendInterval) clearInterval(resendInterval);
-
-                setTimeout(() => {
-                    // Switch back to login
+                // Handle switching back from Forgot Password page
+                if (targetTab === 'login') {
                     document.getElementById('forgot-password').classList.remove('active');
-                    document.querySelector('.auth-tabs').style.display = 'flex';
-                    document.querySelector('[data-tab="login"]').click();
-
-                    document.getElementById('loginUsername').value = username;
-                    document.getElementById('loginPassword').focus();
-
                     // Reset form state
                     document.getElementById('resetStep1').style.display = 'block';
                     document.getElementById('resetStep2').style.display = 'none';
-                    forgotPasswordForm.reset();
+                    document.getElementById('forgotPasswordForm').reset();
 
-                    // Reset method selection
-                    selectedMethod = 'email';
-                    if (methodEmailBtn) methodEmailBtn.classList.add('active');
-                    if (methodPhoneBtn) methodPhoneBtn.classList.remove('active');
-                    if (emailInputGroup) emailInputGroup.style.display = 'block';
-                    if (phoneInputGroup) phoneInputGroup.style.display = 'none';
-                }, 2000);
+                    // Ensure tabs are visible again
+                    document.querySelector('.auth-tabs').style.display = 'flex';
+                }
+
+                // Find and click the corresponding tab
+                const tabToClick = document.querySelector(`.auth-tab[data-tab="${targetTab}"]`);
+                if (tabToClick) {
+                    tabToClick.click();
+                }
+            });
+        });
+
+        // Forgot Password Link Handler
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        if (forgotPasswordLink) {
+            forgotPasswordLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Hide all content
+                authContents.forEach(c => c.classList.remove('active'));
+                // Hide tabs to avoid confusion
+                document.querySelector('.auth-tabs').style.display = 'none';
+                // Show forgot password form
+                document.getElementById('forgot-password').classList.add('active');
+                hideMessage();
+            });
+        }
+
+        // Login Form Handler
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
+
+            const result = await loginUser(username, password);
+
+            if (result.success) {
+                // Handle Remember Me
+                if (rememberMe) {
+                    saveCredentials(username, password);
+                } else {
+                    clearCredentials();
+                }
+
+                showMessage('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    // Check for return URL
+                    const returnUrl = sessionStorage.getItem('returnUrl');
+                    if (returnUrl) {
+                        sessionStorage.removeItem('returnUrl');
+                        window.location.href = returnUrl;
+                        return;
+                    }
+
+                    // Redirect admin to admin dashboard, others to main page
+                    if (result.isAdmin) {
+                        window.location.href = './admin.html';
+                    } else {
+                        window.location.href = './index.html';
+                    }
+                }, 1000);
             } else {
                 showMessage(result.error, 'error');
             }
         });
+
+        // Register Form Handler
+        registerForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('registerUsername').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            // Get full phone number with country code
+            const phoneNumber = document.getElementById('registerPhone').value.trim();
+            const phone = selectedCountry.dialCode + phoneNumber.replace(/\D/g, '');
+            const birthday = document.getElementById('registerBirthday').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validate password match
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match!', 'error');
+                return;
+            }
+
+            const result = await registerUser(username, email, phone, birthday, password);
+
+            if (result.success) {
+                showMessage('Account created! You can now sign in.', 'success');
+
+                // Switch to login tab
+                setTimeout(() => {
+                    document.querySelector('[data-tab="login"]').click();
+                    document.getElementById('loginUsername').value = username;
+                    document.getElementById('loginPassword').focus();
+                }, 1500);
+
+                // Clear register form
+                registerForm.reset();
+            } else {
+                showMessage(result.error, 'error');
+            }
+        });
+
+        // Forgot Password Form Handler
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const sendCodeBtn = document.getElementById('sendCodeBtn');
+        const resendCodeBtn = document.getElementById('resendCodeBtn');
+        const methodEmailBtn = document.getElementById('methodEmail');
+        const methodPhoneBtn = document.getElementById('methodPhone');
+        const emailInputGroup = document.getElementById('emailInputGroup');
+        const phoneInputGroup = document.getElementById('phoneInputGroup');
+        const sendCodeIcon = document.getElementById('sendCodeIcon');
+        const sendCodeText = document.getElementById('sendCodeText');
+        const otpSentMessage = document.getElementById('otpSentMessage');
+
+        let selectedMethod = 'email';
+        let resendCooldown = 0;
+        let resendInterval = null;
+
+        // Method selector handlers
+        if (methodEmailBtn) {
+            methodEmailBtn.addEventListener('click', function () {
+                selectedMethod = 'email';
+                methodEmailBtn.classList.add('active');
+                methodPhoneBtn.classList.remove('active');
+                emailInputGroup.style.display = 'block';
+                phoneInputGroup.style.display = 'none';
+                sendCodeIcon.textContent = '📧';
+                sendCodeText.textContent = 'Send OTP to Email';
+            });
+        }
+
+        if (methodPhoneBtn) {
+            methodPhoneBtn.addEventListener('click', function () {
+                selectedMethod = 'phone';
+                methodPhoneBtn.classList.add('active');
+                methodEmailBtn.classList.remove('active');
+                phoneInputGroup.style.display = 'block';
+                emailInputGroup.style.display = 'none';
+                sendCodeIcon.textContent = '📱';
+                sendCodeText.textContent = 'Send OTP to Phone';
+            });
+        }
+
+        // Function to send code
+        function handleSendCode() {
+            const username = document.getElementById('resetUsername').value.trim();
+            let contactValue = '';
+
+            if (selectedMethod === 'email') {
+                contactValue = document.getElementById('resetEmail').value.trim();
+                if (!contactValue) {
+                    showMessage('Please enter your email address', 'error');
+                    return;
+                }
+            } else {
+                contactValue = document.getElementById('resetPhone').value.trim();
+                if (!contactValue) {
+                    showMessage('Please enter your phone number', 'error');
+                    return;
+                }
+            }
+
+            if (!username) {
+                showMessage('Please enter your username', 'error');
+                return;
+            }
+
+            const result = sendResetCode(username, contactValue, selectedMethod);
+            if (result.success) {
+                const methodLabel = selectedMethod === 'email' ? 'email' : 'phone';
+                showMessage(`Verification code sent to your ${methodLabel}!`, 'success');
+
+                // Update message in step 2
+                if (otpSentMessage) {
+                    otpSentMessage.textContent = `We sent a 6-digit code to ${result.maskedContact}`;
+                }
+
+                // Switch to step 2
+                document.getElementById('resetStep1').style.display = 'none';
+                document.getElementById('resetStep2').style.display = 'block';
+
+                // Start resend cooldown (60 seconds)
+                startResendCooldown(60);
+            } else {
+                showMessage(result.error, 'error');
+            }
+        }
+
+        // Resend cooldown function
+        function startResendCooldown(seconds) {
+            resendCooldown = seconds;
+            const resendText = document.getElementById('resendText');
+
+            if (resendCodeBtn) resendCodeBtn.disabled = true;
+
+            if (resendInterval) clearInterval(resendInterval);
+
+            resendInterval = setInterval(() => {
+                resendCooldown--;
+                if (resendText) {
+                    resendText.textContent = `Resend Code (${resendCooldown}s)`;
+                }
+
+                if (resendCooldown <= 0) {
+                    clearInterval(resendInterval);
+                    if (resendCodeBtn) resendCodeBtn.disabled = false;
+                    if (resendText) resendText.textContent = 'Resend Code';
+                }
+            }, 1000);
+        }
+
+        if (sendCodeBtn) {
+            sendCodeBtn.addEventListener('click', handleSendCode);
+        }
+
+        // Resend code handler
+        if (resendCodeBtn) {
+            resendCodeBtn.addEventListener('click', function () {
+                // Go back to step 1 to change method if needed, or resend
+                handleSendCode();
+            });
+        }
+
+        if (forgotPasswordForm) {
+            forgotPasswordForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const username = document.getElementById('resetUsername').value.trim();
+                const code = document.getElementById('resetCode').value.trim();
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+
+                // Validate passwords match
+                if (newPassword !== confirmNewPassword) {
+                    showMessage('Passwords do not match', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 4) {
+                    showMessage('Password must be at least 4 characters', 'error');
+                    return;
+                }
+
+                const result = await resetPasswordWithCode(username, code, newPassword);
+
+                if (result.success) {
+                    showMessage('Password reset successfully! Please login.', 'success');
+
+                    // Clear cooldown
+                    if (resendInterval) clearInterval(resendInterval);
+
+                    setTimeout(() => {
+                        // Switch back to login
+                        document.getElementById('forgot-password').classList.remove('active');
+                        document.querySelector('.auth-tabs').style.display = 'flex';
+                        document.querySelector('[data-tab="login"]').click();
+
+                        document.getElementById('loginUsername').value = username;
+                        document.getElementById('loginPassword').focus();
+
+                        // Reset form state
+                        document.getElementById('resetStep1').style.display = 'block';
+                        document.getElementById('resetStep2').style.display = 'none';
+                        forgotPasswordForm.reset();
+
+                        // Reset method selection
+                        selectedMethod = 'email';
+                        if (methodEmailBtn) methodEmailBtn.classList.add('active');
+                        if (methodPhoneBtn) methodPhoneBtn.classList.remove('active');
+                        if (emailInputGroup) emailInputGroup.style.display = 'block';
+                        if (phoneInputGroup) phoneInputGroup.style.display = 'none';
+                    }, 2000);
+                } else {
+                    showMessage(result.error, 'error');
+                }
+            });
+        }
     }
-}
 
 // Export functions for use in main.js and admin.js
 export { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser, getAuthToken };
