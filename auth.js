@@ -323,6 +323,15 @@ async function registerUser(username, email, phone, birthday, password) {
         return { success: false, error: 'Password must be at least 4 characters long' };
     }
 
+    // Check password strength: must contain uppercase, lowercase, and number
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+        return { success: false, error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' };
+    }
+
     const users = getUsers();
 
     // Check if username exists locally
@@ -456,6 +465,19 @@ async function resetPasswordWithCode(username, code, newPassword) {
     // Verify expiry
     if (Date.now() > user.resetCodeExpiry) {
         return { success: false, error: 'Verification code has expired' };
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 4) {
+        return { success: false, error: 'Password must be at least 4 characters long' };
+    }
+
+    const hasUppercase = /[A-Z]/.test(newPassword);
+    const hasLowercase = /[a-z]/.test(newPassword);
+    const hasNumber = /[0-9]/.test(newPassword);
+
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+        return { success: false, error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' };
     }
 
     // Hash new password and save

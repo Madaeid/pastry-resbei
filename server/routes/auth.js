@@ -32,6 +32,15 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 4 characters long' });
         }
 
+        // Check password strength: must contain uppercase, lowercase, and number
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasLowercase = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+
+        if (!hasUppercase || !hasLowercase || !hasNumber) {
+            return res.status(400).json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
+        }
+
         // Age validation
         if (birthday) {
             const birthDate = new Date(birthday);
@@ -240,6 +249,15 @@ router.post('/reset-password', async (req, res) => {
 
         if (!newPassword || newPassword.length < 4) {
             return res.status(400).json({ error: 'Password must be at least 4 characters' });
+        }
+
+        // Check password strength: must contain uppercase, lowercase, and number
+        const hasUppercase = /[A-Z]/.test(newPassword);
+        const hasLowercase = /[a-z]/.test(newPassword);
+        const hasNumber = /[0-9]/.test(newPassword);
+
+        if (!hasUppercase || !hasLowercase || !hasNumber) {
+            return res.status(400).json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
         }
 
         const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
