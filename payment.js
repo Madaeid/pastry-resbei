@@ -1,6 +1,7 @@
 // Payment Module for Pastry Recipe Book
 import './style.css';
 import { getCurrentUser, isAdmin, getAuthToken } from './auth.js';
+import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // API Configuration
 const API_URL = 'http://localhost:3001/api';
@@ -276,6 +277,9 @@ function cancelSubscription() {
 document.addEventListener('DOMContentLoaded', initPaymentPage);
 
 function initPaymentPage() {
+    // Initialize language system
+    initLanguage();
+
     const currentUser = getCurrentUser();
 
     // Update user header

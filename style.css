@@ -185,7 +185,7 @@ body {
     padding: 60px 20px 40px;
     position: relative;
     z-index: 1;
-    margin-top: 50px;
+    margin-top: 100px;
 }
 
 .page-header::before {
@@ -582,193 +582,6 @@ body {
 .password-toggle:focus {
     outline: none;
     box-shadow: 0 0 0 2px rgba(255, 107, 138, 0.3);
-}
-
-/* ===== Phone Input with Country Selector ===== */
-.phone-input-wrapper {
-    display: flex;
-    gap: 0;
-    align-items: stretch;
-}
-
-.phone-input-wrapper input[type="tel"] {
-    flex: 1;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: none;
-}
-
-.country-selector {
-    position: relative;
-    min-width: 120px;
-}
-
-.country-selected {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 16px 12px;
-    background: linear-gradient(145deg, rgba(40, 40, 60, 0.95), rgba(30, 30, 45, 0.98));
-    border: 1px solid rgba(255, 107, 138, 0.15);
-    border-right: none;
-    border-radius: 12px 0 0 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    height: 100%;
-    box-sizing: border-box;
-}
-
-.country-selected:hover {
-    background: linear-gradient(145deg, rgba(50, 50, 70, 0.95), rgba(40, 40, 55, 0.98));
-    border-color: rgba(255, 107, 138, 0.3);
-}
-
-.country-selected.active {
-    border-color: var(--accent-pink);
-    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
-}
-
-.country-flag {
-    font-size: 1.4rem;
-    line-height: 1;
-}
-
-.country-code {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.dropdown-arrow {
-    font-size: 0.6rem;
-    color: var(--text-secondary);
-    margin-left: auto;
-    transition: transform 0.3s ease;
-}
-
-.country-selected.active .dropdown-arrow {
-    transform: rotate(180deg);
-}
-
-.country-dropdown {
-    display: none;
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    width: 280px;
-    max-height: 350px;
-    background: linear-gradient(145deg, rgba(25, 25, 40, 0.98), rgba(15, 15, 28, 0.99));
-    border: 1px solid rgba(255, 107, 138, 0.25);
-    border-radius: 12px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 107, 138, 0.1);
-    z-index: 1000;
-    overflow: hidden;
-    animation: dropdownSlide 0.25s ease-out;
-}
-
-.country-dropdown.show {
-    display: block;
-}
-
-@keyframes dropdownSlide {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.country-search {
-    width: 100%;
-    padding: 14px 16px;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-    background: rgba(30, 30, 50, 0.8);
-    border: none;
-    border-bottom: 1px solid rgba(255, 107, 138, 0.15);
-    outline: none;
-    font-family: inherit;
-}
-
-.country-search::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.country-search:focus {
-    background: rgba(40, 40, 60, 0.9);
-    border-bottom-color: rgba(255, 107, 138, 0.3);
-}
-
-.country-list {
-    max-height: 280px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 107, 138, 0.3) transparent;
-}
-
-.country-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-.country-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.country-list::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 138, 0.3);
-    border-radius: 3px;
-}
-
-.country-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 107, 138, 0.5);
-}
-
-.country-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-}
-
-.country-item:hover {
-    background: rgba(255, 107, 138, 0.1);
-}
-
-.country-item.selected {
-    background: rgba(255, 107, 138, 0.15);
-    border-left: 3px solid var(--accent-pink);
-}
-
-.country-item .country-flag {
-    font-size: 1.3rem;
-}
-
-.country-item .country-name {
-    flex: 1;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.country-item .country-dial-code {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 50px;
-    text-align: right;
-}
-
-.country-item:last-child {
-    border-bottom: none;
 }
 
 /* ===== Form Row ===== */
@@ -1542,25 +1355,45 @@ footer {
 .user-header {
     display: flex;
     align-items: center;
-    gap: 15px;
-    position: absolute;
+    gap: 12px;
+    position: fixed;
     top: 20px;
     left: 20px;
-    z-index: 100;
+    z-index: 1000;
+    padding: 12px 20px;
+    background: linear-gradient(145deg, rgba(25, 25, 45, 0.95), rgba(15, 15, 30, 0.98));
+    backdrop-filter: blur(20px);
+    border-radius: 60px;
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 107, 138, 0.08);
 }
 
 .user-display {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 18px;
-    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
-    border: 1px solid rgba(255, 107, 138, 0.2);
+    padding: 8px 16px;
+    background: linear-gradient(145deg, rgba(255, 107, 138, 0.12), rgba(255, 179, 71, 0.08));
+    border: 1px solid rgba(255, 107, 138, 0.25);
     border-radius: 50px;
+    transition: all 0.3s ease;
+}
+
+.user-display:hover {
+    border-color: rgba(255, 107, 138, 0.4);
+    box-shadow: 0 0 20px rgba(255, 107, 138, 0.15);
 }
 
 .user-avatar {
     font-size: 1.3rem;
+}
+
+.user-avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 107, 138, 0.3);
 }
 
 .user-name {
@@ -1569,6 +1402,134 @@ footer {
     font-size: 0.9rem;
 }
 
+.premium-badge {
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #1a1a2e;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+}
+
+/* Upgrade Button - Gold/Premium */
+.btn-upgrade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: #1a1a2e;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    animation: upgradeGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes upgradeGlow {
+    0% {
+        box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 4px 25px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.2);
+    }
+}
+
+.btn-upgrade:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 30px rgba(251, 191, 36, 0.5);
+    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #f59e0b 100%);
+}
+
+/* Daily Menu Button - Orange */
+.btn-daily-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.btn-daily-menu:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(249, 115, 22, 0.4);
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+}
+
+/* Calculator Button - Emerald Green */
+.btn-calculator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-calculator:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+/* Home Button - Pink */
+.btn-home {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #ff6b8a 0%, #f43f5e 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 138, 0.3);
+}
+
+.btn-home:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(255, 107, 138, 0.4);
+    background: linear-gradient(135deg, #fb7185 0%, #ff6b8a 100%);
+}
+
+/* Logout Button - Slate/Red Hover */
 .btn-logout {
     display: inline-flex;
     align-items: center;
@@ -1579,17 +1540,19 @@ footer {
     font-weight: 600;
     font-family: inherit;
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 107, 138, 0.2);
+    background: rgba(100, 116, 139, 0.15);
+    border: 1px solid rgba(100, 116, 139, 0.3);
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .btn-logout:hover {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.5);
-    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.2);
 }
 
 
@@ -5527,4 +5490,1992 @@ footer {
 /* Modal Small Size */
 .modal-content.modal-sm {
     max-width: 400px;
+}
+
+/* ===== Phone Input with Country Selector ===== */
+.phone-input-wrapper {
+    display: flex;
+    gap: 0;
+    position: relative;
+}
+
+.country-selector {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.country-selected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.95), rgba(25, 25, 40, 0.98));
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    border-right: none;
+    border-radius: 12px 0 0 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 110px;
+}
+
+.country-selected:hover {
+    background: linear-gradient(145deg, rgba(50, 50, 70, 0.95), rgba(35, 35, 50, 0.98));
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+.country-selected:focus {
+    outline: none;
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+.country-flag {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.country-code {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 35px;
+}
+
+.dropdown-arrow {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+    margin-left: auto;
+}
+
+.country-selector.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.country-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 280px;
+    max-height: 300px;
+    background: linear-gradient(145deg, rgba(25, 25, 45, 0.98), rgba(15, 15, 30, 0.99));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 107, 138, 0.1);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s ease;
+}
+
+.country-selector.open .country-dropdown {
+    display: flex;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.country-search {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: rgba(30, 30, 50, 0.9);
+    border: none;
+    border-bottom: 1px solid rgba(255, 107, 138, 0.15);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.country-search::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.country-search:focus {
+    background: rgba(40, 40, 60, 0.95);
+    border-bottom-color: var(--accent-pink);
+}
+
+.country-list {
+    overflow-y: auto;
+    max-height: 250px;
+    padding: 8px 0;
+}
+
+.country-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.country-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.country-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 138, 0.4);
+    border-radius: 3px;
+}
+
+.country-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 138, 0.6);
+}
+
+.country-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.country-item:hover {
+    background: rgba(255, 107, 138, 0.15);
+}
+
+.country-item.selected {
+    background: rgba(255, 107, 138, 0.2);
+}
+
+.country-item .country-flag {
+    font-size: 1.3rem;
+}
+
+.country-item .country-name {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.country-item .country-dial-code {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.phone-input-wrapper input[type="tel"] {
+    flex: 1;
+    border-radius: 0 12px 12px 0 !important;
+    border-left: none !important;
+}
+
+.phone-input-wrapper input[type="tel"]:focus {
+    z-index: 1;
+}
+
+/* No country found message */
+.country-list .no-results {
+    padding: 20px 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.country-list .no-results span {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* ===== Cost Calculator Styles ===== */
+
+/* Calculator Page Header - Teal/Cyan Theme */
+body:has(.calculator-container) .page-header::before {
+    background: radial-gradient(ellipse at center, rgba(20, 184, 166, 0.25) 0%, rgba(13, 148, 136, 0.12) 30%, transparent 70%);
+}
+
+body:has(.calculator-container) .header-icon {
+    border-color: rgba(20, 184, 166, 0.4);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 80px rgba(20, 184, 166, 0.3);
+}
+
+body:has(.calculator-container) .header-icon::before {
+    background: linear-gradient(135deg, rgba(20, 184, 166, 0.4), transparent 50%, rgba(139, 92, 246, 0.4)) border-box;
+}
+
+@keyframes calculatorIconPulse {
+    0% {
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 80px rgba(20, 184, 166, 0.2);
+    }
+
+    100% {
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4), 0 0 100px rgba(20, 184, 166, 0.5);
+    }
+}
+
+body:has(.calculator-container) .header-icon {
+    animation: bounceIn 0.8s ease-out, calculatorIconPulse 4s ease-in-out infinite alternate;
+}
+
+body:has(.calculator-container) .page-header h1 {
+    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 25%, #14b8a6 50%, #8b5cf6 75%, #14b8a6 100%);
+    background-size: 300% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body:has(.calculator-container) .header-decoration span {
+    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 50%, #8b5cf6 100%);
+}
+
+body:has(.calculator-container) .header-decoration span:nth-child(2) {
+    box-shadow: 0 0 25px rgba(20, 184, 166, 0.5);
+}
+
+/* Calculator Decorative Orbs - Teal Theme */
+body:has(.calculator-container) .orb-1 {
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.5) 0%, transparent 70%);
+}
+
+body:has(.calculator-container) .orb-2 {
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+}
+
+body:has(.calculator-container) .orb-3 {
+    background: radial-gradient(circle, rgba(45, 212, 191, 0.3) 0%, transparent 70%);
+}
+
+/* Calculator Particles - Teal Theme */
+body:has(.calculator-container) .particle {
+    background: linear-gradient(135deg, #14b8a6 0%, #8b5cf6 100%);
+}
+
+/* Calculator Form Border Accent */
+body:has(.calculator-container) .calculator-form {
+    border-color: rgba(20, 184, 166, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 80px rgba(20, 184, 166, 0.1);
+}
+
+body:has(.calculator-container) .calculator-form::before {
+    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 50%, #8b5cf6 100%);
+}
+
+/* Calculator User Header - Teal Theme */
+body:has(.calculator-container) .user-header {
+    background: linear-gradient(145deg, rgba(20, 30, 35, 0.95), rgba(15, 25, 30, 0.98));
+    padding: 12px 20px;
+    border-radius: 50px;
+    border: 1px solid rgba(20, 184, 166, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 30px rgba(20, 184, 166, 0.1);
+}
+
+body:has(.calculator-container) .user-display {
+    background: linear-gradient(145deg, rgba(20, 184, 166, 0.15), rgba(13, 148, 136, 0.1));
+    border-color: rgba(20, 184, 166, 0.3);
+}
+
+/* Home Button - Teal */
+body:has(.calculator-container) .btn-home {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: #14b8a6;
+    background: rgba(20, 184, 166, 0.1);
+    border: 1px solid rgba(20, 184, 166, 0.3);
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+body:has(.calculator-container) .btn-home:hover {
+    color: #2dd4bf;
+    background: rgba(20, 184, 166, 0.2);
+    border-color: #14b8a6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+}
+
+/* Price Table Button - Cyan */
+body:has(.calculator-container) .btn-price-table {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+}
+
+body:has(.calculator-container) .btn-price-table:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(6, 182, 212, 0.4);
+    background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+}
+
+/* Daily Menu Button - Purple Accent */
+body:has(.calculator-container) .btn-daily-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+body:has(.calculator-container) .btn-daily-menu:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+/* Logout Button - Slate with Teal accent */
+body:has(.calculator-container) .btn-logout {
+    color: var(--text-secondary);
+    background: rgba(100, 116, 139, 0.1);
+    border-color: rgba(100, 116, 139, 0.3);
+}
+
+body:has(.calculator-container) .btn-logout:hover {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.5);
+    background: rgba(248, 113, 113, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.2);
+}
+
+.calculator-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.calculator-form {
+    background: linear-gradient(145deg, rgba(20, 20, 35, 0.95), rgba(15, 15, 26, 0.98));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 24px;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 80px rgba(255, 107, 138, 0.1);
+}
+
+.calculator-form::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary-gradient);
+}
+
+.calculator-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 107, 138, 0.1);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+/* Ingredients Table */
+.ingredients-table {
+    margin-bottom: 15px;
+}
+
+.ingredients-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr 40px;
+    gap: 10px;
+    padding: 10px 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 107, 138, 0.15);
+}
+
+.ingredient-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.2fr 1fr 40px;
+    gap: 10px;
+    padding: 10px 5px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    animation: fadeIn 0.3s ease;
+}
+
+.ingredient-row input,
+.ingredient-row select {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: rgba(30, 30, 50, 0.8);
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    border-radius: 8px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.ingredient-row input:focus,
+.ingredient-row select:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 2px rgba(255, 107, 138, 0.15);
+}
+
+.ingredient-row .ing-total {
+    font-weight: 600;
+    color: var(--accent-orange);
+    text-align: center;
+}
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.btn-delete:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.1);
+}
+
+.ingredients-subtotal {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 5px;
+    font-weight: 600;
+    border-top: 2px solid rgba(255, 107, 138, 0.2);
+}
+
+.ingredients-subtotal span:last-child {
+    color: var(--accent-orange);
+    font-size: 1.1rem;
+}
+
+/* Costs Grid */
+.costs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.currency-input {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.currency-symbol {
+    position: absolute;
+    left: 12px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    z-index: 1;
+}
+
+.currency-input input {
+    padding-left: 30px !important;
+}
+
+.currency-input.small {
+    width: 100%;
+}
+
+.currency-input.small input {
+    width: 100%;
+}
+
+/* Profit Slider */
+.profit-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profit-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(255, 107, 138, 0.3) 0%, rgba(255, 179, 71, 0.5) 100%);
+    outline: none;
+}
+
+.profit-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 138, 0.4);
+    transition: transform 0.2s ease;
+}
+
+.profit-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.profit-display {
+    min-width: 80px;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, rgba(255, 107, 138, 0.2), rgba(255, 179, 71, 0.2));
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--accent-orange);
+}
+
+/* Results Section */
+.calculator-results {
+    background: linear-gradient(145deg, rgba(255, 107, 138, 0.08), rgba(255, 179, 71, 0.05));
+    border-radius: 20px;
+    padding: 25px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 107, 138, 0.2);
+}
+
+.calculator-results h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    color: var(--text-primary);
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.result-card {
+    background: rgba(20, 20, 35, 0.8);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.result-card:hover {
+    transform: translateY(-3px);
+}
+
+.result-icon {
+    display: block;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+}
+
+.result-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+}
+
+.result-value {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.result-value.highlight {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.result-value.profit {
+    color: #4ade80;
+}
+
+.per-serving-results {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.per-serving-item {
+    display: flex;
+    gap: 10px;
+    font-size: 0.95rem;
+}
+
+.per-serving-item .highlight {
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.per-serving-item .profit {
+    font-weight: 700;
+    color: #4ade80;
+}
+
+/* Calculator Actions */
+.calculator-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+/* Calculator Action Buttons - Teal/Cyan Theme */
+.calculator-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.calculator-actions .btn-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(100, 116, 139, 0.3);
+}
+
+.calculator-actions .btn-secondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(100, 116, 139, 0.4);
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+.calculator-actions .btn-primary {
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+}
+
+.calculator-actions .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4);
+    background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
+}
+
+.calculator-actions .btn-pdf {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+}
+
+.calculator-actions .btn-pdf:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+}
+
+.calculator-actions .btn:active {
+    transform: translateY(-1px);
+}
+
+.calculator-actions .btn .btn-icon {
+    font-size: 1.2rem;
+}
+
+/* PDF Download Button */
+.btn-pdf {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-pdf:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+}
+
+.btn-pdf:active {
+    transform: translateY(-1px);
+}
+
+/* Saved Calculations */
+.saved-calculations {
+    margin-top: 30px;
+    background: linear-gradient(145deg, rgba(20, 20, 35, 0.95), rgba(15, 15, 26, 0.98));
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    border-radius: 20px;
+    padding: 25px;
+}
+
+.saved-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.saved-item:hover {
+    background: rgba(255, 107, 138, 0.08);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+.saved-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.saved-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.saved-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.saved-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.saved-actions button {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.saved-actions .btn-load:hover {
+    background: rgba(255, 179, 71, 0.2);
+}
+
+.saved-actions .btn-remove:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Notification */
+.calc-notification {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    background: linear-gradient(135deg, rgba(20, 20, 35, 0.98), rgba(30, 30, 50, 0.98));
+    border: 1px solid rgba(255, 107, 138, 0.3);
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    animation: slideUp 0.3s ease;
+}
+
+.calc-notification.error {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.calc-notification.fade-out {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+    transition: all 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Responsive Design for Calculator */
+@media (max-width: 768px) {
+    .ingredients-header {
+        display: none;
+    }
+
+    .ingredient-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 15px 10px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    .ingredient-row .ing-name {
+        grid-column: 1 / -1;
+    }
+
+    .ingredient-row .ing-total {
+        text-align: left;
+    }
+
+    .ingredient-row .btn-delete {
+        justify-self: end;
+    }
+
+    .costs-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .results-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .per-serving-results {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .calculator-actions {
+        flex-direction: column;
+    }
+
+    .calculator-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ===== Import Recipe Feature ===== */
+.recipe-name-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.recipe-name-row input {
+    flex: 1;
+}
+
+.btn-import {
+    white-space: nowrap;
+    padding: 14px 20px;
+    font-size: 0.85rem;
+}
+
+/* Import Recipe Modal Styles */
+#importRecipeModal .modal-content {
+    max-width: 600px;
+}
+
+#importRecipeModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 107, 138, 0.2);
+}
+
+#importRecipeModal .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+#importRecipeModal .modal-body {
+    padding: 20px 30px 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.import-search-container {
+    margin-bottom: 20px;
+}
+
+.import-search-input {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.import-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.import-search-input:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+.import-recipes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.import-recipe-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.7), rgba(20, 20, 35, 0.8));
+    border: 1px solid rgba(255, 107, 138, 0.15);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.import-recipe-item:hover {
+    border-color: var(--accent-pink);
+    transform: translateX(5px);
+    box-shadow: 0 5px 20px rgba(255, 107, 138, 0.2);
+}
+
+.import-recipe-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.8), rgba(30, 30, 45, 0.9));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.import-recipe-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.import-recipe-image .placeholder-emoji {
+    font-size: 1.5rem;
+}
+
+.import-recipe-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.import-recipe-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.import-recipe-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.import-recipe-btn {
+    padding: 8px 16px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.import-recipe-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(255, 107, 138, 0.4);
+}
+
+.import-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.import-empty-state .empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 15px;
+    opacity: 0.6;
+}
+
+.import-empty-state p {
+    font-size: 1rem;
+}
+
+/* Responsive styles for import feature */
+@media (max-width: 480px) {
+    .recipe-name-row {
+        flex-direction: column;
+    }
+
+    .btn-import {
+        width: 100%;
+    }
+
+    .import-recipe-item {
+        flex-wrap: wrap;
+    }
+
+    .import-recipe-btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* ===== Price Table Button ===== */
+.btn-price-table {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: white;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-price-table:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+}
+
+/* ===== Price Table Modal ===== */
+#priceTableModal .modal-content.modal-lg {
+    max-width: 900px;
+}
+
+#priceTableModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 107, 138, 0.2);
+}
+
+#priceTableModal .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+#priceTableModal .modal-body {
+    padding: 25px 30px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+#priceTableModal .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 30px;
+    border-top: 1px solid rgba(255, 107, 138, 0.2);
+}
+
+.price-table-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(16, 185, 129, 0.1);
+    border-left: 4px solid #10b981;
+    border-radius: 0 12px 12px 0;
+}
+
+/* Currency Selector */
+.currency-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 18px 20px;
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.7), rgba(30, 30, 45, 0.8));
+    border: 1px solid rgba(255, 179, 71, 0.3);
+    border-radius: 14px;
+    margin-bottom: 25px;
+}
+
+.currency-label {
+    font-weight: 600;
+    color: var(--accent-orange);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.currency-select {
+    flex: 1;
+    max-width: 280px;
+    padding: 12px 40px 12px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(50, 50, 70, 0.9), rgba(35, 35, 50, 0.95));
+    border: 2px solid rgba(255, 179, 71, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffb347' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.currency-select:hover {
+    border-color: rgba(255, 179, 71, 0.5);
+    background-color: rgba(60, 60, 80, 0.9);
+}
+
+.currency-select:focus {
+    border-color: var(--accent-orange);
+    box-shadow: 0 0 0 3px rgba(255, 179, 71, 0.2);
+}
+
+.currency-select option {
+    background: #1a1a2e;
+    color: var(--text-primary);
+    padding: 12px;
+}
+
+/* Currency Symbol Position Classes */
+.currency-symbol.after {
+    order: 1;
+    margin-left: 4px;
+    margin-right: 0;
+}
+
+.currency-symbol.before {
+    order: -1;
+    margin-right: 4px;
+    margin-left: 0;
+}
+
+.currency-input.small {
+    display: flex;
+    align-items: center;
+}
+
+.currency-input.small .currency-symbol.after {
+    position: relative;
+    left: auto;
+}
+
+/* Responsive Currency Selector */
+@media (max-width: 480px) {
+    .currency-selector-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .currency-select {
+        max-width: 100%;
+    }
+}
+
+/* Add Price Item Form */
+.add-price-item-form {
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.7), rgba(20, 20, 35, 0.8));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.price-item-inputs {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.price-item-name-input {
+    flex: 2;
+    min-width: 200px;
+    padding: 14px 18px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.9), rgba(25, 25, 40, 0.95));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.price-item-name-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.price-item-name-input:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+.price-item-unit-group {
+    flex: 0 0 auto;
+}
+
+.price-item-unit-select {
+    padding: 14px 35px 14px 15px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.9), rgba(25, 25, 40, 0.95));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.price-item-unit-select:focus {
+    border-color: var(--accent-pink);
+}
+
+.price-item-unit-select option {
+    background: var(--dark-bg);
+    color: var(--text-primary);
+}
+
+.price-item-price-input {
+    flex: 0 0 auto;
+    width: 130px;
+}
+
+.price-item-price-input input {
+    width: 100%;
+    padding: 14px 14px 14px 30px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.9), rgba(25, 25, 40, 0.95));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.price-item-price-input input:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+.btn-add-item {
+    padding: 14px 20px;
+    white-space: nowrap;
+}
+
+/* Price Table Search */
+.price-table-search {
+    margin-bottom: 20px;
+}
+
+.price-search-input {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text-primary);
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 12px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.price-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.price-search-input:focus {
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+}
+
+/* Price Items Table */
+.price-items-table {
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.price-items-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    gap: 15px;
+    padding: 15px 20px;
+    background: linear-gradient(145deg, rgba(40, 40, 60, 0.8), rgba(30, 30, 45, 0.9));
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--accent-pink);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.price-items-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.price-item-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    gap: 15px;
+    padding: 15px 20px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.price-item-row:hover {
+    background: rgba(255, 107, 138, 0.05);
+}
+
+.price-item-row:last-child {
+    border-bottom: none;
+}
+
+.price-item-row .item-name {
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.price-item-row .item-unit {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.price-item-row .item-price {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.price-item-row .item-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.price-item-row .btn-edit-item,
+.price-item-row .btn-delete-item {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 107, 138, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.price-item-row .btn-edit-item:hover {
+    background: rgba(255, 179, 71, 0.2);
+    border-color: var(--accent-orange);
+}
+
+.price-item-row .btn-delete-item:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+/* Price Table Empty State */
+.price-table-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-secondary);
+}
+
+.price-table-empty .empty-icon {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.price-table-empty p {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.price-table-empty .empty-hint {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* Responsive Price Table */
+@media (max-width: 768px) {
+    .price-item-inputs {
+        flex-direction: column;
+    }
+
+    .price-item-name-input,
+    .price-item-unit-group,
+    .price-item-price-input,
+    .btn-add-item {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .price-items-header,
+    .price-item-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .price-items-header .col-item-actions,
+    .price-item-row .item-actions {
+        grid-column: span 2;
+        justify-content: center;
+    }
+
+    #priceTableModal .modal-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #priceTableModal .modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* ===== Language Toggle Button ===== */
+.language-toggle {
+    position: fixed;
+    bottom: 25px;
+    left: 25px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 35, 0.98));
+    border: 2px solid rgba(255, 107, 138, 0.4);
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 107, 138, 0.15);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.language-toggle:hover {
+    transform: translateY(-3px) scale(1.05);
+    border-color: var(--accent-pink);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 107, 138, 0.3);
+}
+
+.language-toggle:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.language-toggle .lang-icon {
+    font-size: 1.3rem;
+    animation: globeSpin 8s linear infinite;
+}
+
+@keyframes globeSpin {
+
+    0%,
+    100% {
+        transform: rotate(-5deg);
+    }
+
+    50% {
+        transform: rotate(5deg);
+    }
+}
+
+.language-toggle .lang-text {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+}
+
+/* RTL position adjustment */
+body.rtl .language-toggle {
+    left: auto;
+    right: 25px;
+}
+
+/* ===== RTL (Right-to-Left) Arabic Support ===== */
+html[dir="rtl"] {
+    direction: rtl;
+}
+
+body.rtl {
+    text-align: right;
+}
+
+/* RTL - Form elements */
+body.rtl .form-group input,
+body.rtl .form-group select,
+body.rtl .form-group textarea {
+    text-align: right;
+}
+
+body.rtl .form-group select {
+    background-position: left 16px center;
+    padding-left: 45px;
+    padding-right: 20px;
+}
+
+/* RTL - Password toggle */
+body.rtl .password-input-wrapper input {
+    padding-right: 20px;
+    padding-left: 55px;
+}
+
+body.rtl .password-toggle {
+    right: auto;
+    left: 12px;
+}
+
+/* RTL - Search input */
+body.rtl .search-icon {
+    left: auto;
+    right: 18px;
+}
+
+body.rtl .search-input {
+    padding: 14px 50px 14px 20px;
+}
+
+/* RTL - Buttons */
+body.rtl .btn {
+    flex-direction: row-reverse;
+}
+
+body.rtl .form-actions {
+    justify-content: flex-end;
+}
+
+/* RTL - Recipe card actions */
+body.rtl .recipe-card-actions {
+    flex-direction: row-reverse;
+}
+
+/* RTL - User header */
+body.rtl .user-header {
+    flex-direction: row-reverse;
+}
+
+body.rtl .user-display {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Tabs */
+body.rtl .tabs-container {
+    flex-direction: row-reverse;
+}
+
+body.rtl .tab {
+    flex-direction: row-reverse;
+}
+
+body.rtl .auth-tabs {
+    flex-direction: row-reverse;
+}
+
+body.rtl .auth-tab {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Modal */
+body.rtl .modal-close {
+    left: 15px;
+    right: auto;
+}
+
+/* RTL - Recipe meta */
+body.rtl .recipe-card-meta {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Ingredient row */
+body.rtl .ingredient-row,
+body.rtl .cost-row,
+body.rtl .summary-row {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Day picker */
+body.rtl .day-picker-grid {
+    direction: rtl;
+}
+
+body.rtl .day-picker-btn {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Recipes header */
+body.rtl .recipes-header {
+    flex-direction: row-reverse;
+}
+
+body.rtl .recipes-actions {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Navigation buttons */
+body.rtl .btn-upgrade,
+body.rtl .btn-daily-menu,
+body.rtl .btn-calculator,
+body.rtl .btn-dashboard,
+body.rtl .btn-logout,
+body.rtl .btn-edit-user {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Header decorations */
+body.rtl .header-decoration {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Remember me group */
+body.rtl .remember-me-group {
+    flex-direction: row-reverse;
+}
+
+body.rtl .remember-me-label {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Recovery method selector */
+body.rtl .recovery-method-selector {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Phone input wrapper */
+body.rtl .phone-input-wrapper {
+    flex-direction: row-reverse;
+}
+
+body.rtl .country-selector {
+    border-radius: 12px 0 0 12px;
+}
+
+body.rtl .phone-input-wrapper input[type="tel"] {
+    border-radius: 0 12px 12px 0;
+}
+
+/* RTL - Country dropdown */
+body.rtl .country-dropdown {
+    right: auto;
+    left: 0;
+}
+
+/* RTL - Price table */
+body.rtl .price-item-inputs {
+    flex-direction: row-reverse;
+}
+
+body.rtl .price-items-header {
+    direction: rtl;
+}
+
+body.rtl .price-item-row {
+    direction: rtl;
+}
+
+/* RTL - Calculator sections */
+body.rtl .calculator-section {
+    text-align: right;
+}
+
+body.rtl .section-header {
+    flex-direction: row-reverse;
+}
+
+body.rtl .section-title {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Summary section */
+body.rtl .summary-section {
+    text-align: right;
+}
+
+body.rtl .summary-item {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Daily menu */
+body.rtl .day-selector {
+    flex-direction: row-reverse;
+}
+
+body.rtl .recipe-item {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Payment cards */
+body.rtl .plan-card {
+    text-align: right;
+}
+
+body.rtl .plan-features li {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+body.rtl .plan-features li::before {
+    margin-left: 10px;
+    margin-right: 0;
+}
+
+/* RTL - Premium modal */
+body.rtl .premium-benefits {
+    text-align: right;
+}
+
+body.rtl .benefit-item {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Auth switch */
+body.rtl .auth-switch {
+    text-align: center;
+}
+
+/* RTL - Notification */
+body.rtl .notification {
+    left: auto;
+    right: 50%;
+    transform: translateX(50%);
+    flex-direction: row-reverse;
+}
+
+/* RTL - Checkbox container */
+body.rtl .recipe-checkbox-container {
+    left: auto;
+    right: 10px;
+}
+
+/* RTL - Edit actions in form */
+body.rtl #editUserForm .form-actions {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Modal actions */
+body.rtl .modal-actions {
+    flex-direction: row-reverse;
+}
+
+/* RTL - Days selection */
+body.rtl .days-grid {
+    direction: rtl;
+}
+
+/* RTL - Floating orbs - flip positions */
+body.rtl .orb-1 {
+    right: auto;
+    left: -100px;
+}
+
+body.rtl .orb-2 {
+    left: auto;
+    right: -50px;
+}
+
+/* RTL - Animations adjustment */
+body.rtl .header-icon::before {
+    animation: ringRotateRTL 10s linear infinite;
+}
+
+@keyframes ringRotateRTL {
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+/* RTL - Ingredient table header */
+body.rtl .ingredients-table thead th {
+    text-align: right;
+}
+
+body.rtl .ingredients-table tbody td {
+    text-align: right;
+}
+
+body.rtl .ingredients-table tbody td input,
+body.rtl .ingredients-table tbody td select {
+    text-align: right;
+}
+
+/* RTL - Remove button alignment */
+body.rtl .btn-remove-ingredient {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+/* RTL - Saved calculations dropdown */
+body.rtl .saved-calcs-dropdown {
+    left: auto;
+    right: 0;
+}
+
+/* RTL - Empty state */
+body.rtl .empty-state {
+    text-align: center;
+}
+
+/* RTL - Admin dashboard */
+body.rtl .admin-sidebar {
+    right: auto;
+    left: 0;
+}
+
+body.rtl .admin-main {
+    margin-left: 280px;
+    margin-right: 0;
+}
+
+body.rtl .user-table th,
+body.rtl .user-table td {
+    text-align: right;
+}
+
+/* RTL - Font loading for Arabic */
+body.rtl {
+    font-family: 'Poppins', 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif;
+}
+
+/* Mobile RTL adjustments */
+@media (max-width: 768px) {
+    .language-toggle {
+        bottom: 15px;
+        left: 15px;
+        padding: 10px 16px;
+        font-size: 0.85rem;
+    }
+
+    body.rtl .language-toggle {
+        left: auto;
+        right: 15px;
+    }
+
+    body.rtl .admin-sidebar {
+        left: -280px;
+    }
+
+    body.rtl .admin-sidebar.open {
+        left: 0;
+    }
+
+    body.rtl .admin-main {
+        margin-left: 0;
+    }
 }

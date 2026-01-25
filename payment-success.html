@@ -198,8 +198,8 @@
             <!-- Loading State -->
             <div class="loading-state" id="loadingState">
                 <div class="spinner"></div>
-                <h2>Verifying your payment...</h2>
-                <p>Please wait while we confirm your subscription.</p>
+                <h2 data-i18n="verifyingPayment">Verifying your payment...</h2>
+                <p data-i18n="pleaseWaitConfirm">Please wait while we confirm your subscription.</p>
             </div>
 
             <!-- Error State -->
@@ -208,8 +208,8 @@
             <!-- Success State -->
             <div class="ready-state hidden" id="readyState">
                 <div class="success-icon">🎉</div>
-                <h1>Payment Successful!</h1>
-                <p>Welcome to Premium, <strong id="userName"></strong>!</p>
+                <h1 data-i18n="paymentSuccessful">Payment Successful!</h1>
+                <p><span data-i18n="welcomeToPremium">Welcome to Premium,</span> <strong id="userName"></strong>!</p>
 
                 <div class="plan-info">
                     <div class="plan-name" id="planName">Premium Plan</div>
@@ -217,20 +217,20 @@
                 </div>
 
                 <div class="success-features">
-                    <h3>You now have access to:</h3>
+                    <h3 data-i18n="youNowHaveAccess">You now have access to:</h3>
                     <ul>
-                        <li>Unlimited Recipes</li>
-                        <li>PDF Export</li>
-                        <li>All Categories</li>
-                        <li>Multiple Photos per Recipe</li>
-                        <li>Priority Support</li>
-                        <li>Ad-Free Experience</li>
+                        <li data-i18n="unlimitedRecipes">Unlimited Recipes</li>
+                        <li data-i18n="pdfExport">PDF Export</li>
+                        <li data-i18n="allCategories">All Categories</li>
+                        <li data-i18n="multiplePhotosPerRecipe">Multiple Photos per Recipe</li>
+                        <li data-i18n="prioritySupport">Priority Support</li>
+                        <li data-i18n="adFreeExperience">Ad-Free Experience</li>
                     </ul>
                 </div>
 
                 <button class="btn-continue" onclick="window.location.href='./index.html'">
                     <span>🚀</span>
-                    Start Using Premium Features
+                    <span data-i18n="startUsingPremium">Start Using Premium Features</span>
                 </button>
             </div>
         </div>
@@ -238,6 +238,10 @@
 
     <script type="module">
         import { getCurrentUser, getAuthToken } from './auth.js';
+        import { initLanguage } from './language.js';
+
+        // Initialize language
+        initLanguage();
 
         const API_URL = 'http://localhost:3001/api';
 

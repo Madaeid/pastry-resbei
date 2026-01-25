@@ -38,19 +38,19 @@
             <div class="header-icon">
                 <span>🔐</span>
             </div>
-            <h1>My Recipe Book</h1>
-            <p>Sign in to access your delicious recipes</p>
+            <h1 data-i18n="appTitle">My Recipe Book</h1>
+            <p data-i18n="authSubtitle">Sign in to access your delicious recipes</p>
         </div>
 
         <!-- Auth Tabs -->
         <div class="auth-tabs">
             <button class="auth-tab active" data-tab="login">
                 <span class="tab-icon">🔑</span>
-                Sign In
+                <span data-i18n="signIn">Sign In</span>
             </button>
             <button class="auth-tab" data-tab="register">
                 <span class="tab-icon">✨</span>
-                Register
+                <span data-i18n="register">Register</span>
             </button>
         </div>
 
@@ -58,15 +58,16 @@
         <div id="login" class="auth-form-content active">
             <form id="loginForm" class="auth-form">
                 <div class="form-group">
-                    <label for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" name="username" placeholder="Enter your username" required>
+                    <label for="loginUsername" data-i18n="username">Username</label>
+                    <input type="text" id="loginUsername" name="username" data-i18n="usernamePlaceholder"
+                        placeholder="Enter your username" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="loginPassword">Password</label>
+                    <label for="loginPassword" data-i18n="password">Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password"
-                            required>
+                        <input type="password" id="loginPassword" name="password" data-i18n="passwordPlaceholder"
+                            placeholder="Enter your password" required>
                         <button type="button" class="password-toggle" data-target="loginPassword"
                             aria-label="Toggle password visibility">
                             <span class="eye-icon">👁️</span>
@@ -79,22 +80,24 @@
                     <label class="remember-me-label">
                         <input type="checkbox" id="rememberMe" name="rememberMe">
                         <span class="checkbox-custom"></span>
-                        <span class="remember-text">Remember Me</span>
+                        <span class="remember-text" data-i18n="rememberMe">Remember Me</span>
                     </label>
                     <a href="#" class="forgot-password-link" id="forgotPasswordLink"
-                        style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;">Forgot
+                        style="font-size: 0.9rem; color: var(--primary-color); text-decoration: none;"
+                        data-i18n="forgotPassword">Forgot
                         Password?</a>
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary btn-full">
                         <span class="btn-icon">🔓</span>
-                        Sign In
+                        <span data-i18n="signInBtn">Sign In</span>
                     </button>
                 </div>
 
                 <div class="auth-switch">
-                    <p>Don't have an account? <a href="#" class="switch-auth" data-target="register">Register</a></p>
+                    <p><span data-i18n="noAccount">Don't have an account?</span> <a href="#" class="switch-auth"
+                            data-target="register" data-i18n="registerLink">Register</a></p>
                 </div>
             </form>
         </div>
@@ -103,18 +106,19 @@
         <div id="register" class="auth-form-content">
             <form id="registerForm" class="auth-form">
                 <div class="form-group">
-                    <label for="registerUsername">Username</label>
-                    <input type="text" id="registerUsername" name="username" placeholder="Choose a username" required
-                        minlength="3">
+                    <label for="registerUsername" data-i18n="username">Username</label>
+                    <input type="text" id="registerUsername" name="username" data-i18n="chooseUsernamePlaceholder"
+                        placeholder="Choose a username" required minlength="3">
                 </div>
 
                 <div class="form-group">
-                    <label for="registerEmail">Email</label>
-                    <input type="email" id="registerEmail" name="email" placeholder="Enter your email" required>
+                    <label for="registerEmail" data-i18n="email">Email</label>
+                    <input type="email" id="registerEmail" name="email" data-i18n="emailPlaceholder"
+                        placeholder="Enter your email" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="registerPhone">Phone Number</label>
+                    <label for="registerPhone" data-i18n="phoneNumber">Phone Number</label>
                     <div class="phone-input-wrapper">
                         <div class="country-selector" id="countrySelector">
                             <div class="country-selected" id="countrySelected">
@@ -123,27 +127,30 @@
                                 <span class="dropdown-arrow">▼</span>
                             </div>
                             <div class="country-dropdown" id="countryDropdown">
-                                <input type="text" class="country-search" id="countrySearch" placeholder="Search country...">
+                                <input type="text" class="country-search" id="countrySearch" data-i18n="searchCountry"
+                                    placeholder="Search country...">
                                 <div class="country-list" id="countryList">
                                     <!-- Countries will be populated by JavaScript -->
                                 </div>
                             </div>
                         </div>
-                        <input type="tel" id="registerPhone" name="phone" placeholder="Phone number" required>
+                        <input type="tel" id="registerPhone" name="phone" data-i18n="phonePlaceholder"
+                            placeholder="Phone number" required>
                     </div>
                     <input type="hidden" id="fullPhoneNumber" name="fullPhone">
                 </div>
 
                 <div class="form-group">
-                    <label for="registerBirthday">Birthday</label>
+                    <label for="registerBirthday" data-i18n="birthday">Birthday</label>
                     <input type="date" id="registerBirthday" name="birthday" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="registerPassword">Password</label>
+                    <label for="registerPassword" data-i18n="password">Password</label>
                     <div class="password-input-wrapper">
-                        <input type="password" id="registerPassword" name="password" placeholder="Create a password"
-                            required minlength="4">
+                        <input type="password" id="registerPassword" name="password"
+                            data-i18n="createPasswordPlaceholder" placeholder="Create a password" required
+                            minlength="4">
                         <button type="button" class="password-toggle" data-target="registerPassword"
                             aria-label="Toggle password visibility">
                             <span class="eye-icon">👁️</span>
@@ -152,10 +159,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="confirmPassword">Confirm Password</label>
+                    <label for="confirmPassword" data-i18n="confirmPassword">Confirm Password</label>
                     <div class="password-input-wrapper">
                         <input type="password" id="confirmPassword" name="confirmPassword"
-                            placeholder="Confirm your password" required>
+                            data-i18n="confirmPasswordPlaceholder" placeholder="Confirm your password" required>
                         <button type="button" class="password-toggle" data-target="confirmPassword"
                             aria-label="Toggle password visibility">
                             <span class="eye-icon">👁️</span>
@@ -166,12 +173,13 @@
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary btn-full">
                         <span class="btn-icon">🎉</span>
-                        Create Account
+                        <span data-i18n="createAccount">Create Account</span>
                     </button>
                 </div>
 
                 <div class="auth-switch">
-                    <p>Already have an account? <a href="#" class="switch-auth" data-target="login">Sign In</a></p>
+                    <p><span data-i18n="haveAccount">Already have an account?</span> <a href="#" class="switch-auth"
+                            data-target="login" data-i18n="signInLink">Sign In</a></p>
                 </div>
             </form>
         </div>
@@ -183,48 +191,52 @@
                 <div id="resetStep1">
                     <div class="reset-header" style="text-align: center; margin-bottom: 25px;">
                         <span style="font-size: 3rem;">🔑</span>
-                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;">Reset Your Password</h3>
-                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Choose how you'd like to receive
+                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;" data-i18n="resetPassword">Reset
+                            Your Password</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;" data-i18n="chooseRecoveryMethod">
+                            Choose how you'd like to receive
                             your verification code</p>
                     </div>
 
                     <div class="form-group">
-                        <label for="resetUsername">Username</label>
-                        <input type="text" id="resetUsername" name="username" placeholder="Enter your username"
-                            required>
+                        <label for="resetUsername" data-i18n="username">Username</label>
+                        <input type="text" id="resetUsername" name="username" data-i18n="usernamePlaceholder"
+                            placeholder="Enter your username" required>
                     </div>
 
                     <!-- Recovery Method Selection -->
                     <div class="form-group">
-                        <label>Send OTP via:</label>
+                        <label data-i18n="sendOtpVia">Send OTP via:</label>
                         <div class="recovery-method-selector">
                             <button type="button" class="method-btn active" data-method="email" id="methodEmail">
                                 <span class="method-icon">📧</span>
-                                <span class="method-text">Email</span>
+                                <span class="method-text" data-i18n="email">Email</span>
                             </button>
                             <button type="button" class="method-btn" data-method="phone" id="methodPhone">
                                 <span class="method-icon">📱</span>
-                                <span class="method-text">Phone</span>
+                                <span class="method-text" data-i18n="phone">Phone</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Email Input (shown by default) -->
                     <div class="form-group" id="emailInputGroup">
-                        <label for="resetEmail">Email Address</label>
-                        <input type="email" id="resetEmail" name="email" placeholder="Enter your registered email">
+                        <label for="resetEmail" data-i18n="emailAddress">Email Address</label>
+                        <input type="email" id="resetEmail" name="email" data-i18n="registeredEmailPlaceholder"
+                            placeholder="Enter your registered email">
                     </div>
 
                     <!-- Phone Input (hidden by default) -->
                     <div class="form-group" id="phoneInputGroup" style="display: none;">
-                        <label for="resetPhone">Phone Number</label>
-                        <input type="tel" id="resetPhone" name="phone" placeholder="Enter your registered phone number">
+                        <label for="resetPhone" data-i18n="phoneNumber">Phone Number</label>
+                        <input type="tel" id="resetPhone" name="phone" data-i18n="registeredPhonePlaceholder"
+                            placeholder="Enter your registered phone number">
                     </div>
 
                     <div class="form-actions">
                         <button type="button" id="sendCodeBtn" class="btn btn-primary btn-full">
                             <span class="btn-icon" id="sendCodeIcon">📧</span>
-                            <span id="sendCodeText">Send OTP to Email</span>
+                            <span id="sendCodeText" data-i18n="sendOtpToEmail">Send OTP to Email</span>
                         </button>
                     </div>
                 </div>
@@ -233,25 +245,26 @@
                 <div id="resetStep2" style="display: none;">
                     <div class="reset-header" style="text-align: center; margin-bottom: 25px;">
                         <span style="font-size: 3rem;">✉️</span>
-                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;">Enter Verification Code</h3>
+                        <h3 style="color: var(--text-primary); margin: 15px 0 10px;" data-i18n="enterVerificationCode">
+                            Enter Verification Code</h3>
                         <p class="step-info" style="color: var(--text-secondary); font-size: 0.9rem;"
-                            id="otpSentMessage">
+                            id="otpSentMessage" data-i18n="otpSentMessage">
                             We sent a 6-digit code to your email
                         </p>
                     </div>
 
                     <div class="form-group">
-                        <label for="resetCode">Verification Code (OTP)</label>
-                        <input type="text" id="resetCode" name="code" placeholder="Enter 6-digit code" maxlength="6"
-                            pattern="\d{6}" class="otp-input"
+                        <label for="resetCode" data-i18n="verificationCode">Verification Code (OTP)</label>
+                        <input type="text" id="resetCode" name="code" data-i18n="otpPlaceholder"
+                            placeholder="Enter 6-digit code" maxlength="6" pattern="\d{6}" class="otp-input"
                             style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;">
                     </div>
 
                     <div class="form-group">
-                        <label for="newPassword">New Password</label>
+                        <label for="newPassword" data-i18n="newPassword">New Password</label>
                         <div class="password-input-wrapper">
-                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password"
-                                minlength="4">
+                            <input type="password" id="newPassword" name="newPassword"
+                                data-i18n="newPasswordPlaceholder" placeholder="Enter new password" minlength="4">
                             <button type="button" class="password-toggle" data-target="newPassword"
                                 aria-label="Toggle password visibility">
                                 <span class="eye-icon">👁️</span>
@@ -260,10 +273,11 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="confirmNewPassword">Confirm New Password</label>
+                        <label for="confirmNewPassword" data-i18n="confirmNewPassword">Confirm New Password</label>
                         <div class="password-input-wrapper">
                             <input type="password" id="confirmNewPassword" name="confirmNewPassword"
-                                placeholder="Confirm new password" minlength="4">
+                                data-i18n="confirmNewPasswordPlaceholder" placeholder="Confirm new password"
+                                minlength="4">
                             <button type="button" class="password-toggle" data-target="confirmNewPassword"
                                 aria-label="Toggle password visibility">
                                 <span class="eye-icon">👁️</span>
@@ -274,17 +288,18 @@
                     <div class="form-actions" style="flex-direction: column; gap: 10px;">
                         <button type="submit" class="btn btn-primary btn-full">
                             <span class="btn-icon">🔄</span>
-                            Reset Password
+                            <span data-i18n="resetPasswordBtn">Reset Password</span>
                         </button>
                         <button type="button" id="resendCodeBtn" class="btn btn-secondary btn-full">
                             <span class="btn-icon">🔁</span>
-                            <span id="resendText">Resend Code</span>
+                            <span id="resendText" data-i18n="resendCode">Resend Code</span>
                         </button>
                     </div>
                 </div>
 
                 <div class="auth-switch">
-                    <p>Remembered it? <a href="#" class="switch-auth" data-target="login">Back to Sign In</a></p>
+                    <p><span data-i18n="rememberedPassword">Remembered it?</span> <a href="#" class="switch-auth"
+                            data-target="login" data-i18n="backToSignIn">Back to Sign In</a></p>
                 </div>
             </form>
         </div>
@@ -294,7 +309,7 @@
     </div>
 
     <footer>
-        <p>📖 My Recipe Book &copy; 2024</p>
+        <p data-i18n="footer">📖 My Recipe Book &copy; 2024</p>
     </footer>
 
     <script type="module" src="./auth.js"></script>

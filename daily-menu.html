@@ -25,7 +25,7 @@
         <div class="header-brand">
             <a href="./days-selection.html" class="back-link">
                 <span>←</span>
-                <span>Back to Days</span>
+                <span data-i18n="backToDays">Back to Days</span>
             </a>
         </div>
         <div class="header-title">
@@ -35,7 +35,7 @@
         <div class="header-actions">
             <button class="btn-logout" id="logoutBtn">
                 <span>🚪</span>
-                <span>Logout</span>
+                <span data-i18n="logout">Logout</span>
             </button>
         </div>
     </div>
@@ -45,11 +45,12 @@
         <div class="day-cover-container" id="dayCoverContainer">
             <div class="day-cover-preview" id="dayCoverPreview">
                 <span class="cover-upload-icon">🖼️</span>
-                <span class="cover-upload-text">Click to add a cover photo for this day</span>
+                <span class="cover-upload-text" data-i18n="clickToAddCover">Click to add a cover photo for this
+                    day</span>
             </div>
             <input type="file" id="dayCoverInput" accept="image/*" hidden>
             <button class="btn-remove-cover" id="removeCoverBtn" style="display: none;">
-                <span>🗑️</span> Remove Photo
+                <span>🗑️</span> <span data-i18n="removePhoto">Remove Photo</span>
             </button>
         </div>
     </div>
@@ -77,11 +78,11 @@
         <div class="add-recipe-section">
             <button class="btn-add-recipe" id="addRecipeBtn">
                 <span class="add-icon">➕</span>
-                <span>Add Recipe</span>
+                <span data-i18n="addRecipeBtn">Add Recipe</span>
             </button>
             <button class="btn-download-pdf" id="downloadPdfBtn">
                 <span class="pdf-icon">📥</span>
-                <span>Download PDF</span>
+                <span data-i18n="downloadPdf">Download PDF</span>
             </button>
         </div>
 
@@ -93,8 +94,8 @@
         <!-- Empty State -->
         <div class="empty-day-state" id="emptyState">
             <div class="empty-icon">🍰</div>
-            <h3>No recipes for this day yet</h3>
-            <p>Click the "Add Recipe" button to add your first recipe!</p>
+            <h3 data-i18n="noRecipesForDay">No recipes for this day yet</h3>
+            <p data-i18n="clickAddRecipe">Click the "Add Recipe" button to add your first recipe!</p>
         </div>
     </div>
 
@@ -103,46 +104,48 @@
         <div class="modal-content modal-md">
             <button class="modal-close" id="closeAddRecipeModal">&times;</button>
             <div class="modal-header">
-                <h2>➕ Add Recipe for <span id="modalDayName">Day</span></h2>
+                <h2>➕ <span data-i18n="addRecipeFor">Add Recipe for</span> <span id="modalDayName">Day</span></h2>
             </div>
 
             <!-- Select from My Recipes Option -->
             <div class="select-from-recipes-section">
-                <p class="section-divider-text">Choose from your saved recipes</p>
+                <p class="section-divider-text" data-i18n="chooseFromSaved">Choose from your saved recipes</p>
                 <button type="button" class="btn btn-secondary btn-select-recipes" id="selectFromMyRecipesBtn">
-                    <span>📖</span> Select from My Recipes
+                    <span>📖</span> <span data-i18n="selectFromMyRecipes">Select from My Recipes</span>
                 </button>
-                <p class="section-divider-text">— or create a new recipe —</p>
+                <p class="section-divider-text" data-i18n="orCreateNew">— or create a new recipe —</p>
             </div>
 
             <form id="addRecipeForm">
                 <div class="form-group cover-upload">
-                    <label>Recipe Photo</label>
+                    <label data-i18n="recipePhoto">Recipe Photo</label>
                     <div class="cover-preview" id="recipePhotoPreview">
                         <span class="upload-icon">📷</span>
-                        <span class="upload-text">Click to upload photo</span>
+                        <span class="upload-text" data-i18n="clickToUpload">Click to upload photo</span>
                     </div>
                     <input type="file" id="recipePhoto" accept="image/*" hidden>
                 </div>
                 <div class="form-group">
-                    <label for="recipeName">Recipe Name *</label>
-                    <input type="text" id="recipeName" placeholder="e.g., Chocolate Croissant" required>
+                    <label for="recipeName" data-i18n="recipeName">Recipe Name *</label>
+                    <input type="text" id="recipeName" data-i18n="recipeNamePlaceholder"
+                        placeholder="e.g., Chocolate Croissant" required>
                 </div>
                 <div class="form-group">
-                    <label for="recipeIngredients">Ingredients (optional)</label>
-                    <textarea id="recipeIngredients" rows="4"
+                    <label for="recipeIngredients" data-i18n="ingredientsOptional">Ingredients (optional)</label>
+                    <textarea id="recipeIngredients" rows="4" data-i18n="ingredientsPlaceholderShort"
                         placeholder="e.g., 2 cups flour, 1 cup sugar, 3 eggs..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="recipeInstructions">Instructions (optional)</label>
-                    <textarea id="recipeInstructions" rows="5"
+                    <label for="recipeInstructions" data-i18n="instructionsOptional">Instructions (optional)</label>
+                    <textarea id="recipeInstructions" rows="5" data-i18n="instructionsPlaceholderShort"
                         placeholder="e.g., Step 1: Preheat oven to 350°F..."></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelAddRecipe">Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="cancelAddRecipe"
+                        data-i18n="cancel">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <span class="btn-icon">✨</span>
-                        Add Recipe
+                        <span data-i18n="addRecipeBtn">Add Recipe</span>
                     </button>
                 </div>
             </form>
@@ -154,11 +157,12 @@
         <div class="modal-content">
             <button class="modal-close" id="closeSelectRecipeModal">&times;</button>
             <div class="modal-header">
-                <h2>📖 Select from My Recipes</h2>
+                <h2>📖 <span data-i18n="selectFromMyRecipes">Select from My Recipes</span></h2>
             </div>
             <div class="recipe-search-container">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="selectRecipeSearch" class="search-input" placeholder="Search recipes...">
+                <input type="text" id="selectRecipeSearch" class="search-input" data-i18n="searchRecipes"
+                    placeholder="Search recipes...">
             </div>
             <div id="selectRecipeList" class="select-recipe-list">
                 <!-- Recipes will be dynamically inserted here -->
@@ -177,7 +181,7 @@
     </div>
 
     <footer>
-        <p>📅 Daily Menu - My Recipe Book © 2024</p>
+        <p data-i18n="dailyMenuFooter">📅 Daily Menu - My Recipe Book © 2024</p>
     </footer>
 
     <script type="module" src="./daily-menu.js"></script>

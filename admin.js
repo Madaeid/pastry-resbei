@@ -2,6 +2,7 @@
 import './style.css';
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser } from './auth.js';
 import { isUserPremium, grantPremiumToUser, revokePremiumFromUser } from './payment.js';
+import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // ===== Access Control =====
 // Check if user is logged in and is admin
@@ -46,6 +47,9 @@ let pendingAction = null;
 
 // ===== Initialize Dashboard =====
 function initDashboard() {
+    // Initialize language system
+    initLanguage();
+
     updateStats();
     loadUsers();
     setupEventListeners();

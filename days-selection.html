@@ -25,17 +25,17 @@
         <div class="header-brand">
             <a href="./index.html" class="back-link">
                 <span>←</span>
-                <span>Back to Recipes</span>
+                <span data-i18n="backToRecipes">Back to Recipes</span>
             </a>
         </div>
         <div class="header-title">
             <span class="header-icon-emoji">📅</span>
-            <h1>Daily Menu</h1>
+            <h1 data-i18n="dailyMenu">Daily Menu</h1>
         </div>
         <div class="header-actions">
             <button class="btn-logout" id="logoutBtn">
                 <span>🚪</span>
-                <span>Logout</span>
+                <span data-i18n="logout">Logout</span>
             </button>
         </div>
     </div>
@@ -60,8 +60,8 @@
     <!-- Main Content -->
     <div class="days-selection-container">
         <div class="days-selection-header">
-            <h2>🗓️ Choose a Day</h2>
-            <p>Select a day to view or add your recipes</p>
+            <h2>🗓️ <span data-i18n="chooseADay">Choose a Day</span></h2>
+            <p data-i18n="selectDayToView">Select a day to view or add your recipes</p>
         </div>
 
         <div class="days-grid" id="daysGrid">
@@ -70,7 +70,7 @@
     </div>
 
     <footer>
-        <p>📅 Daily Menu - My Recipe Book © 2024</p>
+        <p data-i18n="dailyMenuFooter">📅 Daily Menu - My Recipe Book © 2024</p>
     </footer>
 
     <script type="module" src="./days-selection.js"></script>

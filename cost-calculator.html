@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>🧮 Cost Calculator - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate auth check to prevent unauthenticated access
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- User Header (shows when logged in) -->
+    <div class="user-header" id="userHeader" style="display: none;">
+        <div class="user-display">
+            <img id="userProfilePic" src="" alt="Profile" class="user-avatar-img" style="display: none;">
+            <span class="user-avatar" id="userDefaultAvatar">👤</span>
+            <span class="user-name" id="userName"></span>
+        </div>
+        <a href="./index.html" class="btn-home">
+            <span>🏠</span>
+            <span data-i18n="home">Home</span>
+        </a>
+        <button class="btn-price-table" id="priceTableBtn">
+            <span>📋</span>
+            <span data-i18n="priceTable">Price Table</span>
+        </button>
+        <a href="./days-selection.html" id="dailyMenuBtn" class="btn-daily-menu" style="display: none;">
+            <span>📅</span>
+            <span data-i18n="dailyMenu">Daily Menu</span>
+        </a>
+        <button class="btn-logout" id="logoutBtn">
+            <span>🚪</span>
+            <span data-i18n="logout">Logout</span>
+        </button>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-icon">
+            <span>🧮</span>
+        </div>
+        <h1 data-i18n="costCalculator">Cost Calculator</h1>
+        <p data-i18n="calculateCostsSubtitle">Calculate your recipe costs and selling prices</p>
+        <div class="header-decoration">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Calculator Container -->
+    <div class="calculator-container">
+        <div class="calculator-form">
+            <!-- Recipe Name -->
+            <div class="form-group">
+                <label for="recipeName" data-i18n="recipeItemName">Recipe / Item Name</label>
+                <div class="recipe-name-row">
+                    <input type="text" id="recipeName" data-i18n="enterRecipeName" placeholder="Enter recipe name..."
+                        required>
+                    <button type="button" class="btn btn-secondary btn-import" id="importRecipeBtn">
+                        <span>📥</span> <span data-i18n="importFromRecipes">Import from My Recipes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ingredients Section -->
+            <div class="calculator-section">
+                <div class="section-header">
+                    <h3>🥄 <span data-i18n="ingredients">Ingredients</span></h3>
+                    <button type="button" class="btn btn-sm btn-primary" id="addIngredientBtn">
+                        <span>➕</span> <span data-i18n="add">Add</span>
+                    </button>
+                </div>
+
+                <div class="ingredients-table">
+                    <div class="ingredients-header">
+                        <span class="col-name" data-i18n="name">Name</span>
+                        <span class="col-qty" data-i18n="qty">Qty</span>
+                        <span class="col-unit" data-i18n="unit">Unit</span>
+                        <span class="col-price" data-i18n="unitPrice">Unit Price</span>
+                        <span class="col-total" data-i18n="total">Total</span>
+                        <span class="col-action"></span>
+                    </div>
+                    <div id="ingredientsList">
+                        <!-- Ingredient rows will be added here dynamically -->
+                    </div>
+                </div>
+
+                <div class="ingredients-subtotal">
+                    <span data-i18n="ingredientsSubtotal">Ingredients Subtotal:</span>
+                    <span id="ingredientsSubtotal">$0.00</span>
+                </div>
+            </div>
+
+            <!-- Additional Costs Section -->
+            <div class="calculator-section">
+                <div class="section-header">
+                    <h3>💼 <span data-i18n="additionalCosts">Additional Costs</span></h3>
+                </div>
+
+                <div class="costs-grid">
+                    <div class="form-group">
+                        <label for="laborCost" data-i18n="laborCost">👷 Labor Cost</label>
+                        <div class="currency-input">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="laborCost" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="overheadCost" data-i18n="overheadCost">🏢 Overhead</label>
+                        <div class="currency-input">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="overheadCost" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="packagingCost" data-i18n="packagingCost">📦 Packaging</label>
+                        <div class="currency-input">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="packagingCost" value="0" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="servings" data-i18n="servingsLabel">🍽️ Servings</label>
+                        <input type="number" id="servings" value="1" min="1" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profit Margin Section -->
+            <div class="calculator-section">
+                <div class="section-header">
+                    <h3>📈 <span data-i18n="profitMargin">Profit Margin</span></h3>
+                </div>
+
+                <div class="profit-slider-container">
+                    <input type="range" id="profitMargin" min="0" max="200" value="50" class="profit-slider">
+                    <div class="profit-display">
+                        <span id="profitMarginValue">50</span>%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="calculator-results">
+                <h3>💰 <span data-i18n="results">Results</span></h3>
+
+                <div class="results-grid">
+                    <div class="result-card cost-card">
+                        <span class="result-icon">📊</span>
+                        <span class="result-label" data-i18n="totalCost">Total Cost</span>
+                        <span class="result-value" id="totalCost">$0.00</span>
+                    </div>
+                    <div class="result-card serving-card">
+                        <span class="result-icon">🍽️</span>
+                        <span class="result-label" data-i18n="costPerServing">Cost/Serving</span>
+                        <span class="result-value" id="costPerServing">$0.00</span>
+                    </div>
+                    <div class="result-card sell-card">
+                        <span class="result-icon">💵</span>
+                        <span class="result-label" data-i18n="sellingPrice">Selling Price</span>
+                        <span class="result-value highlight" id="sellingPrice">$0.00</span>
+                    </div>
+                    <div class="result-card profit-card">
+                        <span class="result-icon">🎯</span>
+                        <span class="result-label" data-i18n="profit">Profit</span>
+                        <span class="result-value profit" id="profitAmount">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="per-serving-results">
+                    <div class="per-serving-item">
+                        <span data-i18n="sellingPricePerServing">Selling Price per Serving:</span>
+                        <span id="sellPerServing" class="highlight">$0.00</span>
+                    </div>
+                    <div class="per-serving-item">
+                        <span data-i18n="profitPerServing">Profit per Serving:</span>
+                        <span id="profitPerServing" class="profit">$0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="calculator-actions">
+                <button type="button" class="btn btn-secondary" id="resetBtn">
+                    <span class="btn-icon">🔄</span>
+                    <span data-i18n="reset">Reset</span>
+                </button>
+                <button type="button" class="btn btn-primary" id="saveBtn">
+                    <span class="btn-icon">💾</span>
+                    <span data-i18n="saveCalculation">Save Calculation</span>
+                </button>
+                <button type="button" class="btn btn-pdf" id="downloadPdfBtn">
+                    <span class="btn-icon">📄</span>
+                    <span data-i18n="downloadPdf">Download PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Saved Calculations -->
+        <div class="saved-calculations" id="savedCalculationsSection" style="display: none;">
+            <div class="section-header">
+                <h3>📁 <span data-i18n="savedCalculations">Saved Calculations</span></h3>
+                <button type="button" class="btn btn-sm btn-secondary" id="clearAllBtn" data-i18n="clearAll">
+                    Clear All
+                </button>
+            </div>
+            <div id="savedList">
+                <!-- Saved items will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Recipe Modal -->
+    <div class="modal" id="importRecipeModal">
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h2>📥 Import from My Recipes</h2>
+                <button class="modal-close" id="closeImportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-search-container">
+                    <input type="text" id="importRecipeSearch" placeholder="🔍 Search recipes..."
+                        class="import-search-input">
+                </div>
+                <div class="import-recipes-list" id="importRecipesList">
+                    <!-- Recipes will be loaded here -->
+                </div>
+                <div class="import-empty-state" id="importEmptyState" style="display: none;">
+                    <span class="empty-icon">📭</span>
+                    <p>No recipes found</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Table Modal -->
+    <div class="modal" id="priceTableModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h2>📋 Ingredient Price Table</h2>
+                <button class="modal-close" id="closePriceTableModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="price-table-description">
+                    Add your ingredients and their prices here. When you import a recipe, prices will be automatically
+                    filled from this table.
+                </p>
+
+                <!-- Currency Selector -->
+                <div class="currency-selector-container">
+                    <label for="currencySelect" class="currency-label">🌐 Currency:</label>
+                    <select id="currencySelect" class="currency-select">
+                        <option value="USD">$ USD - US Dollar</option>
+                        <option value="SAR">ر.س SAR - Saudi Riyal</option>
+                        <option value="EGP">ج.م EGP - Egyptian Pound</option>
+                    </select>
+                </div>
+
+                <!-- Add New Item Form -->
+                <div class="add-price-item-form">
+                    <div class="price-item-inputs">
+                        <input type="text" id="newItemName" placeholder="Ingredient name (e.g., Flour, Sugar)"
+                            class="price-item-name-input">
+                        <div class="price-item-unit-group">
+                            <select id="newItemUnit" class="price-item-unit-select">
+                                <option value="pcs">pcs</option>
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="ml">ml</option>
+                                <option value="L">L</option>
+                                <option value="cup">cup</option>
+                                <option value="tbsp">tbsp</option>
+                                <option value="tsp">tsp</option>
+                            </select>
+                        </div>
+                        <div class="currency-input price-item-price-input">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="newItemPrice" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-add-item" id="addPriceItemBtn">
+                            <span>➕</span> Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Items -->
+                <div class="price-table-search">
+                    <input type="text" id="priceTableSearch" placeholder="🔍 Search ingredients..."
+                        class="price-search-input">
+                </div>
+
+                <!-- Price Items Table -->
+                <div class="price-items-table">
+                    <div class="price-items-header">
+                        <span class="col-item-name">Ingredient Name</span>
+                        <span class="col-item-unit">Unit</span>
+                        <span class="col-item-price">Price per Unit</span>
+                        <span class="col-item-actions">Actions</span>
+                    </div>
+                    <div id="priceItemsList" class="price-items-list">
+                        <!-- Price items will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="price-table-empty" id="priceTableEmpty" style="display: none;">
+                    <span class="empty-icon">📝</span>
+                    <p>No ingredients added yet</p>
+                    <p class="empty-hint">Add ingredients above to build your price table</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="clearAllPricesBtn">
+                    <span>🗑️</span> Clear All
+                </button>
+                <button type="button" class="btn btn-primary" id="closePriceTableDoneBtn">
+                    <span>✅</span> Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p data-i18n="footer">📖 My Recipe Book &copy; 2024</p>
+    </footer>
+
+    <script type="module" src="./cost-calculator.js"></script>
+</body>
+
+</html>

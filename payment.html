@@ -30,11 +30,12 @@
         <div class="user-display">
             <span class="user-avatar">👤</span>
             <span class="user-name" id="userName"></span>
-            <span class="premium-badge" id="premiumBadge" style="display: none;">💎 Premium</span>
+            <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
+                Premium</span>
         </div>
         <a href="./index.html" class="btn-back-home">
             <span>🏠</span>
-            <span>Back to App</span>
+            <span data-i18n="backToApp">Back to App</span>
         </a>
     </div>
 
@@ -60,8 +61,8 @@
         <div class="header-icon premium-icon">
             <span>💎</span>
         </div>
-        <h1>Upgrade to Premium</h1>
-        <p>Unlock the full potential of your recipe collection</p>
+        <h1 data-i18n="upgradeToPremium">Upgrade to Premium</h1>
+        <p data-i18n="unlockFullPotential">Unlock the full potential of your recipe collection</p>
         <div class="header-decoration">
             <span></span>
             <span></span>
@@ -75,12 +76,12 @@
             <div class="plan-status">
                 <span class="plan-icon" id="planIcon">🆓</span>
                 <div class="plan-info">
-                    <h3 id="currentPlanName">Free Plan</h3>
-                    <p id="currentPlanDetails">Limited features</p>
+                    <h3 id="currentPlanName" data-i18n="freePlan">Free Plan</h3>
+                    <p id="currentPlanDetails" data-i18n="limitedFeatures">Limited features</p>
                 </div>
             </div>
             <div class="plan-expiry" id="planExpiry" style="display: none;">
-                <span>Expires:</span>
+                <span data-i18n="expires">Expires:</span>
                 <strong id="expiryDate"></strong>
             </div>
         </div>
@@ -94,8 +95,8 @@
                 <div class="monthly-offer-badge">💰 40% OFF</div>
                 <div class="pricing-card-header">
                     <span class="plan-emoji">📅</span>
-                    <h3>Monthly</h3>
-                    <p class="plan-subtitle">Great for trying out</p>
+                    <h3 data-i18n="monthlyPlan">Monthly</h3>
+                    <p class="plan-subtitle" data-i18n="greatForTrying">Great for trying out</p>
                 </div>
                 <div class="pricing-card-price">
                     <span class="original-price">$5</span>
@@ -106,26 +107,29 @@
                 </div>
                 <div class="savings-badge monthly-save">40% OFF! 💰</div>
                 <ul class="pricing-features">
-                    <li><span class="feature-icon">✅</span> Unlimited Recipes</li>
-                    <li><span class="feature-icon">✅</span> PDF Export</li>
-                    <li><span class="feature-icon">✅</span> All Categories</li>
-                    <li><span class="feature-icon">✅</span> Multiple Photos</li>
-                    <li><span class="feature-icon">✅</span> Priority Support</li>
-                    <li><span class="feature-icon">✅</span> Ad-Free Experience</li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="unlimitedRecipes">Unlimited Recipes</span>
+                    </li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="pdfExport">PDF Export</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="allCategories">All Categories</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="multiplePhotos">Multiple Photos</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="prioritySupport">Priority Support</span>
+                    </li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="adFreeExperience">Ad-Free Experience</span>
+                    </li>
                 </ul>
                 <button class="btn btn-subscribe" id="subscribeMonthly">
                     <span class="btn-icon">🚀</span>
-                    Subscribe Monthly
+                    <span data-i18n="subscribeMonthly">Subscribe Monthly</span>
                 </button>
             </div>
 
             <!-- Yearly Plan (Popular) -->
             <div class="pricing-card popular" data-plan="yearly">
-                <div class="popular-badge">🔥 Most Popular</div>
+                <div class="popular-badge">🔥 <span data-i18n="mostPopular">Most Popular</span></div>
                 <div class="pricing-card-header">
                     <span class="plan-emoji">🎯</span>
-                    <h3>Yearly</h3>
-                    <p class="plan-subtitle">Best value for bakers</p>
+                    <h3 data-i18n="yearlyPlan">Yearly</h3>
+                    <p class="plan-subtitle" data-i18n="bestValueBakers">Best value for bakers</p>
                 </div>
                 <div class="pricing-card-price">
                     <span class="currency">$</span>
@@ -133,29 +137,32 @@
                     <span class="cents">.99</span>
                     <span class="period">/year</span>
                 </div>
-                <div class="savings-badge">Save 33% 💰</div>
+                <div class="savings-badge"><span data-i18n="save33">Save 33%</span> 💰</div>
                 <ul class="pricing-features">
-                    <li><span class="feature-icon">✅</span> Unlimited Recipes</li>
-                    <li><span class="feature-icon">✅</span> PDF Export</li>
-                    <li><span class="feature-icon">✅</span> All Categories</li>
-                    <li><span class="feature-icon">✅</span> Multiple Photos</li>
-                    <li><span class="feature-icon">✅</span> Priority Support</li>
-                    <li><span class="feature-icon">✅</span> Ad-Free Experience</li>
-                    <li><span class="feature-icon">⭐</span> <strong>Cloud Backup</strong></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="unlimitedRecipes">Unlimited Recipes</span>
+                    </li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="pdfExport">PDF Export</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="allCategories">All Categories</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="multiplePhotos">Multiple Photos</span></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="prioritySupport">Priority Support</span>
+                    </li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="adFreeExperience">Ad-Free Experience</span>
+                    </li>
+                    <li><span class="feature-icon">⭐</span> <strong data-i18n="cloudBackup">Cloud Backup</strong></li>
                 </ul>
                 <button class="btn btn-subscribe btn-popular" id="subscribeYearly">
                     <span class="btn-icon">⭐</span>
-                    Subscribe Yearly
+                    <span data-i18n="subscribeYearly">Subscribe Yearly</span>
                 </button>
             </div>
 
             <!-- Lifetime Plan (SPECIAL OFFER!) -->
             <div class="pricing-card lifetime" data-plan="lifetime">
-                <div class="lifetime-badge">🔥 LIMITED OFFER</div>
+                <div class="lifetime-badge">🔥 <span data-i18n="limitedOffer">LIMITED OFFER</span></div>
                 <div class="pricing-card-header">
                     <span class="plan-emoji">👑</span>
-                    <h3>Lifetime</h3>
-                    <p class="plan-subtitle">One-time payment</p>
+                    <h3 data-i18n="lifetimePlan">Lifetime</h3>
+                    <p class="plan-subtitle" data-i18n="oneTimePayment">One-time payment</p>
                 </div>
                 <div class="pricing-card-price">
                     <span class="original-price">$100</span>
@@ -166,15 +173,20 @@
                 </div>
                 <div class="savings-badge lifetime-save">80% OFF! 🔥</div>
                 <ul class="pricing-features">
-                    <li><span class="feature-icon">✅</span> <strong>All Premium Features</strong></li>
-                    <li><span class="feature-icon">✅</span> <strong>Forever Access</strong></li>
-                    <li><span class="feature-icon">✅</span> <strong>All Future Updates</strong></li>
-                    <li><span class="feature-icon">✅</span> Priority Support</li>
-                    <li><span class="feature-icon">👑</span> <strong>Founder Badge</strong></li>
+                    <li><span class="feature-icon">✅</span> <strong data-i18n="allPremiumFeatures">All Premium
+                            Features</strong></li>
+                    <li><span class="feature-icon">✅</span> <strong data-i18n="foreverAccess">Forever Access</strong>
+                    </li>
+                    <li><span class="feature-icon">✅</span> <strong data-i18n="allFutureUpdates">All Future
+                            Updates</strong></li>
+                    <li><span class="feature-icon">✅</span> <span data-i18n="prioritySupport">Priority Support</span>
+                    </li>
+                    <li><span class="feature-icon">👑</span> <strong data-i18n="founderBadge">Founder Badge</strong>
+                    </li>
                 </ul>
                 <button class="btn btn-subscribe btn-lifetime" id="subscribeLifetime">
                     <span class="btn-icon">👑</span>
-                    Get Lifetime Access - Only $20!
+                    <span data-i18n="getLifetimeAccess">Get Lifetime Access - Only $20!</span>
                 </button>
             </div>
         </div>
@@ -183,7 +195,7 @@
     <!-- Features Comparison Section -->
     <div class="features-section">
         <h2 class="section-title">
-            <span>📊</span> Feature Comparison
+            <span>📊</span> <span data-i18n="featureComparison">Feature Comparison</span>
         </h2>
         <div class="comparison-table-wrapper">
             <table class="comparison-table">
@@ -245,19 +257,19 @@
         <div class="trust-badges">
             <div class="trust-badge">
                 <span class="trust-icon">🔒</span>
-                <span>Secure Payment</span>
+                <span data-i18n="securePayment">Secure Payment</span>
             </div>
             <div class="trust-badge">
                 <span class="trust-icon">💳</span>
-                <span>Stripe Protected</span>
+                <span data-i18n="stripeProtected">Stripe Protected</span>
             </div>
             <div class="trust-badge">
                 <span class="trust-icon">🔄</span>
-                <span>Cancel Anytime</span>
+                <span data-i18n="cancelAnytime">Cancel Anytime</span>
             </div>
             <div class="trust-badge">
                 <span class="trust-icon">💯</span>
-                <span>30-Day Guarantee</span>
+                <span data-i18n="thirtyDayGuarantee">30-Day Guarantee</span>
             </div>
         </div>
     </div>
@@ -265,7 +277,7 @@
     <!-- FAQ Section -->
     <div class="faq-section">
         <h2 class="section-title">
-            <span>❓</span> Frequently Asked Questions
+            <span>❓</span> <span data-i18n="faq">Frequently Asked Questions</span>
         </h2>
         <div class="faq-container">
             <div class="faq-item">
@@ -376,7 +388,7 @@
             </div>
             <button class="btn btn-primary" id="successContinue">
                 <span class="btn-icon">🚀</span>
-                Start Using Premium Features
+                <span data-i18n="startUsingPremium">Start Using Premium Features</span>
             </button>
         </div>
     </div>
@@ -412,7 +424,7 @@
     </div>
 
     <footer>
-        <p>📖 My Recipe Book © 2024 | Secure payments by Stripe</p>
+        <p data-i18n="paymentFooter">📖 My Recipe Book © 2024 | Secure payments by Stripe</p>
     </footer>
 
     <script type="module" src="./payment.js"></script>

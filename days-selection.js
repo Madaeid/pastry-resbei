@@ -1,6 +1,7 @@
 // Days Selection Page - Choose a day to add recipes
 import './style.css';
 import { isLoggedIn, logout } from './auth.js';
+import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // Days configuration (Saturday to Friday)
 const DAYS = [
@@ -21,6 +22,9 @@ if (document.readyState === 'loading') {
 }
 
 function initApp() {
+    // Initialize language system
+    initLanguage();
+
     if (!isLoggedIn()) {
         window.location.href = './auth.html';
         return;

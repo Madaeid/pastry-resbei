@@ -26,28 +26,33 @@
             <img id="userProfilePic" src="" alt="Profile" class="user-avatar-img" style="display: none;">
             <span class="user-avatar" id="userDefaultAvatar">👤</span>
             <span class="user-name" id="userName"></span>
-            <span class="premium-badge" id="premiumBadge" style="display: none;">💎 Premium</span>
+            <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
+                Premium</span>
         </div>
 
         <a href="./payment.html" id="upgradeBtn" class="btn-upgrade">
             <span>💎</span>
-            <span>Upgrade (80% OFF)</span>
+            <span data-i18n="upgrade">Upgrade (80% OFF)</span>
         </a>
         <a href="./days-selection.html" id="dailyMenuBtn" class="btn-daily-menu" style="display: none;">
             <span>📅</span>
-            <span>Daily Menu</span>
+            <span data-i18n="dailyMenu">Daily Menu</span>
+        </a>
+        <a href="./cost-calculator.html" id="costCalculatorBtn" class="btn-calculator">
+            <span>🧮</span>
+            <span data-i18n="calculator">Calculator</span>
         </a>
         <a href="./admin.html" id="adminDashboardBtn" class="btn-dashboard" style="display: none;">
             <span>👑</span>
-            <span>Dashboard</span>
+            <span data-i18n="dashboard">Dashboard</span>
         </a>
         <button class="btn-logout" id="logoutBtn">
             <span>🚪</span>
-            <span>Logout</span>
+            <span data-i18n="logout">Logout</span>
         </button>
         <button class="btn-edit-user" id="editUserBtn">
             <span>✏️</span>
-            <span>Edit Profile</span>
+            <span data-i18n="editProfile">Edit Profile</span>
         </button>
     </div>
 
@@ -73,8 +78,8 @@
         <div class="header-icon">
             <span>🧁</span>
         </div>
-        <h1>My Recipe Book</h1>
-        <p>Create your personal collection of delicious recipes</p>
+        <h1 data-i18n="appTitle">My Recipe Book</h1>
+        <p data-i18n="appSubtitle">Create your personal collection of delicious recipes</p>
         <div class="header-decoration">
             <span></span>
             <span></span>
@@ -86,11 +91,11 @@
     <div class="tabs-container">
         <button class="tab active" data-tab="add-recipe">
             <span class="tab-icon">➕</span>
-            Add Recipe
+            <span data-i18n="addRecipeTab">Add Recipe</span>
         </button>
         <button class="tab" data-tab="my-recipes">
             <span class="tab-icon">📖</span>
-            My Recipes
+            <span data-i18n="myRecipesTab">My Recipes</span>
         </button>
     </div>
 
@@ -100,45 +105,45 @@
             <form id="addRecipeForm" class="recipe-form">
                 <!-- Recipe Photo Upload -->
                 <div class="form-group cover-upload">
-                    <label>Recipe Photo (Optional)</label>
+                    <label data-i18n="recipePhoto">Recipe Photo (Optional)</label>
                     <div class="cover-preview" id="photoPreview">
                         <span class="upload-icon">📷</span>
-                        <span class="upload-text">Click to upload photo</span>
+                        <span class="upload-text" data-i18n="clickToUpload">Click to upload photo</span>
                     </div>
                     <input type="file" id="recipePhoto" name="recipePhoto" accept="image/*" hidden>
                 </div>
 
                 <!-- Recipe Name -->
                 <div class="form-group">
-                    <label for="recipeName">Recipe Name *</label>
-                    <input type="text" id="recipeName" name="recipeName" placeholder="e.g., Chocolate Croissant"
-                        required>
+                    <label for="recipeName" data-i18n="recipeName">Recipe Name *</label>
+                    <input type="text" id="recipeName" name="recipeName" data-i18n="recipeNamePlaceholder"
+                        placeholder="e.g., Chocolate Croissant" required>
                 </div>
 
                 <!-- Category -->
                 <div class="form-group">
-                    <label for="category">Category *</label>
+                    <label for="category" data-i18n="category">Category *</label>
                     <select id="category" name="category" required>
-                        <option value="">Select a category</option>
-                        <option value="cakes">🎂 Cakes</option>
-                        <option value="cookies">🍪 Cookies</option>
-                        <option value="pastries">🥐 Pastries</option>
-                        <option value="pies">🥧 Pies & Tarts</option>
-                        <option value="breads">🍞 Breads</option>
-                        <option value="desserts">🍰 Desserts</option>
-                        <option value="chocolates">🍫 Chocolates</option>
-                        <option value="other">✨ Other</option>
+                        <option value="" data-i18n="selectCategory">Select a category</option>
+                        <option value="cakes" data-i18n="cakes">🎂 Cakes</option>
+                        <option value="cookies" data-i18n="cookies">🍪 Cookies</option>
+                        <option value="pastries" data-i18n="pastries">🥐 Pastries</option>
+                        <option value="pies" data-i18n="piesTarts">🥧 Pies & Tarts</option>
+                        <option value="breads" data-i18n="breads">🍞 Breads</option>
+                        <option value="desserts" data-i18n="desserts">🍰 Desserts</option>
+                        <option value="chocolates" data-i18n="chocolates">🍫 Chocolates</option>
+                        <option value="other" data-i18n="other">✨ Other</option>
                     </select>
                 </div>
 
                 <!-- Prep & Cook Time -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="prepTime">Prep Time (min) *</label>
+                        <label for="prepTime" data-i18n="prepTime">Prep Time (min) *</label>
                         <input type="number" id="prepTime" name="prepTime" placeholder="30" min="1" required>
                     </div>
                     <div class="form-group">
-                        <label for="cookTime">Cook Time (min) *</label>
+                        <label for="cookTime" data-i18n="cookTime">Cook Time (min) *</label>
                         <input type="number" id="cookTime" name="cookTime" placeholder="45" min="0" required>
                     </div>
                 </div>
@@ -146,39 +151,39 @@
                 <!-- Servings & Difficulty -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="servings">Servings *</label>
+                        <label for="servings" data-i18n="servings">Servings *</label>
                         <input type="number" id="servings" name="servings" placeholder="8" min="1" required>
                     </div>
                     <div class="form-group">
-                        <label for="difficulty">Difficulty</label>
+                        <label for="difficulty" data-i18n="difficulty">Difficulty</label>
                         <select id="difficulty" name="difficulty">
-                            <option value="easy">🟢 Easy</option>
-                            <option value="medium" selected>🟡 Medium</option>
-                            <option value="hard">🔴 Hard</option>
+                            <option value="easy" data-i18n="easy">🟢 Easy</option>
+                            <option value="medium" selected data-i18n="medium">🟡 Medium</option>
+                            <option value="hard" data-i18n="hard">🔴 Hard</option>
                         </select>
                     </div>
                 </div>
 
                 <!-- Ingredients -->
                 <div class="form-group">
-                    <label for="ingredients">Ingredients *</label>
-                    <textarea id="ingredients" name="ingredients" rows="6"
+                    <label for="ingredients" data-i18n="ingredients">Ingredients *</label>
+                    <textarea id="ingredients" name="ingredients" rows="6" data-i18n="ingredientsPlaceholder"
                         placeholder="Enter each ingredient on a new line:&#10;2 cups all-purpose flour&#10;1 cup sugar&#10;1/2 cup butter&#10;2 eggs&#10;1 tsp vanilla extract"
                         required></textarea>
                 </div>
 
                 <!-- Instructions -->
                 <div class="form-group">
-                    <label for="instructions">Instructions *</label>
-                    <textarea id="instructions" name="instructions" rows="8"
+                    <label for="instructions" data-i18n="instructions">Instructions *</label>
+                    <textarea id="instructions" name="instructions" rows="8" data-i18n="instructionsPlaceholder"
                         placeholder="Enter step-by-step instructions:&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Add wet ingredients&#10;4. Pour into pan..."
                         required></textarea>
                 </div>
 
                 <!-- Notes -->
                 <div class="form-group">
-                    <label for="notes">Chef's Notes (Optional)</label>
-                    <textarea id="notes" name="notes" rows="3"
+                    <label for="notes" data-i18n="chefsNotes">Chef's Notes (Optional)</label>
+                    <textarea id="notes" name="notes" rows="3" data-i18n="notesPlaceholder"
                         placeholder="Any tips, variations, or special notes..."></textarea>
                 </div>
 
@@ -186,11 +191,11 @@
                 <div class="form-actions">
                     <button type="reset" class="btn btn-secondary">
                         <span class="btn-icon">🗑️</span>
-                        Clear Form
+                        <span data-i18n="clearForm">Clear Form</span>
                     </button>
                     <button type="submit" class="btn btn-primary">
                         <span class="btn-icon">✨</span>
-                        Add Recipe
+                        <span data-i18n="addRecipeBtn">Add Recipe</span>
                     </button>
                 </div>
             </form>
@@ -202,20 +207,21 @@
         <div class="recipes-header">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="recipeSearch" class="search-input" placeholder="Search recipes...">
+                <input type="text" id="recipeSearch" class="search-input" data-i18n="searchRecipes"
+                    placeholder="Search recipes...">
             </div>
             <div class="recipes-count">
-                <span id="recipeCount">0</span> Recipes
+                <span id="recipeCount">0</span> <span data-i18n="recipes">Recipes</span>
             </div>
             <div class="recipes-actions">
                 <button id="downloadPdfBtn" class="btn btn-primary">
                     <span class="btn-icon">📄</span>
-                    Save as PDF
+                    <span data-i18n="saveAsPdf">Save as PDF</span>
                 </button>
 
                 <button id="clearAllBtn" class="btn btn-danger">
                     <span class="btn-icon">🗑️</span>
-                    Clear All
+                    <span data-i18n="clearAll">Clear All</span>
                 </button>
             </div>
         </div>
@@ -226,8 +232,8 @@
 
         <div id="emptyState" class="empty-state">
             <div class="empty-icon">📖</div>
-            <h3>Your recipe book is empty</h3>
-            <p>Start adding your favorite recipes!</p>
+            <h3 data-i18n="emptyBookTitle">Your recipe book is empty</h3>
+            <p data-i18n="emptyBookSubtitle">Start adding your favorite recipes!</p>
         </div>
     </div>
 
@@ -246,51 +252,52 @@
         <div class="modal-content" style="max-width: 500px;">
             <button class="modal-close" id="closeEditUserModal">&times;</button>
             <div class="modal-header">
-                <h2>✏️ Edit Profile</h2>
+                <h2>✏️ <span data-i18n="editProfile">Edit Profile</span></h2>
             </div>
             <div class="modal-body">
                 <form id="editUserForm" class="edit-user-form">
                     <!-- Profile Photo Upload -->
                     <div class="form-group profile-upload-group">
-                        <label>Profile Photo</label>
+                        <label data-i18n="profilePhoto">Profile Photo</label>
                         <div class="user-avatar-preview" id="editProfilePreview">
                             <span class="upload-icon">📷</span>
                         </div>
-                        <p class="upload-hint">Click to upload</p>
+                        <p class="upload-hint" data-i18n="clickToUploadProfile">Click to upload</p>
                         <input type="file" id="editProfilePhoto" accept="image/*" hidden>
                     </div>
                     <div class="form-group">
-                        <label for="editUsername">Username</label>
+                        <label for="editUsername" data-i18n="username">Username</label>
                         <input type="text" id="editUsername" name="username" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="editDisplayName">Display Name</label>
+                        <label for="editDisplayName" data-i18n="displayName">Display Name</label>
                         <input type="text" id="editDisplayName" name="displayName" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="editEmail">Email Address</label>
+                        <label for="editEmail" data-i18n="emailAddress">Email Address</label>
                         <input type="email" id="editEmail" name="email" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="editPhoneNumber">Phone Number</label>
+                        <label for="editPhoneNumber" data-i18n="phoneNumber">Phone Number</label>
                         <input type="tel" id="editPhoneNumber" name="phoneNumber" placeholder="+1234567890">
                     </div>
 
                     <div class="form-group">
-                        <label for="editPassword">New Password (leave blank to keep current)</label>
+                        <label for="editPassword" data-i18n="newPasswordOptional">New Password (leave blank to keep
+                            current)</label>
                         <input type="password" id="editPassword" name="password" placeholder="Min. 4 characters">
                     </div>
 
                     <div class="form-actions" style="margin-top: 20px; justify-content: space-between;">
                         <button type="button" class="btn btn-danger" id="modalLogoutBtn" style="padding: 10px 20px;">
-                            <span>🚪</span> Logout
+                            <span>🚪</span> <span data-i18n="logout">Logout</span>
                         </button>
                         <button type="submit" class="btn btn-primary">
                             <span class="btn-icon">💾</span>
-                            Save Changes
+                            <span data-i18n="saveChanges">Save Changes</span>
                         </button>
                     </div>
                 </form>
@@ -304,44 +311,45 @@
         <div class="modal-content modal-sm">
             <button class="modal-close" id="closeDayPickerModal">&times;</button>
             <div class="modal-header">
-                <h2>📅 Add to Daily Menu</h2>
+                <h2>📅 <span data-i18n="addToDailyMenu">Add to Daily Menu</span></h2>
             </div>
-            <p class="day-picker-subtitle" id="dayPickerRecipeName">Select a day for this recipe</p>
+            <p class="day-picker-subtitle" id="dayPickerRecipeName" data-i18n="selectDayForRecipe">Select a day for this
+                recipe</p>
             <div class="day-picker-grid">
                 <button class="day-picker-btn" data-day="Saturday" style="--day-color: #ff6b8a;">
                     <span class="day-emoji">🌟</span>
-                    <span class="day-name">Saturday</span>
+                    <span class="day-name" data-i18n="saturday">Saturday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Sunday" style="--day-color: #ffb347;">
                     <span class="day-emoji">☀️</span>
-                    <span class="day-name">Sunday</span>
+                    <span class="day-name" data-i18n="sunday">Sunday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Monday" style="--day-color: #a855f7;">
                     <span class="day-emoji">🌙</span>
-                    <span class="day-name">Monday</span>
+                    <span class="day-name" data-i18n="monday">Monday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Tuesday" style="--day-color: #ef4444;">
                     <span class="day-emoji">🔥</span>
-                    <span class="day-name">Tuesday</span>
+                    <span class="day-name" data-i18n="tuesday">Tuesday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Wednesday" style="--day-color: #22c55e;">
                     <span class="day-emoji">💚</span>
-                    <span class="day-name">Wednesday</span>
+                    <span class="day-name" data-i18n="wednesday">Wednesday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Thursday" style="--day-color: #3b82f6;">
                     <span class="day-emoji">⚡</span>
-                    <span class="day-name">Thursday</span>
+                    <span class="day-name" data-i18n="thursday">Thursday</span>
                 </button>
                 <button class="day-picker-btn" data-day="Friday" style="--day-color: #ec4899;">
                     <span class="day-emoji">🎉</span>
-                    <span class="day-name">Friday</span>
+                    <span class="day-name" data-i18n="friday">Friday</span>
                 </button>
             </div>
         </div>
     </div>
 
     <footer>
-        <p>📖 My Recipe Book &copy; 2024</p>
+        <p data-i18n="footer">📖 My Recipe Book &copy; 2024</p>
     </footer>
 
     <script type="module" src="./main.js"></script>

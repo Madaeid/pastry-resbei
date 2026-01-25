@@ -3,6 +3,7 @@ import './style.css';
 import { jsPDF } from 'jspdf';
 import { isLoggedIn, logout, getCurrentUser } from './auth.js';
 import { isPremium } from './payment.js';
+import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // API Base URL
 const API_BASE = 'http://localhost:3001/api';
@@ -42,6 +43,9 @@ if (document.readyState === 'loading') {
 }
 
 async function initApp() {
+    // Initialize language system
+    initLanguage();
+
     if (!isLoggedIn()) {
         window.location.href = './auth.html';
         return;

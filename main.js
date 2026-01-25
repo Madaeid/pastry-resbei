@@ -3,6 +3,7 @@ import './style.css';
 import { jsPDF } from 'jspdf';
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, updateUser } from './auth.js';
 import { isPremium, getSubscriptionStatus } from './payment.js';
+import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // Free tier limits
 const FREE_RECIPE_LIMIT = 10;
@@ -57,6 +58,9 @@ function initApp() {
 
     // Setup all event listeners
     setupEventListeners();
+
+    // Initialize language system
+    initLanguage();
 
     // Initialize app
     checkAuth();
