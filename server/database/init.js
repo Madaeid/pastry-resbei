@@ -30,16 +30,32 @@ db.exec(`
         email TEXT UNIQUE NOT NULL COLLATE NOCASE,
         phone TEXT,
         birthday TEXT,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
         is_admin INTEGER DEFAULT 0,
         reset_code TEXT,
         reset_code_expiry INTEGER,
         reset_method TEXT,
+        google_id TEXT UNIQUE,
+        apple_id TEXT UNIQUE,
+        auth_provider TEXT DEFAULT 'local',
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
 `);
 console.log('✅ Users table created');
+
+// Add OAuth columns if they don't exist (for existing databases)
+try {
+    db.exec('ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE');
+} catch (e) { /* Column may already exist */ }
+
+try {
+    db.exec('ALTER TABLE users ADD COLUMN apple_id TEXT UNIQUE');
+} catch (e) { /* Column may already exist */ }
+
+try {
+    db.exec("ALTER TABLE users ADD COLUMN auth_provider TEXT DEFAULT 'local'");
+} catch (e) { /* Column may already exist */ }
 
 // Recipes Table
 db.exec(`

@@ -1257,6 +1257,160 @@ function initAuthPage() {
             }
         });
     }
+
+    // ===== Social Login Handlers =====
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    const googleRegisterBtn = document.getElementById('googleRegisterBtn');
+    const appleLoginBtn = document.getElementById('appleLoginBtn');
+    const appleRegisterBtn = document.getElementById('appleRegisterBtn');
+
+    // Google OAuth Handler
+    async function handleGoogleAuth(isLogin = true) {
+        const btn = isLogin ? googleLoginBtn : googleRegisterBtn;
+        if (btn) btn.classList.add('loading');
+
+        try {
+            // Open Google OAuth popup
+            const width = 500;
+            const height = 600;
+            const left = window.screenX + (window.outerWidth - width) / 2;
+            const top = window.screenY + (window.outerHeight - height) / 2;
+
+            const popup = window.open(
+                `${API_URL}/auth/google`,
+                'Google Sign In',
+                `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+            );
+
+            // Listen for message from popup
+            const handleMessage = async (event) => {
+                if (event.data.type === 'google-auth-success') {
+                    window.removeEventListener('message', handleMessage);
+
+                    // Set session data
+                    sessionStorage.setItem('currentUser', event.data.user.username);
+                    sessionStorage.setItem('isAdmin', event.data.user.isAdmin ? 'true' : 'false');
+                    if (event.data.token) {
+                        sessionStorage.setItem('authToken', event.data.token);
+                    }
+
+                    showMessage('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        const returnUrl = sessionStorage.getItem('returnUrl');
+                        if (returnUrl) {
+                            sessionStorage.removeItem('returnUrl');
+                            window.location.href = returnUrl;
+                        } else if (event.data.user.isAdmin) {
+                            window.location.href = './admin.html';
+                        } else {
+                            window.location.href = './index.html';
+                        }
+                    }, 1000);
+                } else if (event.data.type === 'google-auth-error') {
+                    window.removeEventListener('message', handleMessage);
+                    showMessage(event.data.error || 'Google sign in failed', 'error');
+                }
+            };
+
+            window.addEventListener('message', handleMessage);
+
+            // Check if popup closed without completing
+            const checkPopup = setInterval(() => {
+                if (popup && popup.closed) {
+                    clearInterval(checkPopup);
+                    window.removeEventListener('message', handleMessage);
+                    if (btn) btn.classList.remove('loading');
+                }
+            }, 500);
+
+        } catch (error) {
+            console.error('Google auth error:', error);
+            showMessage('Google sign in is not available. Please use email registration.', 'error');
+        } finally {
+            if (btn) btn.classList.remove('loading');
+        }
+    }
+
+    // Apple OAuth Handler  
+    async function handleAppleAuth(isLogin = true) {
+        const btn = isLogin ? appleLoginBtn : appleRegisterBtn;
+        if (btn) btn.classList.add('loading');
+
+        try {
+            // Open Apple OAuth popup
+            const width = 500;
+            const height = 600;
+            const left = window.screenX + (window.outerWidth - width) / 2;
+            const top = window.screenY + (window.outerHeight - height) / 2;
+
+            const popup = window.open(
+                `${API_URL}/auth/apple`,
+                'Apple Sign In',
+                `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no`
+            );
+
+            // Listen for message from popup
+            const handleMessage = async (event) => {
+                if (event.data.type === 'apple-auth-success') {
+                    window.removeEventListener('message', handleMessage);
+
+                    // Set session data
+                    sessionStorage.setItem('currentUser', event.data.user.username);
+                    sessionStorage.setItem('isAdmin', event.data.user.isAdmin ? 'true' : 'false');
+                    if (event.data.token) {
+                        sessionStorage.setItem('authToken', event.data.token);
+                    }
+
+                    showMessage('Login successful! Redirecting...', 'success');
+                    setTimeout(() => {
+                        const returnUrl = sessionStorage.getItem('returnUrl');
+                        if (returnUrl) {
+                            sessionStorage.removeItem('returnUrl');
+                            window.location.href = returnUrl;
+                        } else if (event.data.user.isAdmin) {
+                            window.location.href = './admin.html';
+                        } else {
+                            window.location.href = './index.html';
+                        }
+                    }, 1000);
+                } else if (event.data.type === 'apple-auth-error') {
+                    window.removeEventListener('message', handleMessage);
+                    showMessage(event.data.error || 'Apple sign in failed', 'error');
+                }
+            };
+
+            window.addEventListener('message', handleMessage);
+
+            // Check if popup closed without completing
+            const checkPopup = setInterval(() => {
+                if (popup && popup.closed) {
+                    clearInterval(checkPopup);
+                    window.removeEventListener('message', handleMessage);
+                    if (btn) btn.classList.remove('loading');
+                }
+            }, 500);
+
+        } catch (error) {
+            console.error('Apple auth error:', error);
+            showMessage('Apple sign in is not available. Please use email registration.', 'error');
+        } finally {
+            if (btn) btn.classList.remove('loading');
+        }
+    }
+
+    // Attach event listeners
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', () => handleGoogleAuth(true));
+    }
+    if (googleRegisterBtn) {
+        googleRegisterBtn.addEventListener('click', () => handleGoogleAuth(false));
+    }
+    if (appleLoginBtn) {
+        appleLoginBtn.addEventListener('click', () => handleAppleAuth(true));
+    }
+    if (appleRegisterBtn) {
+        appleRegisterBtn.addEventListener('click', () => handleAppleAuth(false));
+    }
 }
 
 // Export functions for use in main.js and admin.js

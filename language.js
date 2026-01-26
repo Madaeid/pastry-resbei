@@ -82,6 +82,12 @@ const translations = {
         newPasswordPlaceholder: "Enter new password",
         confirmNewPasswordPlaceholder: "Confirm new password",
 
+        // Social Login
+        orContinueWith: "or continue with",
+        orSignUpWith: "or sign up with",
+        continueWithGoogle: "Continue with Google",
+        continueWithApple: "Continue with Apple",
+
         // Recipe Form
         recipePhoto: "Recipe Photo (Optional)",
         clickToUpload: "Click to upload photo",
@@ -429,6 +435,12 @@ const translations = {
         registeredPhonePlaceholder: "أدخل رقم الهاتف المسجل",
         newPasswordPlaceholder: "أدخل كلمة المرور الجديدة",
         confirmNewPasswordPlaceholder: "أكد كلمة المرور الجديدة",
+
+        // Social Login
+        orContinueWith: "أو تسجيل الدخول عبر",
+        orSignUpWith: "أو إنشاء حساب عبر",
+        continueWithGoogle: "المتابعة مع Google",
+        continueWithApple: "المتابعة مع Apple",
 
         // Recipe Form
         recipePhoto: "صورة الوصفة (اختياري)",

@@ -13,6 +13,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Import routes
 import authRoutes from './routes/auth.js';
+import oauthRoutes from './routes/oauth.js';
 import userRoutes from './routes/users.js';
 import recipeRoutes from './routes/recipes.js';
 import subscriptionRoutes from './routes/subscriptions.js';
@@ -53,6 +54,7 @@ const authLimiter = rateLimit({
 
 // ===== Routes =====
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', oauthRoutes); // OAuth routes (Google, Apple)
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
