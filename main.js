@@ -14,6 +14,7 @@ let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
 let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn;
 let editProfilePreview, editProfilePhoto;
 let dayPickerModal, closeDayPickerModalBtn;
+let themeToggle;
 let editingRecipeId = null;
 let selectedRecipeForMenu = null;
 
@@ -54,10 +55,14 @@ function initApp() {
     editProfilePhoto = document.getElementById('editProfilePhoto');
     dayPickerModal = document.getElementById('dayPickerModal');
     closeDayPickerModalBtn = document.getElementById('closeDayPickerModal');
+    themeToggle = document.getElementById('themeToggle');
 
 
     // Setup all event listeners
     setupEventListeners();
+
+    // Initialize theme
+    initTheme();
 
     // Initialize language system
     initLanguage();
@@ -248,8 +253,47 @@ function setupEventListeners() {
         });
     }
 
+    // Theme Toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleTheme);
+    }
+
     // Day Picker Modal Triggers
     setupDayPickerModal();
+}
+
+// ===== Theme Functions =====
+function initTheme() {
+    // Get saved theme or use system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+    setTheme(theme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    updateThemeIcon(theme);
+}
+
+function updateThemeIcon(theme) {
+    if (!themeToggle) return;
+
+    const icon = themeToggle.querySelector('.theme-icon');
+    if (icon) {
+        // Sun for dark mode (click to switch to light), Moon for light mode (click to switch to dark)
+        icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+        themeToggle.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+    }
 }
 
 // Open Edit User Modal

@@ -12,6 +12,13 @@
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script>
+        // Immediate theme initialization to prevent flash
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
         // Immediate auth check to prevent unauthenticated access
         if (!sessionStorage.getItem('currentUser')) {
             window.location.replace('./auth.html');
@@ -53,6 +60,9 @@
         <button class="btn-edit-user" id="editUserBtn">
             <span>✏️</span>
             <span data-i18n="editProfile">Edit Profile</span>
+        </button>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+            <span class="theme-icon">🌙</span>
         </button>
     </div>
 

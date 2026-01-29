@@ -1,6 +1,6 @@
 /* ===== Pastry Recipe Book Styles ===== */
 
-/* ===== Root Variables ===== */
+/* ===== Root Variables (Dark Theme - Default) ===== */
 :root {
     --primary-gradient: linear-gradient(135deg, #ff6b8a 0%, #ffb347 50%, #ff6b8a 100%);
     --accent-pink: #ff6b8a;
@@ -12,6 +12,387 @@
     --text-secondary: rgba(255, 255, 255, 0.7);
     --border-glow: rgba(255, 107, 138, 0.3);
     --shadow-color: rgba(255, 107, 138, 0.3);
+    --body-bg: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    --input-bg: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
+    --form-bg: linear-gradient(145deg, rgba(20, 20, 35, 0.95), rgba(15, 15, 26, 0.98));
+    --modal-bg: rgba(20, 20, 35, 0.98);
+    --header-bg: linear-gradient(145deg, rgba(40, 40, 70, 0.95), rgba(20, 20, 35, 0.98));
+    --particle-opacity: 0.4;
+    --orb-opacity: 0.4;
+}
+
+/* ===== Light Theme Variables ===== */
+[data-theme="light"] {
+    --dark-bg: #f8f9fc;
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --text-primary: #1a1a2e;
+    --text-secondary: rgba(26, 26, 46, 0.7);
+    --border-glow: rgba(255, 107, 138, 0.2);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --body-bg: linear-gradient(135deg, #f8f9fc 0%, #e8ecf4 50%, #f0f4f8 100%);
+    --input-bg: linear-gradient(145deg, #ffffff, #f5f5f8);
+    --form-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 249, 252, 0.98));
+    --modal-bg: rgba(255, 255, 255, 0.98);
+    --header-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 249, 252, 0.98));
+    --particle-opacity: 0.15;
+    --orb-opacity: 0.2;
+}
+
+/* Light theme specific overrides */
+[data-theme="light"] body {
+    background: var(--body-bg);
+}
+
+[data-theme="light"] .particles .particle {
+    opacity: var(--particle-opacity);
+}
+
+[data-theme="light"] .decorative-orb {
+    opacity: var(--orb-opacity);
+}
+
+[data-theme="light"] .recipe-form,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .recipe-card {
+    background: var(--form-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 30px rgba(255, 107, 138, 0.05);
+}
+
+[data-theme="light"] .form-group input,
+[data-theme="light"] .form-group select,
+[data-theme="light"] .form-group textarea,
+[data-theme="light"] .search-input {
+    background: var(--input-bg);
+    color: var(--text-primary);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+[data-theme="light"] .form-group input::placeholder,
+[data-theme="light"] .form-group textarea::placeholder,
+[data-theme="light"] .search-input::placeholder {
+    color: rgba(26, 26, 46, 0.4);
+}
+
+[data-theme="light"] .form-group select option {
+    background: #ffffff;
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .tab {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-secondary);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+[data-theme="light"] .tab.active {
+    background: var(--primary-gradient);
+    color: white;
+}
+
+[data-theme="light"] .btn-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-secondary);
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+[data-theme="light"] .user-header {
+    background: var(--header-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .header-icon {
+    background: var(--header-bg);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 60px rgba(255, 107, 138, 0.15);
+}
+
+[data-theme="light"] .cover-preview {
+    background: var(--input-bg);
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+[data-theme="light"] .empty-state {
+    background: var(--form-bg);
+}
+
+[data-theme="light"] .recipe-card-image {
+    background: linear-gradient(145deg, #f0f4f8, #e8ecf4);
+}
+
+[data-theme="light"] footer {
+    color: var(--text-secondary);
+}
+
+/* ===== Light Theme - Admin Dashboard ===== */
+[data-theme="light"] .admin-header {
+    background: var(--header-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .admin-title {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .admin-nav-link {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .stat-card {
+    background: var(--form-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .stat-value {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .stat-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .admin-section {
+    background: var(--form-bg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .section-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .users-table-container {
+    background: var(--card-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+}
+
+[data-theme="light"] .users-table th {
+    background: rgba(255, 107, 138, 0.08);
+    color: var(--text-primary);
+    border-color: rgba(255, 107, 138, 0.15);
+}
+
+[data-theme="light"] .users-table td {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .users-table tr:hover td {
+    background: rgba(255, 107, 138, 0.05);
+}
+
+[data-theme="light"] .users-table tr.admin-row td {
+    background: rgba(255, 215, 0, 0.08);
+}
+
+[data-theme="light"] .users-table tr.admin-row:hover td {
+    background: rgba(255, 215, 0, 0.15);
+}
+
+[data-theme="light"] .role-user {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .action-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+[data-theme="light"] .action-btn:hover {
+    border-color: rgba(255, 107, 138, 0.4);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .quick-action-card {
+    background: var(--form-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .quick-action-card:hover {
+    border-color: rgba(255, 107, 138, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .qa-title {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .qa-desc {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .premium-badge {
+    color: var(--text-primary);
+}
+
+/* ===== Light Theme - Daily Menu / Days Selection ===== */
+[data-theme="light"] .days-selection-container {
+    background: var(--form-bg);
+}
+
+[data-theme="light"] .days-selection-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .days-selection-header p {
+    color: var(--text-secondary);
+}
+
+/* Keep day button text WHITE on dark button backgrounds */
+[data-theme="light"] .day-btn .day-name {
+    color: #ffffff;
+}
+
+[data-theme="light"] .day-btn .day-arrow {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="light"] .day-btn:hover .day-arrow {
+    color: var(--day-color, var(--accent-pink));
+}
+
+/* Revert Headers to DARK background in Light Mode for contrast */
+[data-theme="light"] .daily-menu-header,
+[data-theme="light"] .admin-header,
+[data-theme="light"] .user-header {
+    background: linear-gradient(145deg, rgba(40, 40, 70, 0.95), rgba(20, 20, 35, 0.98));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .back-link {
+    color: var(--text-secondary);
+}
+
+/* Force White Text in Dark Headers */
+[data-theme="light"] .admin-header .admin-title,
+[data-theme="light"] .admin-header .admin-nav-link,
+[data-theme="light"] .admin-header .btn-logout,
+[data-theme="light"] .daily-menu-header .header-title h1,
+[data-theme="light"] .daily-menu-header .back-link,
+[data-theme="light"] .daily-menu-header .btn-logout,
+[data-theme="light"] .user-header .user-name,
+[data-theme="light"] .user-header .btn,
+[data-theme="light"] .user-header a {
+    color: #ffffff !important;
+}
+
+/* Fix Logout Button Text Visibility */
+[data-theme="light"] .btn-logout,
+[data-theme="light"] .btn-logout span {
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .btn-logout:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="light"] .header-title h1 {
+    color: var(--text-primary);
+}
+
+/* ===== Light Theme - Cost Calculator ===== */
+[data-theme="light"] .calculator-form {
+    background: var(--form-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .saved-calculations {
+    background: var(--form-bg);
+    border-color: rgba(255, 107, 138, 0.15);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .saved-item {
+    background: var(--card-bg);
+    border-color: rgba(255, 107, 138, 0.1);
+}
+
+[data-theme="light"] .saved-item:hover {
+    background: rgba(255, 107, 138, 0.05);
+    border-color: rgba(255, 107, 138, 0.3);
+}
+
+[data-theme="light"] .saved-name {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .saved-actions button {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .saved-actions button:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .import-search-input,
+[data-theme="light"] .price-search-input {
+    background: var(--input-bg);
+    color: var(--text-primary);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+[data-theme="light"] .price-item-name-input,
+[data-theme="light"] .price-item-unit-select,
+[data-theme="light"] .price-item-price-input input,
+[data-theme="light"] .currency-select {
+    background: var(--input-bg);
+    color: var(--text-primary);
+    border-color: rgba(255, 107, 138, 0.2);
+}
+
+[data-theme="light"] .calculator-section {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(255, 107, 138, 0.1);
+}
+
+[data-theme="light"] .ingredient-row,
+[data-theme="light"] .cost-row {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .ingredient-row input,
+[data-theme="light"] .ingredient-row select,
+[data-theme="light"] .currency-input input {
+    background: var(--input-bg);
+    border-color: rgba(255, 107, 138, 0.2);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .result-card {
+    background: var(--card-bg);
+    border-color: rgba(255, 107, 138, 0.2);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .result-label {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .result-value {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .add-price-item-form {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .price-items-header {
+    background: rgba(255, 107, 138, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .price-item-row {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .price-item-row:hover {
+    background: rgba(255, 107, 138, 0.05);
 }
 
 * {
@@ -22,9 +403,10 @@
 
 body {
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+    background: var(--body-bg);
     min-height: 100vh;
     color: var(--text-primary);
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* ===== Floating Particles ===== */
@@ -7634,4 +8016,140 @@ body.rtl .social-btn.loading::after {
     .social-divider {
         margin: 20px 0;
     }
+}
+
+/* ===== Theme Toggle Button ===== */
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 107, 138, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-toggle:hover {
+    background: linear-gradient(145deg, rgba(255, 107, 138, 0.2), rgba(255, 179, 71, 0.15));
+    border-color: rgba(255, 107, 138, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 138, 0.25);
+}
+
+.theme-toggle:active {
+    transform: translateY(0);
+}
+
+.theme-toggle .theme-icon {
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.theme-toggle:hover .theme-icon {
+    transform: rotate(20deg) scale(1.1);
+}
+
+/* Light theme toggle appearance */
+[data-theme="light"] .theme-toggle {
+    background: linear-gradient(145deg, rgba(26, 26, 46, 0.08), rgba(26, 26, 46, 0.04));
+    border-color: rgba(255, 107, 138, 0.25);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+    background: linear-gradient(145deg, rgba(255, 107, 138, 0.15), rgba(255, 179, 71, 0.1));
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile responsive theme toggle */
+@media (max-width: 768px) {
+    .theme-toggle {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+}
+
+/* ===== Fix Pricing Card Text Color ===== */
+.pricing-card h3,
+.pricing-card .plan-subtitle,
+.pricing-card .pricing-features li,
+.pricing-card .pricing-features li span,
+.pricing-card .pricing-features li strong,
+.pricing-card .period,
+.pricing-card .currency {
+    color: #ffffff !important;
+}
+
+.current-plan-section .plan-info h3,
+.current-plan-section .plan-info p {
+    color: #ffffff !important;
+}
+
+/* Ensure original price shows as white/light but crossed out */
+.pricing-card .original-price {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ===== Fix Feature Comparison Table Text Color ===== */
+.comparison-table th,
+.comparison-table td,
+.comparison-table .feature-name {
+    color: #ffffff !important;
+}
+
+.comparison-table th {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Slight background for headers */
+}
+
+/* Ensure row hover effect doesn't darken text */
+.comparison-table tr:hover td {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* ===== FAQ & Trust Section Colors ===== */
+/* Use theme variable for section titles so they are black in light mode */
+.features-section .section-title,
+.faq-section .section-title {
+    color: var(--text-primary) !important;
+}
+
+/* FAQ Questions - Dark background buttons, always white text */
+.faq-question,
+.faq-question span,
+.faq-toggle {
+    color: #ffffff !important;
+}
+
+/* Ensure FAQ Answer text is also white since the whole container is dark */
+.faq-answer,
+.faq-answer p {
+    color: #ffffff !important;
+}
+
+/* Trust Badges - Text color adapts to theme (Dark in light mode, White in dark mode) */
+.trust-badge,
+.trust-badge span {
+    color: var(--text-primary) !important;
+}
+
+/* ===== Fix Day Recipe Card Text ===== */
+/* This card always has a dark background, so text must always be white */
+.day-recipe-card .recipe-card-title,
+.day-recipe-card .recipe-card-preview {
+    color: #ffffff !important;
+}
+
+/* ===== Fix Notification Text ===== */
+.notification,
+.notification span,
+.notification-message {
+    color: #ffffff !important;
 }
