@@ -1,3 +1,4 @@
+
 // Authentication Routes
 import express from 'express';
 import bcrypt from 'bcryptjs';
@@ -56,14 +57,14 @@ router.post('/register', async (req, res) => {
         }
 
         // Check if username exists
-        const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username.toLowerCase());
-        if (existingUser) {
+        const userCheck = await db.query('SELECT id FROM users WHERE username = $1', [username.toLowerCase()]);
+        if (userCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Username already exists' });
         }
 
         // Check if email exists
-        const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
-        if (existingEmail) {
+        const emailCheck = await db.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+        if (emailCheck.rows.length > 0) {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
@@ -71,8 +72,9 @@ router.post('/register', async (req, res) => {
         if (phone) {
             const normalizedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
             // Simple check - normalize and compare digits only
-            const allUsers = db.prepare('SELECT id, phone FROM users WHERE phone IS NOT NULL').all();
-            const phoneExists = allUsers.some(u => {
+            // Note: In PG doing this in code is less efficient than SQL but needed for complex normalization
+            const allPhonesResult = await db.query('SELECT id, phone FROM users WHERE phone IS NOT NULL');
+            const phoneExists = allPhonesResult.rows.some(u => {
                 const userPhone = (u.phone || '').replace(/[\s\-\(\)\.]/g, '');
                 return userPhone === normalizedPhone;
             });
@@ -85,22 +87,25 @@ router.post('/register', async (req, res) => {
         // Hash password and create user
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const result = db.prepare(`
-            INSERT INTO users (username, display_name, email, phone, birthday, password_hash)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
+        const insertResult = await db.query(`
+            INSERT INTO users (username, display_name, email, phone, birthday, password_hash, is_admin)
+            VALUES ($1, $2, $3, $4, $5, $6, 0)
+            RETURNING id
+        `, [
             username.toLowerCase(),
             username, // Display name defaults to username
             email.toLowerCase(),
             phone || null,
             birthday || null,
             passwordHash
-        );
+        ]);
+
+        const userId = insertResult.rows[0].id;
 
         res.status(201).json({
             success: true,
             message: 'Account created successfully',
-            userId: result.lastInsertRowid
+            userId: userId
         });
 
     } catch (error) {
@@ -120,7 +125,9 @@ router.post('/login', async (req, res) => {
         }
 
         // Find user
-        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
+        const result = await db.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
+        const user = result.rows[0];
+
         if (!user) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
@@ -153,13 +160,15 @@ router.post('/login', async (req, res) => {
 });
 
 // ===== Get Current User =====
-router.get('/me', authenticateToken, (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const user = db.prepare(`
+        const result = await db.query(`
             SELECT id, username, display_name, email, phone, birthday, is_admin, created_at
-            FROM users WHERE id = ?
-        `).get(req.user.userId);
+            FROM users WHERE id = $1
+        `, [req.user.userId]);
+
+        const user = result.rows[0];
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -183,12 +192,14 @@ router.get('/me', authenticateToken, (req, res) => {
 });
 
 // ===== Send Reset Code =====
-router.post('/forgot-password', (req, res) => {
+router.post('/forgot-password', async (req, res) => {
     try {
         const { username, contactValue, method = 'email' } = req.body;
         const db = getDatabase();
 
-        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
+        const result = await db.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
+        const user = result.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -210,10 +221,10 @@ router.post('/forgot-password', (req, res) => {
         const expiry = Date.now() + (10 * 60 * 1000); // 10 minutes
 
         // Save code to database
-        db.prepare(`
-            UPDATE users SET reset_code = ?, reset_code_expiry = ?, reset_method = ?
-            WHERE id = ?
-        `).run(code, expiry, method, user.id);
+        await db.query(`
+            UPDATE users SET reset_code = $1, reset_code_expiry = $2, reset_method = $3
+            WHERE id = $4
+        `, [code, expiry, method, user.id]);
 
         // Mask contact info
         let maskedContact = '';
@@ -260,7 +271,9 @@ router.post('/reset-password', async (req, res) => {
             return res.status(400).json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
         }
 
-        const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username.toLowerCase());
+        const result = await db.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
+        const user = result.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -271,18 +284,18 @@ router.post('/reset-password', async (req, res) => {
         }
 
         // Verify expiry
-        if (Date.now() > user.reset_code_expiry) {
+        if (Date.now() > Number(user.reset_code_expiry)) {
             return res.status(400).json({ error: 'Verification code has expired' });
         }
 
         // Hash new password and save
         const passwordHash = await bcrypt.hash(newPassword, 10);
 
-        db.prepare(`
+        await db.query(`
             UPDATE users 
-            SET password_hash = ?, reset_code = NULL, reset_code_expiry = NULL, reset_method = NULL
-            WHERE id = ?
-        `).run(passwordHash, user.id);
+            SET password_hash = $1, reset_code = NULL, reset_code_expiry = NULL, reset_method = NULL
+            WHERE id = $2
+        `, [passwordHash, user.id]);
 
         res.json({ success: true, message: 'Password reset successfully' });
 

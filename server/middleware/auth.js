@@ -1,3 +1,4 @@
+
 // JWT Authentication Middleware
 import jwt from 'jsonwebtoken';
 import { getDatabase } from '../database/db.js';
@@ -26,43 +27,57 @@ export function authenticateToken(req, res, next) {
 }
 
 // Check if user is admin
-export function requireAdmin(req, res, next) {
+export async function requireAdmin(req, res, next) {
     if (!req.user) {
         return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const db = getDatabase();
-    const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.userId);
+    try {
+        const db = getDatabase();
+        const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+        const user = result.rows[0];
 
-    if (!user || !user.is_admin) {
-        return res.status(403).json({ error: 'Admin access required' });
+        if (!user || user.is_admin !== 1) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        next();
+    } catch (error) {
+        console.error('Admin check error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
-    next();
 }
 
 // Check if user has premium subscription
-export function requirePremium(req, res, next) {
+export async function requirePremium(req, res, next) {
     if (!req.user) {
         return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const db = getDatabase();
+    try {
+        const db = getDatabase();
 
-    // Check for active subscription
-    const subscription = db.prepare(`
-        SELECT * FROM subscriptions 
-        WHERE user_id = ? AND status = 'active' AND end_date > datetime('now')
-    `).get(req.user.userId);
+        // Check for active subscription
+        // Postgres: Use NOW() or CURRENT_TIMESTAMP
+        const subResult = await db.query(`
+            SELECT * FROM subscriptions 
+            WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+        `, [req.user.userId]);
+        const subscription = subResult.rows[0];
 
-    // Also check if user is admin (admins have access to everything)
-    const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.userId);
+        // Also check if user is admin (admins have access to everything)
+        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
 
-    if (!subscription && (!user || !user.is_admin)) {
-        return res.status(403).json({ error: 'Premium subscription required' });
+        if (!subscription && (!user || user.is_admin !== 1)) {
+            return res.status(403).json({ error: 'Premium subscription required' });
+        }
+
+        next();
+    } catch (error) {
+        console.error('Premium check error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
-
-    next();
 }
 
 // Generate JWT token

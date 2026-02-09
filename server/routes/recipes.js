@@ -1,3 +1,4 @@
+
 // Recipe Routes
 import express from 'express';
 import { getDatabase } from '../database/db.js';
@@ -9,12 +10,14 @@ const router = express.Router();
 const FREE_RECIPE_LIMIT = 10;
 
 // ===== Get All User Recipes =====
-router.get('/', authenticateToken, (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const recipes = db.prepare(`
-            SELECT * FROM recipes WHERE user_id = ? ORDER BY created_at DESC
-        `).all(req.user.userId);
+        const result = await db.query(`
+            SELECT * FROM recipes WHERE user_id = $1 ORDER BY created_at DESC
+        `, [req.user.userId]);
+
+        const recipes = result.rows;
 
         const formattedRecipes = recipes.map(recipe => ({
             id: recipe.id,
@@ -40,12 +43,14 @@ router.get('/', authenticateToken, (req, res) => {
 });
 
 // ===== Get Single Recipe =====
-router.get('/:id', authenticateToken, (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const recipe = db.prepare(`
-            SELECT * FROM recipes WHERE id = ? AND user_id = ?
-        `).get(req.params.id, req.user.userId);
+        const result = await db.query(`
+            SELECT * FROM recipes WHERE id = $1 AND user_id = $2
+        `, [req.params.id, req.user.userId]);
+
+        const recipe = result.rows[0];
 
         if (!recipe) {
             return res.status(404).json({ error: 'Recipe not found' });
@@ -73,7 +78,7 @@ router.get('/:id', authenticateToken, (req, res) => {
 });
 
 // ===== Create Recipe =====
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo } = req.body;
@@ -84,14 +89,23 @@ router.post('/', authenticateToken, (req, res) => {
         }
 
         // Check recipe limit for free users
-        const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.userId);
-        const subscription = db.prepare('SELECT * FROM subscriptions WHERE user_id = ? AND status = "active" AND end_date > datetime("now")').get(req.user.userId);
+        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
 
-        const isPremium = user?.is_admin === 1 || subscription != null;
+        const subResult = await db.query(`
+            SELECT * FROM subscriptions 
+            WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+        `, [req.user.userId]);
+        const subscription = subResult.rows[0];
+
+        // Ensure is_admin is treated correctly as number or boolean from PG
+        const isPremium = (user?.is_admin === 1) || (subscription != null);
 
         if (!isPremium) {
-            const recipeCount = db.prepare('SELECT COUNT(*) as count FROM recipes WHERE user_id = ?').get(req.user.userId);
-            if (recipeCount.count >= FREE_RECIPE_LIMIT) {
+            const countResult = await db.query('SELECT COUNT(*) as count FROM recipes WHERE user_id = $1', [req.user.userId]);
+            const recipeCount = parseInt(countResult.rows[0].count);
+
+            if (recipeCount >= FREE_RECIPE_LIMIT) {
                 return res.status(403).json({
                     error: 'Recipe limit reached',
                     message: `Free users can only save ${FREE_RECIPE_LIMIT} recipes. Upgrade to Premium for unlimited recipes!`,
@@ -100,10 +114,11 @@ router.post('/', authenticateToken, (req, res) => {
             }
         }
 
-        const result = db.prepare(`
+        const insertResult = await db.query(`
             INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *
+        `, [
             req.user.userId,
             name,
             category,
@@ -115,9 +130,9 @@ router.post('/', authenticateToken, (req, res) => {
             instructions,
             notes || null,
             photo || null
-        );
+        ]);
 
-        const newRecipe = db.prepare('SELECT * FROM recipes WHERE id = ?').get(result.lastInsertRowid);
+        const newRecipe = insertResult.rows[0];
 
         res.status(201).json({
             success: true,
@@ -145,32 +160,34 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // ===== Update Recipe =====
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo } = req.body;
 
         // Check if recipe exists and belongs to user
-        const existingRecipe = db.prepare('SELECT * FROM recipes WHERE id = ? AND user_id = ?').get(req.params.id, req.user.userId);
+        const existingResult = await db.query('SELECT * FROM recipes WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        const existingRecipe = existingResult.rows[0];
+
         if (!existingRecipe) {
             return res.status(404).json({ error: 'Recipe not found' });
         }
 
-        db.prepare(`
+        await db.query(`
             UPDATE recipes SET
-                name = ?,
-                category = ?,
-                prep_time = ?,
-                cook_time = ?,
-                servings = ?,
-                difficulty = ?,
-                ingredients = ?,
-                instructions = ?,
-                notes = ?,
-                photo = ?,
-                updated_at = ?
-            WHERE id = ? AND user_id = ?
-        `).run(
+                name = $1,
+                category = $2,
+                prep_time = $3,
+                cook_time = $4,
+                servings = $5,
+                difficulty = $6,
+                ingredients = $7,
+                instructions = $8,
+                notes = $9,
+                photo = $10,
+                updated_at = NOW()
+            WHERE id = $11 AND user_id = $12
+        `, [
             name || existingRecipe.name,
             category || existingRecipe.category,
             prepTime ?? existingRecipe.prep_time,
@@ -181,12 +198,12 @@ router.put('/:id', authenticateToken, (req, res) => {
             instructions || existingRecipe.instructions,
             notes !== undefined ? notes : existingRecipe.notes,
             photo !== undefined ? photo : existingRecipe.photo,
-            new Date().toISOString(),
             req.params.id,
             req.user.userId
-        );
+        ]);
 
-        const updatedRecipe = db.prepare('SELECT * FROM recipes WHERE id = ?').get(req.params.id);
+        const updatedResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);
+        const updatedRecipe = updatedResult.rows[0];
 
         res.json({
             success: true,
@@ -214,17 +231,18 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // ===== Delete Recipe =====
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
 
         // Check if recipe exists and belongs to user
-        const recipe = db.prepare('SELECT id FROM recipes WHERE id = ? AND user_id = ?').get(req.params.id, req.user.userId);
-        if (!recipe) {
+        const recipeResult = await db.query('SELECT id FROM recipes WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+
+        if (recipeResult.rows.length === 0) {
             return res.status(404).json({ error: 'Recipe not found' });
         }
 
-        db.prepare('DELETE FROM recipes WHERE id = ?').run(req.params.id);
+        await db.query('DELETE FROM recipes WHERE id = $1', [req.params.id]);
 
         res.json({ success: true, message: 'Recipe deleted successfully' });
 
@@ -235,15 +253,15 @@ router.delete('/:id', authenticateToken, (req, res) => {
 });
 
 // ===== Delete All Recipes =====
-router.delete('/', authenticateToken, (req, res) => {
+router.delete('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
 
-        const result = db.prepare('DELETE FROM recipes WHERE user_id = ?').run(req.user.userId);
+        const result = await db.query('DELETE FROM recipes WHERE user_id = $1', [req.user.userId]);
 
         res.json({
             success: true,
-            message: `Deleted ${result.changes} recipes`
+            message: `Deleted ${result.rowCount} recipes`
         });
 
     } catch (error) {
@@ -253,12 +271,12 @@ router.delete('/', authenticateToken, (req, res) => {
 });
 
 // ===== Get Recipe Count =====
-router.get('/count/total', authenticateToken, (req, res) => {
+router.get('/count/total', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const result = db.prepare('SELECT COUNT(*) as count FROM recipes WHERE user_id = ?').get(req.user.userId);
+        const result = await db.query('SELECT COUNT(*) as count FROM recipes WHERE user_id = $1', [req.user.userId]);
 
-        res.json({ count: result.count });
+        res.json({ count: parseInt(result.rows[0].count) });
 
     } catch (error) {
         console.error('Get recipe count error:', error);

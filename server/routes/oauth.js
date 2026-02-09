@@ -1,3 +1,4 @@
+
 // OAuth Routes for Google and Apple Sign In
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
@@ -97,28 +98,36 @@ router.get('/google/callback', async (req, res) => {
 
         // Find or create user in our database
         const db = getDatabase();
-        let user = db.prepare('SELECT * FROM users WHERE email = ? OR google_id = ?')
-            .get(googleUser.email.toLowerCase(), googleUser.id);
+
+        const userResult = await db.query('SELECT * FROM users WHERE email = $1 OR google_id = $2', [googleUser.email.toLowerCase(), googleUser.id]);
+        let user = userResult.rows[0];
 
         if (!user) {
             // Create new user
             const username = googleUser.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6);
             const displayName = googleUser.name || username;
 
-            const result = db.prepare(`
-                INSERT INTO users (username, display_name, email, google_id, auth_provider, created_at)
-                VALUES (?, ?, ?, ?, 'google', datetime('now'))
-            `).run(username, displayName, googleUser.email.toLowerCase(), googleUser.id);
+            const insertResult = await db.query(`
+                INSERT INTO users (username, display_name, email, google_id, auth_provider, created_at, is_admin)
+                VALUES ($1, $2, $3, $4, 'google', NOW(), 0)
+                RETURNING *
+            `, [username, displayName, googleUser.email.toLowerCase(), googleUser.id]);
 
-            user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+            user = insertResult.rows[0];
         } else if (!user.google_id) {
             // Link Google account to existing user
-            db.prepare('UPDATE users SET google_id = ?, auth_provider = COALESCE(auth_provider, "google") WHERE id = ?')
-                .run(googleUser.id, user.id);
+            // COALESCE(auth_provider, 'google') logic is fine, but in PG if it's not null it stays.
+            await db.query(`
+                UPDATE users SET google_id = $1, auth_provider = COALESCE(auth_provider, 'google') WHERE id = $2
+            `, [googleUser.id, user.id]);
+
+            // Refresh user object
+            const updatedUser = await db.query('SELECT * FROM users WHERE id = $1', [user.id]);
+            user = updatedUser.rows[0];
         }
 
         // Generate JWT token
-        const token = generateToken(user);
+        const token = generateToken(user.id, user.username, user.is_admin === 1);
 
         // Send success message to parent window
         res.send(generateSuccessPage('google', {
@@ -215,28 +224,35 @@ router.post('/apple/callback', async (req, res) => {
 
         // Find or create user in our database
         const db = getDatabase();
-        let user = db.prepare('SELECT * FROM users WHERE email = ? OR apple_id = ?')
-            .get(appleUser.email?.toLowerCase(), appleUser.id);
+
+        const userResult = await db.query('SELECT * FROM users WHERE email = $1 OR apple_id = $2', [appleUser.email?.toLowerCase(), appleUser.id]);
+        let user = userResult.rows[0];
 
         if (!user) {
             // Create new user
             const username = (appleUser.email?.split('@')[0] || 'apple_user') + '_' + Math.random().toString(36).substring(2, 6);
             const displayName = appleUser.name || username;
 
-            const result = db.prepare(`
-                INSERT INTO users (username, display_name, email, apple_id, auth_provider, created_at)
-                VALUES (?, ?, ?, ?, 'apple', datetime('now'))
-            `).run(username, displayName, appleUser.email?.toLowerCase() || null, appleUser.id);
+            const insertResult = await db.query(`
+                INSERT INTO users (username, display_name, email, apple_id, auth_provider, created_at, is_admin)
+                VALUES ($1, $2, $3, $4, 'apple', NOW(), 0)
+                RETURNING *
+            `, [username, displayName, appleUser.email?.toLowerCase() || null, appleUser.id]);
 
-            user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+            user = insertResult.rows[0];
         } else if (!user.apple_id && appleUser.id) {
             // Link Apple account to existing user
-            db.prepare('UPDATE users SET apple_id = ?, auth_provider = COALESCE(auth_provider, "apple") WHERE id = ?')
-                .run(appleUser.id, user.id);
+            await db.query(`
+                UPDATE users SET apple_id = $1, auth_provider = COALESCE(auth_provider, 'apple') WHERE id = $2
+            `, [appleUser.id, user.id]);
+
+            // Refresh user
+            const updatedUser = await db.query('SELECT * FROM users WHERE id = $1', [user.id]);
+            user = updatedUser.rows[0];
         }
 
         // Generate JWT token
-        const token = generateToken(user);
+        const token = generateToken(user.id, user.username, user.is_admin === 1);
 
         // Send success message to parent window
         res.send(generateSuccessPage('apple', {

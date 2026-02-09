@@ -828,5 +828,64 @@ function revokePremiumFromUser(username) {
     return { success: false, error: 'User has no premium subscription' };
 }
 
+// Sync subscription status from server to localStorage
+// Call this on app init to ensure frontend state matches backend
+async function syncSubscriptionFromServer() {
+    const currentUser = getCurrentUser();
+    const token = getAuthToken();
+
+    if (!currentUser || !token) {
+        console.log('Cannot sync subscription: no user or token');
+        return false;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/subscriptions/status`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to fetch subscription status from server');
+            return false;
+        }
+
+        const data = await response.json();
+        console.log('Server subscription status:', data);
+
+        // Update localStorage with server data
+        const subscriptions = JSON.parse(localStorage.getItem('pastrySubscriptions') || '{}');
+
+        if (data.isPremium && data.status !== 'none') {
+            // User has active subscription on server - update localStorage
+            subscriptions[currentUser] = {
+                plan: data.plan,
+                status: data.status === 'admin' ? 'active' : data.status,
+                endDate: data.endDate || null,
+                autoRenew: data.autoRenew || false,
+                grantedByAdmin: data.isAdminPrivilege || false,
+                syncedAt: new Date().toISOString()
+            };
+            console.log('Subscription synced from server for user:', currentUser);
+        } else if (!data.isPremium && data.status !== 'admin') {
+            // User has no subscription on server - clear localStorage
+            if (subscriptions[currentUser]) {
+                delete subscriptions[currentUser];
+                console.log('Subscription cleared from localStorage (not premium on server)');
+            }
+        }
+
+        localStorage.setItem('pastrySubscriptions', JSON.stringify(subscriptions));
+        return true;
+
+    } catch (error) {
+        console.error('Error syncing subscription from server:', error);
+        return false;
+    }
+}
+
 // ===== Export Functions =====
-export { isPremium, getSubscriptionStatus, getSubscription, PLANS, isUserPremium, grantPremiumToUser, revokePremiumFromUser };
+export { isPremium, getSubscriptionStatus, getSubscription, PLANS, isUserPremium, grantPremiumToUser, revokePremiumFromUser, syncSubscriptionFromServer, saveSubscription };
+

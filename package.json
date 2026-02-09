@@ -17,6 +17,7 @@
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "jspdf": "^2.5.1",
-    "mongodb": "^7.0.0"
+    "mongodb": "^7.0.0",
+    "pg": "^8.17.2"
   }
 }

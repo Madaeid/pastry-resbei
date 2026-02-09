@@ -1,3 +1,4 @@
+
 // Subscription Routes
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
@@ -50,12 +51,14 @@ router.get('/plans', (req, res) => {
 });
 
 // ===== Check Premium Status =====
-router.get('/status', authenticateToken, (req, res) => {
+router.get('/status', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
 
         // Check if user is admin
-        const user = db.prepare('SELECT is_admin FROM users WHERE id = ?').get(req.user.userId);
+        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
+
         if (user?.is_admin === 1) {
             return res.json({
                 isPremium: true,
@@ -67,9 +70,8 @@ router.get('/status', authenticateToken, (req, res) => {
         }
 
         // Get subscription
-        const subscription = db.prepare(`
-            SELECT * FROM subscriptions WHERE user_id = ?
-        `).get(req.user.userId);
+        const subResult = await db.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const subscription = subResult.rows[0];
 
         if (!subscription) {
             return res.json({
@@ -127,12 +129,11 @@ router.get('/status', authenticateToken, (req, res) => {
 });
 
 // ===== Get Subscription Details =====
-router.get('/details', authenticateToken, (req, res) => {
+router.get('/details', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const subscription = db.prepare(`
-            SELECT * FROM subscriptions WHERE user_id = ?
-        `).get(req.user.userId);
+        const subResult = await db.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const subscription = subResult.rows[0];
 
         if (!subscription) {
             return res.json(null);
@@ -196,25 +197,26 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
         };
 
         // Check for existing subscription
-        const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+        const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const existingSub = existingSubResult.rows[0];
 
         if (existingSub) {
             // Update existing
-            db.prepare(`
+            await db.query(`
                 UPDATE subscriptions SET
-                    plan = ?,
+                    plan = $1,
                     status = 'active',
-                    start_date = ?,
-                    end_date = ?,
-                    payment_last4 = ?,
-                    payment_brand = ?,
-                    payment_expiry = ?,
-                    auto_renew = ?,
+                    start_date = $2,
+                    end_date = $3,
+                    payment_last4 = $4,
+                    payment_brand = $5,
+                    payment_expiry = $6,
+                    auto_renew = $7,
                     granted_by_admin = 0,
                     cancelled_at = NULL,
-                    updated_at = ?
-                WHERE user_id = ?
-            `).run(
+                    updated_at = $8
+                WHERE user_id = $9
+            `, [
                 plan,
                 startDate.toISOString(),
                 endDate.toISOString(),
@@ -224,13 +226,13 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 plan !== 'lifetime' ? 1 : 0,
                 new Date().toISOString(),
                 req.user.userId
-            );
+            ]);
         } else {
             // Create new
-            db.prepare(`
+            await db.query(`
                 INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, payment_last4, payment_brand, payment_expiry, auto_renew)
-                VALUES (?, ?, 'active', ?, ?, ?, ?, ?, ?)
-            `).run(
+                VALUES ($1, $2, 'active', $3, $4, $5, $6, $7, $8)
+            `, [
                 req.user.userId,
                 plan,
                 startDate.toISOString(),
@@ -239,21 +241,21 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
                 plan !== 'lifetime' ? 1 : 0
-            );
+            ]);
         }
 
         // Add transaction
-        db.prepare(`
+        await db.query(`
             INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, payment_last4, payment_brand)
-            VALUES (?, ?, 'subscription', ?, ?, 'completed', ?, ?)
-        `).run(
+            VALUES ($1, $2, 'subscription', $3, $4, 'completed', $5, $6)
+        `, [
             req.user.userId,
             `TXN-${Date.now()}`,
             plan,
             PLANS[plan].price,
             cardNumber.slice(-4),
             getCardBrand(cardNumber)
-        );
+        ]);
 
         res.json({
             success: true,
@@ -272,37 +274,39 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
 });
 
 // ===== Cancel Subscription =====
-router.post('/cancel', authenticateToken, (req, res) => {
+router.post('/cancel', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
 
-        const subscription = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+        const subResult = await db.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const subscription = subResult.rows[0];
+
         if (!subscription) {
             return res.status(400).json({ error: 'No active subscription' });
         }
 
-        db.prepare(`
+        await db.query(`
             UPDATE subscriptions SET
                 status = 'cancelled',
                 auto_renew = 0,
-                cancelled_at = ?,
-                updated_at = ?
-            WHERE user_id = ?
-        `).run(
+                cancelled_at = $1,
+                updated_at = $2
+            WHERE user_id = $3
+        `, [
             new Date().toISOString(),
             new Date().toISOString(),
             req.user.userId
-        );
+        ]);
 
         // Add transaction
-        db.prepare(`
+        await db.query(`
             INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status)
-            VALUES (?, ?, 'cancellation', ?, 0, 'completed')
-        `).run(
+            VALUES ($1, $2, 'cancellation', $3, 0, 'completed')
+        `, [
             req.user.userId,
             `TXN-${Date.now()}`,
             subscription.plan
-        );
+        ]);
 
         res.json({ success: true, message: 'Subscription cancelled' });
 
@@ -313,12 +317,14 @@ router.post('/cancel', authenticateToken, (req, res) => {
 });
 
 // ===== Get Transaction History =====
-router.get('/transactions', authenticateToken, (req, res) => {
+router.get('/transactions', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const transactions = db.prepare(`
-            SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50
-        `).all(req.user.userId);
+        const result = await db.query(`
+            SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50
+        `, [req.user.userId]);
+
+        const transactions = result.rows;
 
         res.json(transactions.map(tx => ({
             id: tx.transaction_id,
@@ -361,7 +367,9 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
         }
 
         // Get user email
-        const user = db.prepare('SELECT email FROM users WHERE id = ?').get(req.user.userId);
+        const userResult = await db.query('SELECT email FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -403,7 +411,6 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         }
 
         // Check if this session's user matches the authenticated user
-        // Convert both to strings to handle type mismatch (Stripe stores metadata as strings)
         if (String(session.metadata.userId) !== String(req.user.userId)) {
             return res.status(403).json({ error: 'Session does not belong to this user' });
         }
@@ -412,7 +419,8 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         const plan = PLANS[planId];
 
         // Check if subscription already created via webhook
-        const existingSub = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').get(req.user.userId);
+        const existingSubResult = await db.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const existingSub = existingSubResult.rows[0];
 
         if (existingSub && existingSub.stripe_session_id === sessionId) {
             return res.json({
@@ -432,20 +440,20 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         endDate.setDate(endDate.getDate() + plan.durationDays);
 
         if (existingSub) {
-            db.prepare(`
+            await db.query(`
                 UPDATE subscriptions SET
-                    plan = ?,
+                    plan = $1,
                     status = 'active',
-                    start_date = ?,
-                    end_date = ?,
-                    auto_renew = ?,
-                    stripe_session_id = ?,
-                    stripe_customer_id = ?,
+                    start_date = $2,
+                    end_date = $3,
+                    auto_renew = $4,
+                    stripe_session_id = $5,
+                    stripe_customer_id = $6,
                     granted_by_admin = 0,
                     cancelled_at = NULL,
-                    updated_at = ?
-                WHERE user_id = ?
-            `).run(
+                    updated_at = $7
+                WHERE user_id = $8
+            `, [
                 planId,
                 startDate.toISOString(),
                 endDate.toISOString(),
@@ -454,12 +462,12 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
                 session.customer || null,
                 new Date().toISOString(),
                 req.user.userId
-            );
+            ]);
         } else {
-            db.prepare(`
+            await db.query(`
                 INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
-                VALUES (?, ?, 'active', ?, ?, ?, ?, ?)
-            `).run(
+                VALUES ($1, $2, 'active', $3, $4, $5, $6, $7)
+            `, [
                 req.user.userId,
                 planId,
                 startDate.toISOString(),
@@ -467,20 +475,20 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
                 planId !== 'lifetime' ? 1 : 0,
                 sessionId,
                 session.customer || null
-            );
+            ]);
         }
 
         // Add transaction
-        db.prepare(`
+        await db.query(`
             INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
-            VALUES (?, ?, 'subscription', ?, ?, 'completed', ?)
-        `).run(
+            VALUES ($1, $2, 'subscription', $3, $4, 'completed', $5)
+        `, [
             req.user.userId,
             `TXN-${Date.now()}`,
             planId,
             plan.price,
             sessionId
-        );
+        ]);
 
         res.json({
             success: true,
@@ -531,23 +539,24 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                 endDate.setDate(endDate.getDate() + plan.durationDays);
 
                 // Check for existing subscription
-                const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+                const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
+                const existingSub = existingSubResult.rows[0];
 
                 if (existingSub) {
-                    db.prepare(`
+                    await db.query(`
                         UPDATE subscriptions SET
-                            plan = ?,
+                            plan = $1,
                             status = 'active',
-                            start_date = ?,
-                            end_date = ?,
-                            auto_renew = ?,
-                            stripe_session_id = ?,
-                            stripe_customer_id = ?,
+                            start_date = $2,
+                            end_date = $3,
+                            auto_renew = $4,
+                            stripe_session_id = $5,
+                            stripe_customer_id = $6,
                             granted_by_admin = 0,
                             cancelled_at = NULL,
-                            updated_at = ?
-                        WHERE user_id = ?
-                    `).run(
+                            updated_at = $7
+                        WHERE user_id = $8
+                    `, [
                         planId,
                         startDate.toISOString(),
                         endDate.toISOString(),
@@ -556,12 +565,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         session.customer || null,
                         new Date().toISOString(),
                         userId
-                    );
+                    ]);
                 } else {
-                    db.prepare(`
+                    await db.query(`
                         INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
-                        VALUES (?, ?, 'active', ?, ?, ?, ?, ?)
-                    `).run(
+                        VALUES ($1, $2, 'active', $3, $4, $5, $6, $7)
+                    `, [
                         userId,
                         planId,
                         startDate.toISOString(),
@@ -569,20 +578,20 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         planId !== 'lifetime' ? 1 : 0,
                         session.id,
                         session.customer || null
-                    );
+                    ]);
                 }
 
                 // Add transaction
-                db.prepare(`
+                await db.query(`
                     INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
-                    VALUES (?, ?, 'subscription', ?, ?, 'completed', ?)
-                `).run(
+                    VALUES ($1, $2, 'subscription', $3, $4, 'completed', $5)
+                `, [
                     userId,
                     `TXN-${Date.now()}`,
                     planId,
                     plan.price,
                     session.id
-                );
+                ]);
 
                 console.log(`Subscription created for user ${userId} - Plan: ${planId}`);
             } catch (dbError) {

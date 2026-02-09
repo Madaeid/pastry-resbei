@@ -1,3 +1,4 @@
+
 // Admin Routes
 import express from 'express';
 import bcrypt from 'bcryptjs';
@@ -11,14 +12,21 @@ router.use(authenticateToken);
 router.use(requireAdmin);
 
 // ===== Get Dashboard Stats =====
-router.get('/stats', (req, res) => {
+router.get('/stats', async (req, res) => {
     try {
         const db = getDatabase();
 
-        const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-        const totalAdmins = db.prepare('SELECT COUNT(*) as count FROM users WHERE is_admin = 1').get().count;
-        const totalRecipes = db.prepare('SELECT COUNT(*) as count FROM recipes').get().count;
-        const totalSubscriptions = db.prepare('SELECT COUNT(*) as count FROM subscriptions WHERE status = "active" AND end_date > datetime("now")').get().count;
+        const totalUsersResult = await db.query('SELECT COUNT(*) as count FROM users');
+        const totalUsers = parseInt(totalUsersResult.rows[0].count);
+
+        const totalAdminsResult = await db.query('SELECT COUNT(*) as count FROM users WHERE is_admin = 1');
+        const totalAdmins = parseInt(totalAdminsResult.rows[0].count);
+
+        const totalRecipesResult = await db.query('SELECT COUNT(*) as count FROM recipes');
+        const totalRecipes = parseInt(totalRecipesResult.rows[0].count);
+
+        const totalSubsResult = await db.query(`SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active' AND end_date > NOW()`);
+        const totalSubscriptions = parseInt(totalSubsResult.rows[0].count);
 
         res.json({
             totalUsers,
@@ -34,10 +42,10 @@ router.get('/stats', (req, res) => {
 });
 
 // ===== Get All Users =====
-router.get('/users', (req, res) => {
+router.get('/users', async (req, res) => {
     try {
         const db = getDatabase();
-        const users = db.prepare(`
+        const usersResult = await db.query(`
             SELECT u.*, 
                    s.plan as subscription_plan,
                    s.status as subscription_status,
@@ -46,7 +54,8 @@ router.get('/users', (req, res) => {
             FROM users u
             LEFT JOIN subscriptions s ON u.id = s.user_id
             ORDER BY u.created_at DESC
-        `).all();
+        `);
+        const users = usersResult.rows;
 
         const formattedUsers = users.map(user => {
             // Check if premium
@@ -68,7 +77,8 @@ router.get('/users', (req, res) => {
                 isPremium,
                 subscriptionPlan: user.subscription_plan,
                 subscriptionStatus: user.subscription_status,
-                recipeCount: user.recipe_count,
+                subscriptionEndDate: user.subscription_end_date,
+                recipeCount: parseInt(user.recipe_count || 0),
                 createdAt: user.created_at
             };
         });
@@ -82,18 +92,20 @@ router.get('/users', (req, res) => {
 });
 
 // ===== Get Single User =====
-router.get('/users/:id', (req, res) => {
+router.get('/users/:id', async (req, res) => {
     try {
         const db = getDatabase();
-        const user = db.prepare(`
+        const userResult = await db.query(`
             SELECT u.*, 
                    s.plan as subscription_plan,
                    s.status as subscription_status,
                    s.end_date as subscription_end_date
             FROM users u
             LEFT JOIN subscriptions s ON u.id = s.user_id
-            WHERE u.id = ?
-        `).get(req.params.id);
+            WHERE u.id = $1
+        `, [req.params.id]);
+
+        const user = userResult.rows[0];
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -126,7 +138,9 @@ router.put('/users/:id', async (req, res) => {
         const db = getDatabase();
         const userId = parseInt(req.params.id);
 
-        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+        const userResult = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -138,34 +152,35 @@ router.put('/users/:id', async (req, res) => {
 
         let updates = [];
         let params = [];
+        let paramIndex = 1;
 
         if (displayName) {
-            updates.push('display_name = ?');
+            updates.push(`display_name = $${paramIndex++}`);
             params.push(displayName);
         }
 
         if (email && email.toLowerCase() !== user.email) {
-            const existingEmail = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email.toLowerCase(), userId);
-            if (existingEmail) {
+            const existingEmailResult = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email.toLowerCase(), userId]);
+            if (existingEmailResult.rows.length > 0) {
                 return res.status(400).json({ error: 'Email already registered' });
             }
-            updates.push('email = ?');
+            updates.push(`email = $${paramIndex++}`);
             params.push(email.toLowerCase());
         }
 
         if (phone !== undefined) {
-            updates.push('phone = ?');
+            updates.push(`phone = $${paramIndex++}`);
             params.push(phone || null);
         }
 
         if (password) {
             const passwordHash = await bcrypt.hash(password, 10);
-            updates.push('password_hash = ?');
+            updates.push(`password_hash = $${paramIndex++}`);
             params.push(passwordHash);
         }
 
         if (isAdmin !== undefined && user.username !== 'admin') {
-            updates.push('is_admin = ?');
+            updates.push(`is_admin = $${paramIndex++}`);
             params.push(isAdmin ? 1 : 0);
         }
 
@@ -173,11 +188,13 @@ router.put('/users/:id', async (req, res) => {
             return res.status(400).json({ error: 'No updates provided' });
         }
 
-        updates.push('updated_at = ?');
-        params.push(new Date().toISOString());
-        params.push(userId);
+        updates.push(`updated_at = NOW()`);
 
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        // Add userId for WHERE clause
+        params.push(userId);
+        const whereIndex = paramIndex;
+
+        await db.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${whereIndex}`, params);
 
         res.json({ success: true, message: 'User updated successfully' });
 
@@ -188,12 +205,14 @@ router.put('/users/:id', async (req, res) => {
 });
 
 // ===== Delete User =====
-router.delete('/users/:id', (req, res) => {
+router.delete('/users/:id', async (req, res) => {
     try {
         const db = getDatabase();
         const userId = parseInt(req.params.id);
 
-        const user = db.prepare('SELECT username FROM users WHERE id = ?').get(userId);
+        const userResult = await db.query('SELECT username FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -203,7 +222,7 @@ router.delete('/users/:id', (req, res) => {
         }
 
         // Delete will cascade to recipes and subscriptions
-        db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+        await db.query('DELETE FROM users WHERE id = $1', [userId]);
 
         res.json({ success: true, message: 'User deleted successfully' });
 
@@ -214,12 +233,14 @@ router.delete('/users/:id', (req, res) => {
 });
 
 // ===== Toggle Admin Status =====
-router.patch('/users/:id/toggle-admin', (req, res) => {
+router.patch('/users/:id/toggle-admin', async (req, res) => {
     try {
         const db = getDatabase();
         const userId = parseInt(req.params.id);
 
-        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+        const userResult = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -229,8 +250,7 @@ router.patch('/users/:id/toggle-admin', (req, res) => {
         }
 
         const newAdminStatus = user.is_admin === 1 ? 0 : 1;
-        db.prepare('UPDATE users SET is_admin = ?, updated_at = ? WHERE id = ?')
-            .run(newAdminStatus, new Date().toISOString(), userId);
+        await db.query('UPDATE users SET is_admin = $1, updated_at = NOW() WHERE id = $2', [newAdminStatus, userId]);
 
         res.json({
             success: true,
@@ -245,14 +265,14 @@ router.patch('/users/:id/toggle-admin', (req, res) => {
 });
 
 // ===== Grant Premium to User =====
-router.post('/users/:id/grant-premium', (req, res) => {
+router.post('/users/:id/grant-premium', async (req, res) => {
     try {
         const { plan = 'lifetime' } = req.body;
         const db = getDatabase();
         const userId = parseInt(req.params.id);
 
-        const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
-        if (!user) {
+        const userResult = await db.query('SELECT id FROM users WHERE id = $1', [userId]);
+        if (userResult.rows.length === 0) {
             return res.status(404).json({ error: 'User not found' });
         }
 
@@ -267,26 +287,27 @@ router.post('/users/:id/grant-premium', (req, res) => {
 
         endDate.setDate(endDate.getDate() + (durationDays[plan] || 36500));
 
-        const existingSub = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
+        const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
+        const existingSub = existingSubResult.rows[0];
 
         if (existingSub) {
-            db.prepare(`
+            await db.query(`
                 UPDATE subscriptions SET
-                    plan = ?,
+                    plan = $1,
                     status = 'active',
-                    start_date = ?,
-                    end_date = ?,
+                    start_date = $2,
+                    end_date = $3,
                     granted_by_admin = 1,
                     auto_renew = 0,
                     cancelled_at = NULL,
-                    updated_at = ?
-                WHERE user_id = ?
-            `).run(plan, startDate.toISOString(), endDate.toISOString(), new Date().toISOString(), userId);
+                    updated_at = NOW()
+                WHERE user_id = $4
+            `, [plan, startDate.toISOString(), endDate.toISOString(), userId]);
         } else {
-            db.prepare(`
+            await db.query(`
                 INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, granted_by_admin, auto_renew)
-                VALUES (?, ?, 'active', ?, ?, 1, 0)
-            `).run(userId, plan, startDate.toISOString(), endDate.toISOString());
+                VALUES ($1, $2, 'active', $3, $4, 1, 0)
+            `, [userId, plan, startDate.toISOString(), endDate.toISOString()]);
         }
 
         res.json({ success: true, message: `Premium ${plan} granted to user` });
@@ -298,17 +319,17 @@ router.post('/users/:id/grant-premium', (req, res) => {
 });
 
 // ===== Revoke Premium from User =====
-router.post('/users/:id/revoke-premium', (req, res) => {
+router.post('/users/:id/revoke-premium', async (req, res) => {
     try {
         const db = getDatabase();
         const userId = parseInt(req.params.id);
 
-        const subscription = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(userId);
-        if (!subscription) {
+        const subResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
+        if (subResult.rows.length === 0) {
             return res.status(400).json({ error: 'User has no subscription' });
         }
 
-        db.prepare('DELETE FROM subscriptions WHERE user_id = ?').run(userId);
+        await db.query('DELETE FROM subscriptions WHERE user_id = $1', [userId]);
 
         res.json({ success: true, message: 'Premium revoked from user' });
 
@@ -319,15 +340,16 @@ router.post('/users/:id/revoke-premium', (req, res) => {
 });
 
 // ===== Get All Recipes (Admin) =====
-router.get('/recipes', (req, res) => {
+router.get('/recipes', async (req, res) => {
     try {
         const db = getDatabase();
-        const recipes = db.prepare(`
+        const recipesResult = await db.query(`
             SELECT r.*, u.username, u.display_name as user_display_name
             FROM recipes r
             JOIN users u ON r.user_id = u.id
             ORDER BY r.created_at DESC
-        `).all();
+        `);
+        const recipes = recipesResult.rows;
 
         res.json(recipes.map(r => ({
             id: r.id,
@@ -346,22 +368,22 @@ router.get('/recipes', (req, res) => {
 });
 
 // ===== Export All Data =====
-router.get('/export', (req, res) => {
+router.get('/export', async (req, res) => {
     try {
         const db = getDatabase();
 
-        const users = db.prepare('SELECT id, username, display_name, email, is_admin, created_at FROM users').all();
-        const recipes = db.prepare('SELECT * FROM recipes').all();
-        const subscriptions = db.prepare('SELECT * FROM subscriptions').all();
-        const transactions = db.prepare('SELECT * FROM transactions').all();
+        const usersResult = await db.query('SELECT id, username, display_name, email, is_admin, created_at FROM users');
+        const recipesResult = await db.query('SELECT * FROM recipes');
+        const subsResult = await db.query('SELECT * FROM subscriptions');
+        const transResult = await db.query('SELECT * FROM transactions');
 
         res.json({
             exportDate: new Date().toISOString(),
             data: {
-                users,
-                recipes,
-                subscriptions,
-                transactions
+                users: usersResult.rows,
+                recipes: recipesResult.rows,
+                subscriptions: subsResult.rows,
+                transactions: transResult.rows
             }
         });
 

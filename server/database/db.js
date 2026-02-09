@@ -1,30 +1,34 @@
-// Database Connection Module
-import Database from 'better-sqlite3';
+
+import pg from 'pg';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+const { Pool } = pg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Database file is in the same directory as this file
-const fullPath = path.join(__dirname, 'pastry.db');
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
+// Create a new pool using the connection string from environment variables
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
-let db;
+// Test connection
+pool.on('error', (err, client) => {
+    console.error('Unexpected error on idle client', err);
+    process.exit(-1);
+});
 
 export function getDatabase() {
-    if (!db) {
-        db = new Database(fullPath);
-        db.pragma('foreign_keys = ON');
-    }
-    return db;
+    return pool;
 }
 
 export function closeDatabase() {
-    if (db) {
-        db.close();
-        db = null;
-    }
+    return pool.end();
 }
 
 export default getDatabase;

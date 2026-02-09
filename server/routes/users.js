@@ -1,3 +1,4 @@
+
 // User Routes
 import express from 'express';
 import bcrypt from 'bcryptjs';
@@ -7,13 +8,15 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 // ===== Get User Profile =====
-router.get('/profile', authenticateToken, (req, res) => {
+router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const user = db.prepare(`
+        const result = await db.query(`
             SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
-            FROM users WHERE id = ?
-        `).get(req.user.userId);
+            FROM users WHERE id = $1
+        `, [req.user.userId]);
+
+        const user = result.rows[0];
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -44,60 +47,63 @@ router.put('/profile', authenticateToken, async (req, res) => {
         const db = getDatabase();
         const userId = req.user.userId;
 
-        const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+        const userResult = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
         let updates = [];
         let params = [];
+        let paramIndex = 1;
 
         // Update display name
         if (displayName) {
-            updates.push('display_name = ?');
+            updates.push(`display_name = $${paramIndex++}`);
             params.push(displayName);
         }
 
         // Update email
         if (email && email.toLowerCase() !== user.email) {
-            const existingEmail = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email.toLowerCase(), userId);
-            if (existingEmail) {
+            const existingEmailResult = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [email.toLowerCase(), userId]);
+            if (existingEmailResult.rows.length > 0) {
                 return res.status(400).json({ error: 'Email already registered by another user' });
             }
-            updates.push('email = ?');
+            updates.push(`email = $${paramIndex++}`);
             params.push(email.toLowerCase());
         }
 
         // Update phone (support both 'phone' and 'phoneNumber' field names)
         const phoneValue = phone || phoneNumber;
         if (phoneValue !== undefined) {
-            updates.push('phone = ?');
+            updates.push(`phone = $${paramIndex++}`);
             params.push(phoneValue || null);
         }
 
         // Update profile picture
         if (profilePicture !== undefined) {
-            updates.push('profile_picture = ?');
+            updates.push(`profile_picture = $${paramIndex++}`);
             params.push(profilePicture);
         }
 
         // Update password
         if (password) {
             const passwordHash = await bcrypt.hash(password, 10);
-            updates.push('password_hash = ?');
+            updates.push(`password_hash = $${paramIndex++}`);
             params.push(passwordHash);
         }
 
-        // Update username (complex - requires data migration)
+        // Update username (complex - requires data migration if username changes logic specific to app, but here simple info update)
         if (newUsername && newUsername.toLowerCase() !== user.username) {
             if (newUsername.length < 3) {
                 return res.status(400).json({ error: 'Username must be at least 3 characters' });
             }
-            const existingUsername = db.prepare('SELECT id FROM users WHERE username = ?').get(newUsername.toLowerCase());
-            if (existingUsername) {
+            const existingUsernameResult = await db.query('SELECT id FROM users WHERE username = $1', [newUsername.toLowerCase()]);
+            if (existingUsernameResult.rows.length > 0) {
                 return res.status(400).json({ error: 'Username already taken' });
             }
-            updates.push('username = ?');
+            updates.push(`username = $${paramIndex++}`);
             params.push(newUsername.toLowerCase());
         }
 
@@ -106,19 +112,20 @@ router.put('/profile', authenticateToken, async (req, res) => {
         }
 
         // Add updated_at
-        updates.push('updated_at = ?');
-        params.push(new Date().toISOString());
+        updates.push(`updated_at = NOW()`);
 
         // Add userId for WHERE clause
         params.push(userId);
+        const whereIndex = paramIndex;
 
-        db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+        await db.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${whereIndex}`, params);
 
         // Get updated user
-        const updatedUser = db.prepare(`
+        const updatedUserResult = await db.query(`
             SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
-            FROM users WHERE id = ?
-        `).get(userId);
+            FROM users WHERE id = $1
+        `, [userId]);
+        const updatedUser = updatedUserResult.rows[0];
 
         res.json({
             success: true,

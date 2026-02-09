@@ -2,7 +2,7 @@
 import './style.css';
 import { jsPDF } from 'jspdf';
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, updateUser } from './auth.js';
-import { isPremium, getSubscriptionStatus } from './payment.js';
+import { isPremium, getSubscriptionStatus, syncSubscriptionFromServer } from './payment.js';
 import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // Free tier limits
@@ -27,7 +27,7 @@ if (document.readyState === 'loading') {
     initApp();
 }
 
-function initApp() {
+async function initApp() {
     // Initialize DOM Elements
     tabs = document.querySelectorAll('.tab');
     tabContents = document.querySelectorAll('.tab-content');
@@ -66,6 +66,10 @@ function initApp() {
 
     // Initialize language system
     initLanguage();
+
+    // Sync subscription status from server to ensure premium status is up-to-date
+    // This fixes issues where payment happens but localStorage isn't updated
+    await syncSubscriptionFromServer();
 
     // Initialize app
     checkAuth();

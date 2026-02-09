@@ -262,6 +262,29 @@
         const readyState = document.getElementById('readyState');
         const errorMessage = document.getElementById('errorMessage');
 
+        // Save subscription to localStorage for frontend state sync
+        function saveSubscriptionToLocalStorage(subscription) {
+            const currentUser = getCurrentUser();
+            if (!currentUser || !subscription) return;
+
+            const subscriptions = JSON.parse(localStorage.getItem('pastrySubscriptions') || '{}');
+
+            // Calculate end date for localStorage
+            const endDate = subscription.endDate || subscription.end_date;
+
+            subscriptions[currentUser] = {
+                plan: subscription.plan,
+                status: 'active',
+                startDate: subscription.startDate || subscription.start_date || new Date().toISOString(),
+                endDate: endDate,
+                autoRenew: subscription.plan !== 'lifetime',
+                createdAt: new Date().toISOString()
+            };
+
+            localStorage.setItem('pastrySubscriptions', JSON.stringify(subscriptions));
+            console.log('Subscription saved to localStorage for user:', currentUser);
+        }
+
         async function verifySession() {
             if (!sessionId) {
                 showError('No session ID found. Please try again.');
@@ -289,6 +312,8 @@
                 }
 
                 if (data.success) {
+                    // Save subscription to localStorage so frontend isPremium() works
+                    saveSubscriptionToLocalStorage(data.subscription);
                     showSuccess(data.subscription);
                 } else {
                     throw new Error('Payment verification failed');
