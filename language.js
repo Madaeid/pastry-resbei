@@ -9,15 +9,24 @@ const translations = {
         footer: "📖 My Recipe Book © 2024",
 
         // Navigation & Header
+        homeTab: "Home",
         addRecipeTab: "Add Recipe",
         myRecipesTab: "My Recipes",
         upgrade: "Upgrade (80% OFF)",
         dailyMenu: "Daily Menu",
         calculator: "Calculator",
+        myCv: "My CV",
+        editCv: "Edit Digital CV",
+        addCv: "Add CV",
         dashboard: "Dashboard",
         logout: "Logout",
         editProfile: "Edit Profile",
         premiumBadge: "💎 Premium",
+        chefsTab: "Chefs",
+        myChefsTab: "My Chefs",
+        searchMyChefs: "Search followed chefs...",
+        noFollowedChefsTitle: "No followed chefs yet",
+        followedChefsEmptyDesc: "Follow your favorite chefs to see them here!",
 
         // Auth Page
         signIn: "Sign In",
@@ -363,11 +372,15 @@ const translations = {
         footer: "📖 كتاب وصفاتي © 2024",
 
         // Navigation & Header
+        homeTab: "الرئيسية",
         addRecipeTab: "إضافة وصفة",
         myRecipesTab: "وصفاتي",
         upgrade: "ترقية (خصم 80%)",
         dailyMenu: "القائمة اليومية",
         calculator: "الحاسبة",
+        myCv: "سيرتي الذاتية",
+        editCv: "تعديل السيرة الذاتية والرقمية",
+        addCv: "إضافة سيرة ذاتية",
         dashboard: "لوحة التحكم",
         logout: "تسجيل الخروج",
         editProfile: "تعديل الملف",
@@ -591,6 +604,11 @@ const translations = {
         language: "اللغة",
         english: "English",
         arabic: "العربية",
+        chefsTab: "الطهاة",
+        myChefsTab: "طهاة أتابعهم",
+        searchMyChefs: "البحث في الطهاة المتابعين...",
+        noFollowedChefsTitle: "لا يوجد طهاة متابعون بعد",
+        followedChefsEmptyDesc: "تابع الطهاة المفضلين لديك لتراهم هنا!",
 
         // Admin Page
         adminDashboard: "لوحة تحكم المدير",
@@ -782,13 +800,10 @@ function applyLanguage(lang) {
         }
     });
 
-    // Update language toggle button
-    const langToggle = document.getElementById('languageToggle');
-    if (langToggle) {
-        const langText = langToggle.querySelector('.lang-text');
-        if (langText) {
-            langText.textContent = isArabic ? 'EN' : 'عربي';
-        }
+    // Update language toggle button class/text
+    const langToggleText = document.getElementById('langToggleText');
+    if (langToggleText) {
+        langToggleText.textContent = isArabic ? 'EN' : 'عربي';
     }
 
     // Dispatch event for custom handling
@@ -797,23 +812,82 @@ function applyLanguage(lang) {
 
 // Create language toggle button
 function createLanguageToggle() {
-    // Check if toggle already exists
-    if (document.getElementById('languageToggle')) return;
+    let toggle = document.getElementById('languageToggle');
 
-    const toggle = document.createElement('button');
+    // Check if toggle already exists
+    if (toggle) {
+        // If it exists, just ensure the click listener is attached
+        if (toggle._clickListener) {
+            toggle.removeEventListener('click', toggle._clickListener);
+        }
+
+        toggle._clickListener = function (e) {
+            e.preventDefault();
+            toggleLanguage();
+        };
+        toggle.addEventListener('click', toggle._clickListener);
+        return;
+    }
+
+    toggle = document.createElement('button');
     toggle.id = 'languageToggle';
     toggle.className = 'language-toggle';
     toggle.setAttribute('aria-label', 'Toggle Language');
 
     const isArabic = getCurrentLanguage() === 'ar';
     toggle.innerHTML = `
-        <span class="lang-icon">🌐</span>
-        <span class="lang-text">${isArabic ? 'EN' : 'عربي'}</span>
+        <span class="lang-icon" style="font-size: 0.8rem;">🌐</span>
+        <span id="langToggleText" class="lang-text" style="font-weight: 600; font-size: 0.8rem;">${isArabic ? 'EN' : 'عربي'}</span>
     `;
 
-    toggle.addEventListener('click', toggleLanguage);
+    toggle.style.width = '42px';
+    toggle.style.height = '42px';
+    toggle.style.display = 'flex';
+    toggle.style.alignItems = 'center';
+    toggle.style.justifyContent = 'center';
+    toggle.style.borderRadius = '8px';
+    toggle.style.flexDirection = 'column';
+    toggle.style.gap = '2px';
+    toggle.style.padding = '0';
 
-    document.body.appendChild(toggle);
+    toggle._clickListener = function (e) {
+        e.preventDefault();
+        toggleLanguage();
+    };
+    toggle.addEventListener('click', toggle._clickListener);
+
+
+
+    // Intelligently embed into existing headers instead of floating awkwardly
+    const headerNav = document.querySelector('.header-nav-btns');
+    const sidebarBottom = document.querySelector('.sidebar-bottom');
+    const authHeader = document.querySelector('.auth-header');
+
+    if (headerNav || sidebarBottom) {
+        // Make it flow natively inside flex containers
+        toggle.style.position = 'relative';
+        toggle.style.top = '0';
+        toggle.style.right = '0';
+        toggle.style.left = 'auto';
+        toggle.style.marginTop = sidebarBottom ? '10px' : '0';
+
+        if (headerNav) {
+            headerNav.insertBefore(toggle, headerNav.firstChild);
+        } else {
+            sidebarBottom.insertBefore(toggle, sidebarBottom.firstChild);
+        }
+    } else if (authHeader) {
+        toggle.style.position = 'absolute';
+        toggle.style.top = '25px';
+        toggle.style.left = '25px';
+        toggle.style.right = 'auto';
+        document.body.appendChild(toggle);
+    } else {
+        toggle.style.position = 'fixed';
+        toggle.style.bottom = '25px';
+        toggle.style.left = '25px';
+        document.body.appendChild(toggle);
+    }
 }
 
 // Initialize language system
@@ -823,12 +897,13 @@ function initLanguage() {
     createLanguageToggle();
 }
 
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLanguage);
-} else {
-    initLanguage();
-}
+// Removed auto-initialize since main.js and auth.js call initLanguage() manually
+// This prevents double-calls
+// if (document.readyState === 'loading') {
+//     document.addEventListener('DOMContentLoaded', initLanguage);
+// } else {
+//     initLanguage();
+// }
 
 // Export functions for use in other modules
 export {

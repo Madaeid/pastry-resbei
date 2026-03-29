@@ -181,6 +181,29 @@ async function initDB() {
             `);
             console.log('✅ Recipe book table created');
 
+            // CV Table
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS cvs (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                    full_name TEXT NOT NULL,
+                    dob TEXT,
+                    phone TEXT,
+                    email TEXT,
+                    address TEXT,
+                    summary TEXT,
+                    skills TEXT,
+                    languages TEXT,
+                    education TEXT,
+                    experience TEXT,
+                    certifications TEXT,
+                    photo TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+            console.log('✅ Cv table created');
+
             // ===== Create Indexes =====
             await client.query(`
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -192,6 +215,7 @@ async function initDB() {
                 CREATE INDEX IF NOT EXISTS idx_daily_menus_date ON daily_menus(menu_date);
                 CREATE INDEX IF NOT EXISTS idx_daily_menu_items_menu_id ON daily_menu_items(menu_id);
                 CREATE INDEX IF NOT EXISTS idx_recipebook_user_id ON recipebook(user_id);
+                CREATE INDEX IF NOT EXISTS idx_cvs_user_id ON cvs(user_id);
             `);
             console.log('✅ Indexes created');
 

@@ -682,7 +682,7 @@ function initAuthPage() {
         if (isAdmin()) {
             window.location.href = './admin.html';
         } else {
-            window.location.href = './index.html';
+            window.location.href = './index.html#home';
         }
         return;
     }
@@ -1031,13 +1031,13 @@ function initAuthPage() {
                     return;
                 }
 
-                // Redirect admin to admin dashboard, others to main page
-                if (result.isAdmin) {
-                    window.location.href = './admin.html';
-                } else {
-                    window.location.href = './index.html';
-                }
-            }, 1000);
+                                // Redirect admin to admin dashboard, others to home page
+                                if (result.isAdmin) {
+                                    window.location.href = './admin.html';
+                                } else {
+                                    window.location.href = './index.html#home';
+                                }
+                            }, 1000);
         } else {
             showMessage(result.error, 'error');
         }
@@ -1303,7 +1303,7 @@ function initAuthPage() {
                         } else if (event.data.user.isAdmin) {
                             window.location.href = './admin.html';
                         } else {
-                            window.location.href = './index.html';
+                            window.location.href = './index.html#home';
                         }
                     }, 1000);
                 } else if (event.data.type === 'google-auth-error') {
@@ -1370,7 +1370,7 @@ function initAuthPage() {
                         } else if (event.data.user.isAdmin) {
                             window.location.href = './admin.html';
                         } else {
-                            window.location.href = './index.html';
+                            window.location.href = './index.html#home';
                         }
                     }, 1000);
                 } else if (event.data.type === 'apple-auth-error') {

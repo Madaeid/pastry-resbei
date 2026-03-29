@@ -459,6 +459,12 @@ function setupEventListeners() {
     if (cancelSubscriptionBtn) {
         cancelSubscriptionBtn.addEventListener('click', handleCancelSubscription);
     }
+
+    // Update payment method button
+    const updatePaymentBtn = document.getElementById('updatePaymentBtn');
+    if (updatePaymentBtn) {
+        updatePaymentBtn.addEventListener('click', handleUpdatePaymentMethod);
+    }
 }
 
 let selectedPlan = null;
@@ -600,6 +606,9 @@ async function handleStripeCheckout(e) {
 
     } catch (error) {
         console.error('Stripe checkout error:', error);
+        // Show detailed error in an alert for debugging
+        alert(`Checkout Error: ${error.message}\n\nCheck the console (F12) for more details.`);
+
         showNotification(error.message || 'Failed to start checkout. Please try again.', 'error');
         payButton.disabled = false;
         payButtonText.textContent = 'Proceed to Checkout';
@@ -672,6 +681,48 @@ function handleCancelSubscription() {
         updateSubscriptionDisplay();
     } else {
         showNotification(result.error || 'Failed to cancel subscription', 'error');
+    }
+}
+
+// ===== Handle Update Payment Method =====
+async function handleUpdatePaymentMethod() {
+    const updatePaymentBtn = document.getElementById('updatePaymentBtn');
+    if (!updatePaymentBtn) return;
+
+    // Save original content
+    const originalHTML = updatePaymentBtn.innerHTML;
+
+    updatePaymentBtn.disabled = true;
+    updatePaymentBtn.innerHTML = '<span>⌛</span> Loading...';
+
+    try {
+        const token = getAuthToken();
+        const frontendUrl = window.location.origin;
+
+        const response = await fetch(`${API_URL}/subscriptions/create-portal-session`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                returnUrl: `${frontendUrl}/payment.html`
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.url) {
+            window.location.href = data.url;
+        } else {
+            throw new Error(data.error || 'Failed to open settings');
+        }
+
+    } catch (error) {
+        console.error('Portal session error:', error);
+        showNotification(error.message || 'Failed to open settings', 'error');
+        updatePaymentBtn.disabled = false;
+        updatePaymentBtn.innerHTML = originalHTML;
     }
 }
 

@@ -7426,14 +7426,11 @@ body:has(.calculator-container) .btn-logout:hover {
 
 /* ===== Language Toggle Button ===== */
 .language-toggle {
-    position: fixed;
-    bottom: 25px;
-    left: 25px;
     z-index: 9999;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 10px 16px;
     background: linear-gradient(145deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 35, 0.98));
     border: 2px solid rgba(255, 107, 138, 0.4);
     border-radius: 50px;
@@ -7442,15 +7439,17 @@ body:has(.calculator-container) .btn-logout:hover {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 107, 138, 0.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 107, 138, 0.15);
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .language-toggle:hover {
-    transform: translateY(-3px) scale(1.05);
+    transform: translateY(-2px) scale(1.05);
     border-color: var(--accent-pink);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 107, 138, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45), 0 0 30px rgba(255, 107, 138, 0.25);
 }
 
 .language-toggle:active {
@@ -7482,8 +7481,8 @@ body:has(.calculator-container) .btn-logout:hover {
     font-weight: 700;
 }
 
-/* RTL position adjustment */
-body.rtl .language-toggle {
+/* RTL position adjustment deleted so it is right only */
+body.rtl .language-toggle-disabled {
     left: auto;
     right: 25px;
 }
@@ -7838,13 +7837,10 @@ body.rtl {
 /* Mobile RTL adjustments */
 @media (max-width: 768px) {
     .language-toggle {
-        bottom: 15px;
-        left: 15px;
-        padding: 10px 16px;
         font-size: 0.85rem;
     }
 
-    body.rtl .language-toggle {
+    body.rtl .language-toggle-disabled {
         left: auto;
         right: 15px;
     }

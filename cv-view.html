@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>My CV - My Recipe Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="cv-style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        // Immediate theme initialization
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+        // Auth check
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- User Header -->
+    <div class="user-header" id="userHeader">
+        <div class="user-display">
+            <span class="user-avatar">👤</span>
+            <span class="user-name" id="userName"></span>
+        </div>
+        <div class="header-nav-btns">
+            <a href="./cv-edit.html" class="btn-cv-nav" id="addCvBtn">
+                <span>➕</span>
+                <span>Add CV</span>
+            </a>
+            <a href="./cv-view.html" class="btn-cv-nav active" id="myCvBtn">
+                <span>📄</span>
+                <span>My CV</span>
+            </a>
+            <a href="./index.html" class="btn-back-home">
+                <span>⬅️</span>
+                <span>Back to Home</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- No CV State -->
+    <div class="cv-view-container" id="noCvState" style="display: none;">
+        <div class="no-cv-message">
+            <div class="no-cv-icon">📄</div>
+            <h2>No CV Found</h2>
+            <p>You haven't created a CV yet. Click below to get started!</p>
+            <a href="./cv-edit.html" class="btn-save"
+                style="display: inline-block; text-decoration: none; text-align: center; margin-top: 20px;">
+                ➕ Create My CV
+            </a>
+        </div>
+    </div>
+
+    <!-- CV Display -->
+    <div class="cv-view-container" id="cvDisplay" style="display: none;">
+        <!-- CV Header -->
+        <div class="cv-display-header">
+            <div class="cv-photo-wrapper">
+                <img id="cvPhoto" src="" alt="Profile Photo" class="cv-display-photo">
+            </div>
+            <div class="cv-header-info">
+                <h1 id="cvFullName" class="cv-display-name"></h1>
+                <div class="cv-contact-grid">
+                    <div class="cv-contact-item" id="cvEmailWrap">
+                        <span class="cv-contact-icon">📧</span>
+                        <span id="cvEmail"></span>
+                    </div>
+                    <div class="cv-contact-item" id="cvPhoneWrap">
+                        <span class="cv-contact-icon">📱</span>
+                        <span id="cvPhone"></span>
+                    </div>
+                    <div class="cv-contact-item" id="cvDobWrap">
+                        <span class="cv-contact-icon">🎂</span>
+                        <span id="cvDob"></span>
+                    </div>
+                    <div class="cv-contact-item" id="cvAddressWrap">
+                        <span class="cv-contact-icon">📍</span>
+                        <span id="cvAddress"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="cv-display-section" id="cvSummarySection" style="display: none;">
+            <h3 class="cv-section-title">📝 Summary</h3>
+            <p id="cvSummary" class="cv-summary-text"></p>
+        </div>
+
+        <!-- Skills -->
+        <div class="cv-display-section" id="cvSkillsSection" style="display: none;">
+            <h3 class="cv-section-title">🛠️ Skills & Expertise</h3>
+            <div class="cv-tags-list" id="cvSkillsList"></div>
+        </div>
+
+        <!-- Languages -->
+        <div class="cv-display-section" id="cvLanguagesSection" style="display: none;">
+            <h3 class="cv-section-title">🌐 Languages</h3>
+            <div class="cv-tags-list" id="cvLanguagesList"></div>
+        </div>
+
+        <!-- Education -->
+        <div class="cv-display-section" id="cvEducationSection" style="display: none;">
+            <h3 class="cv-section-title">🎓 Education</h3>
+            <div id="cvEducationList" class="cv-entries-list"></div>
+        </div>
+
+        <!-- Work Experience -->
+        <div class="cv-display-section" id="cvExperienceSection" style="display: none;">
+            <h3 class="cv-section-title">💼 Work Experience</h3>
+            <div id="cvExperienceList" class="cv-entries-list"></div>
+        </div>
+
+        <!-- Certifications -->
+        <div class="cv-display-section" id="cvCertificationsSection" style="display: none;">
+            <h3 class="cv-section-title">📜 Certifications</h3>
+            <div id="cvCertificationsList" class="cv-entries-list"></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="cv-view-actions">
+            <button type="button" class="btn-download-pdf" id="downloadPdfBtn" title="Save CV as PDF">
+                <span class="pdf-btn-icon">📥</span>
+                <span class="pdf-btn-text">Save as PDF</span>
+            </button>
+            <a href="./cv-edit.html" class="btn-save" style="text-decoration: none; text-align: center;">✏️ Edit CV</a>
+            <button type="button" class="btn-cancel" id="deleteCvBtn">🗑️ Delete CV</button>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 My Recipe Book</p>
+    </footer>
+
+    <script>
+        const currentUser = sessionStorage.getItem('currentUser')
+            ? { username: sessionStorage.getItem('currentUser'), displayName: sessionStorage.getItem('currentUser') }
+            : null;
+
+        if (currentUser) {
+            document.getElementById('userName').textContent = currentUser.displayName;
+        }
+
+        const authToken = sessionStorage.getItem('authToken');
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function parseArrayField(val) {
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'string') {
+                try { return JSON.parse(val); } catch (e) { return [val]; }
+            }
+            return [];
+        }
+
+        async function loadCV() {
+            let cvData = null;
+
+            // Try from DB first
+            if (authToken) {
+                try {
+                    const response = await fetch('/api/cv', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (response.ok) {
+                        cvData = await response.json();
+                    }
+                } catch (err) {
+                    console.error('Failed to load CV from DB:', err);
+                }
+            }
+
+            // Fallback to localStorage
+            if (!cvData) {
+                const key = 'cvData_' + (currentUser ? currentUser.username : 'guest');
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    try {
+                        cvData = JSON.parse(saved);
+                    } catch (e) {
+                        console.error('Failed to parse localStorage CV data:', e);
+                    }
+                }
+            }
+
+            if (cvData && cvData.fullName) {
+                displayCV(cvData);
+            } else {
+                document.getElementById('noCvState').style.display = 'block';
+                document.getElementById('cvDisplay').style.display = 'none';
+            }
+        }
+
+        function displayCV(data) {
+            document.getElementById('noCvState').style.display = 'none';
+            document.getElementById('cvDisplay').style.display = 'block';
+
+            // Name
+            document.getElementById('cvFullName').textContent = data.fullName || '';
+
+            // Photo
+            const photoEl = document.getElementById('cvPhoto');
+            if (data.photo && data.photo.startsWith('data:image/') && !data.photo.startsWith('data:image/svg')) {
+                photoEl.src = data.photo;
+                photoEl.style.display = 'block';
+            } else {
+                photoEl.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+            }
+
+            // Contact
+            if (data.email) {
+                document.getElementById('cvEmail').textContent = data.email;
+                document.getElementById('cvEmailWrap').style.display = 'flex';
+            } else { document.getElementById('cvEmailWrap').style.display = 'none'; }
+
+            if (data.phone) {
+                document.getElementById('cvPhone').textContent = data.phone;
+                document.getElementById('cvPhoneWrap').style.display = 'flex';
+            } else { document.getElementById('cvPhoneWrap').style.display = 'none'; }
+
+            if (data.dob) {
+                const dateStr = data.dob.split('T')[0];
+                document.getElementById('cvDob').textContent = dateStr;
+                document.getElementById('cvDobWrap').style.display = 'flex';
+            } else { document.getElementById('cvDobWrap').style.display = 'none'; }
+
+            if (data.address) {
+                document.getElementById('cvAddress').textContent = data.address;
+                document.getElementById('cvAddressWrap').style.display = 'flex';
+            } else { document.getElementById('cvAddressWrap').style.display = 'none'; }
+
+            // Summary
+            if (data.summary) {
+                document.getElementById('cvSummary').textContent = data.summary;
+                document.getElementById('cvSummarySection').style.display = 'block';
+            }
+
+            // Skills
+            const skillsArr = parseArrayField(data.skills);
+            if (skillsArr.length > 0) {
+                document.getElementById('cvSkillsList').innerHTML = skillsArr.map(s =>
+                    `<span class="cv-display-tag">${escapeHtml(s)}</span>`
+                ).join('');
+                document.getElementById('cvSkillsSection').style.display = 'block';
+            }
+
+            // Languages
+            const langsArr = parseArrayField(data.languages);
+            if (langsArr.length > 0) {
+                document.getElementById('cvLanguagesList').innerHTML = langsArr.map(l =>
+                    `<span class="cv-display-tag lang-display-tag">🌐 ${escapeHtml(l)}</span>`
+                ).join('');
+                document.getElementById('cvLanguagesSection').style.display = 'block';
+            }
+
+            // Education
+            const eduArr = parseArrayField(data.education);
+            if (eduArr.length > 0) {
+                document.getElementById('cvEducationList').innerHTML = eduArr.map(edu => `
+                    <div class="cv-entry-display">
+                        <div class="cv-entry-main">
+                            <strong>${escapeHtml(edu.degree || '')}</strong>
+                            <span class="cv-entry-sub">${escapeHtml(edu.school || '')}</span>
+                        </div>
+                        <span class="cv-entry-date">${escapeHtml(edu.year || '')}</span>
+                    </div>
+                `).join('');
+                document.getElementById('cvEducationSection').style.display = 'block';
+            }
+
+            // Experience
+            const expArr = parseArrayField(data.experience);
+            if (expArr.length > 0) {
+                document.getElementById('cvExperienceList').innerHTML = expArr.map(exp => `
+                    <div class="cv-entry-display">
+                        <div class="cv-entry-main">
+                            <strong>${escapeHtml(exp.position || '')}</strong>
+                            <span class="cv-entry-sub">${escapeHtml(exp.company || '')}</span>
+                            ${exp.description ? `<p class="cv-entry-desc">${escapeHtml(exp.description)}</p>` : ''}
+                        </div>
+                        <span class="cv-entry-date">${escapeHtml(exp.period || '')}</span>
+                    </div>
+                `).join('');
+                document.getElementById('cvExperienceSection').style.display = 'block';
+            }
+
+            // Certifications
+            const certArr = parseArrayField(data.certifications);
+            if (certArr.length > 0) {
+                document.getElementById('cvCertificationsList').innerHTML = certArr.map(cert => `
+                    <div class="cv-entry-display">
+                        <div class="cv-entry-main">
+                            <strong>${escapeHtml(cert.name || '')}</strong>
+                            <span class="cv-entry-sub">${escapeHtml(cert.issuer || '')}</span>
+                        </div>
+                        <span class="cv-entry-date">${escapeHtml(cert.year || '')}</span>
+                    </div>
+                `).join('');
+                document.getElementById('cvCertificationsSection').style.display = 'block';
+            }
+        }
+
+        // Delete CV
+        document.getElementById('deleteCvBtn').addEventListener('click', async function () {
+            if (!confirm('Are you sure you want to delete your CV?')) return;
+
+            // Remove from localStorage
+            localStorage.removeItem('cvData_' + (currentUser ? currentUser.username : 'guest'));
+
+            // Remove from DB
+            if (authToken) {
+                try {
+                    await fetch('/api/cv', {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                } catch (err) {
+                    console.error('Failed to delete CV from DB:', err);
+                }
+            }
+
+            // Show empty state
+            document.getElementById('cvDisplay').style.display = 'none';
+            document.getElementById('noCvState').style.display = 'block';
+        });
+
+        // Init
+        loadCV();
+
+        // ========== Download PDF ==========
+        document.getElementById('downloadPdfBtn').addEventListener('click', async function () {
+            const btn = this;
+            const btnText = btn.querySelector('.pdf-btn-text');
+            const btnIcon = btn.querySelector('.pdf-btn-icon');
+            const originalText = btnText.textContent;
+            const originalIcon = btnIcon.textContent;
+
+            // Set loading state
+            btnText.textContent = 'Generating...';
+            btnIcon.textContent = '⏳';
+            btn.disabled = true;
+            btn.classList.add('pdf-loading');
+
+            try {
+                const cvDisplay = document.getElementById('cvDisplay');
+                const actionsDiv = document.querySelector('.cv-view-actions');
+
+                // Hide action buttons for PDF
+                actionsDiv.style.display = 'none';
+
+                // Add print-friendly class
+                cvDisplay.classList.add('pdf-printing');
+
+                // Get user's name for file name
+                const userName = document.getElementById('cvFullName').textContent || 'My_CV';
+                const fileName = userName.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_') + '_CV.pdf';
+
+                const options = {
+                    margin: [10, 10, 10, 10],
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                await html2pdf().set(options).from(cvDisplay).save();
+
+                // Restore everything
+                cvDisplay.classList.remove('pdf-printing');
+                actionsDiv.style.display = '';
+
+                // Success feedback
+                btnIcon.textContent = '✅';
+                btnText.textContent = 'Downloaded!';
+                setTimeout(() => {
+                    btnIcon.textContent = originalIcon;
+                    btnText.textContent = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('pdf-loading');
+                }, 2000);
+
+            } catch (err) {
+                console.error('PDF generation failed:', err);
+                alert('Failed to generate PDF. Please try again.');
+
+                // Restore on error
+                document.getElementById('cvDisplay').classList.remove('pdf-printing');
+                document.querySelector('.cv-view-actions').style.display = '';
+                btnIcon.textContent = originalIcon;
+                btnText.textContent = originalText;
+                btn.disabled = false;
+                btn.classList.remove('pdf-loading');
+            }
+        });
+    </script>
+    <script type="module" src="language.js"></script>
+</body>
+
+</html>

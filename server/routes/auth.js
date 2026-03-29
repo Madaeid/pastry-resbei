@@ -101,6 +101,7 @@ router.post('/register', async (req, res) => {
         ]);
 
         const userId = insertResult.rows[0].id;
+        console.log(`✅ User registered in PostgreSQL - ID: ${userId}, Username: ${username}`);
 
         res.status(201).json({
             success: true,

@@ -11,6 +11,13 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="toggle.css">
+    <link rel="stylesheet" href="public_card.css">
+    <link rel="stylesheet" href="my_recipe_card.css">
+    <link rel="stylesheet" href="sidebar.css">
+
+
+
     <script>
         // Immediate theme initialization to prevent flash
         (function () {
@@ -27,44 +34,120 @@
 </head>
 
 <body>
-    <!-- User Header (shows when logged in) -->
-    <div class="user-header" id="userHeader" style="display: none;">
-        <div class="user-display">
-            <img id="userProfilePic" src="" alt="Profile" class="user-avatar-img" style="display: none;">
-            <span class="user-avatar" id="userDefaultAvatar">👤</span>
-            <span class="user-name" id="userName"></span>
-            <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
-                Premium</span>
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="userHeader" style="display: none;">
+        <!-- Logo / Brand -->
+        <div class="sidebar-brand">
+            <span class="sidebar-logo">🧁</span>
+            <span class="sidebar-title">Recipe Book</span>
         </div>
 
-        <a href="./payment.html" id="upgradeBtn" class="btn-upgrade">
-            <span>💎</span>
-            <span data-i18n="upgrade">Upgrade (80% OFF)</span>
+        <!-- User Profile Section -->
+        <div class="sidebar-user" id="sidebarUserDisplay">
+            <div class="sidebar-avatar-wrapper">
+                <img id="userProfilePic" src="" alt="Profile" class="sidebar-avatar-img" style="display: none;">
+                <span class="user-avatar" id="userDefaultAvatar">👤</span>
+                <div class="sidebar-avatar-ring"></div>
+                <div class="avatar-edit-overlay">📷</div>
+            </div>
+            <span class="user-name" id="userName"></span>
+            
+            <div class="user-badges-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px;">
+                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎 Premium</span>
+                <button class="profile-logout-btn" id="profileLogoutBtn" title="Logout">
+                    <span style="font-size: 0.9em;">🚪</span> <span data-i18n="logout">Logout</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Main Navigation -->
+        <div class="sidebar-nav">
+            <span class="sidebar-section-label">Navigation</span>
+
+            <button class="sidebar-link nav-btn active" id="headerHomeBtn" data-tab="home">
+                <span class="sidebar-link-icon">🏠</span>
+                <span class="sidebar-link-text" data-i18n="homeTab">Home</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+ 
+            <button class="sidebar-link nav-btn" id="headerChefsBtn" data-tab="chefs">
+                <span class="sidebar-link-icon">👩‍🍳</span>
+                <span class="sidebar-link-text" data-i18n="chefsTab">Chefs</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+ 
+            <button class="sidebar-link nav-btn" id="headerMyChefsBtn" data-tab="my-chefs">
+                <span class="sidebar-link-icon">💖</span>
+                <span class="sidebar-link-text" data-i18n="myChefsTab">My Chefs</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+
+            <button class="sidebar-link nav-btn" id="headerAddRecipeBtn" data-tab="add-recipe">
+                <span class="sidebar-link-icon">➕</span>
+                <span class="sidebar-link-text" data-i18n="addRecipeTab">Add Recipe</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+
+            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn" data-tab="my-recipes">
+                <span class="sidebar-link-icon">📖</span>
+                <span class="sidebar-link-text" data-i18n="myRecipesTab">My Recipes</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+
+            <a href="./admin.html" id="adminDashboardBtn" class="sidebar-link" style="display: none;">
+                <span class="sidebar-link-icon">👑</span>
+                <span class="sidebar-link-text" data-i18n="dashboard">Dashboard</span>
+            </a>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Tools Section -->
+        <div class="sidebar-nav">
+            <span class="sidebar-section-label">Tools</span>
+
+            <a href="./days-selection.html" id="dailyMenuBtn" class="sidebar-link" style="display: none;">
+                <span class="sidebar-link-icon">📅</span>
+                <span class="sidebar-link-text" data-i18n="dailyMenu">Daily Menu</span>
+            </a>
+
+            <a href="./cost-calculator.html" id="costCalculatorBtn" class="sidebar-link">
+                <span class="sidebar-link-icon">🧮</span>
+                <span class="sidebar-link-text" data-i18n="calculator">Calculator</span>
+            </a>
+
+            <a href="./cv-view.html" id="myCvBtn" class="sidebar-link">
+                <span class="sidebar-link-icon">📄</span>
+                <span class="sidebar-link-text" data-i18n="myCv">My CV</span>
+            </a>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Upgrade -->
+        <a href="./payment.html" id="upgradeBtn" class="sidebar-upgrade">
+            <span class="sidebar-upgrade-icon">💎</span>
+            <span class="sidebar-upgrade-text" data-i18n="upgrade">Upgrade (80% OFF)</span>
+            <span class="sidebar-upgrade-glow"></span>
         </a>
-        <a href="./days-selection.html" id="dailyMenuBtn" class="btn-daily-menu" style="display: none;">
-            <span>📅</span>
-            <span data-i18n="dailyMenu">Daily Menu</span>
-        </a>
-        <a href="./cost-calculator.html" id="costCalculatorBtn" class="btn-calculator">
-            <span>🧮</span>
-            <span data-i18n="calculator">Calculator</span>
-        </a>
-        <a href="./admin.html" id="adminDashboardBtn" class="btn-dashboard" style="display: none;">
-            <span>👑</span>
-            <span data-i18n="dashboard">Dashboard</span>
-        </a>
-        <button class="btn-logout" id="logoutBtn">
-            <span>🚪</span>
-            <span data-i18n="logout">Logout</span>
-        </button>
-        <button class="btn-edit-user" id="editUserBtn">
-            <span>✏️</span>
-            <span data-i18n="editProfile">Edit Profile</span>
-        </button>
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-            <span class="theme-icon">🌙</span>
-        </button>
-    </div>
+
+        <!-- Bottom Actions -->
+        <div class="sidebar-bottom">
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
+    </nav>
 
     <!-- Floating Particles Background -->
     <div class="particles">
@@ -97,20 +180,73 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="tabs-container">
-        <button class="tab active" data-tab="add-recipe">
-            <span class="tab-icon">➕</span>
-            <span data-i18n="addRecipeTab">Add Recipe</span>
-        </button>
-        <button class="tab" data-tab="my-recipes">
-            <span class="tab-icon">📖</span>
-            <span data-i18n="myRecipesTab">My Recipes</span>
-        </button>
+
+
+    <!-- Home / Public Feed Tab Content -->
+    <div id="home" class="tab-content active">
+        <div class="recipes-header">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="publicSearch" class="search-input" data-i18n="searchPublicRecipes"
+                    placeholder="Search public recipes...">
+            </div>
+        </div>
+
+        <div id="publicRecipesGrid" class="recipes-grid">
+            <!-- Public Recipes will be dynamically inserted here -->
+        </div>
+
+        <div id="publicEmptyState" class="empty-state">
+            <div class="empty-icon">🌍</div>
+            <h3>No public recipes yet</h3>
+            <p>Be the first to share a recipe with the community!</p>
+        </div>
+    </div>
+ 
+    <!-- Chefs Tab Content -->
+    <div id="chefs" class="tab-content">
+        <div class="recipes-header">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="chefsSearch" class="search-input" data-i18n="searchChefs"
+                    placeholder="Search chefs...">
+            </div>
+        </div>
+ 
+        <div id="chefsGrid" class="recipes-grid chefs-grid">
+            <!-- Chefs will be dynamically inserted here -->
+        </div>
+ 
+        <div id="chefsEmptyState" class="empty-state">
+            <div class="empty-icon">👩‍🍳</div>
+            <h3>No chefs found</h3>
+            <p>Be the first to join our community!</p>
+        </div>
+    </div>
+ 
+    <!-- My Chefs Tab Content -->
+    <div id="my-chefs" class="tab-content">
+        <div class="recipes-header">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="myChefsSearch" class="search-input" data-i18n="searchMyChefs"
+                    placeholder="Search followed chefs...">
+            </div>
+        </div>
+ 
+        <div id="myChefsGrid" class="recipes-grid chefs-grid">
+            <!-- Followed Chefs will be dynamically inserted here -->
+        </div>
+ 
+        <div id="myChefsEmptyState" class="empty-state">
+            <div class="empty-icon">💖</div>
+            <h3 data-i18n="noFollowedChefsTitle">No followed chefs yet</h3>
+            <p data-i18n="followedChefsEmptyDesc">Follow your favorite chefs to see them here!</p>
+        </div>
     </div>
 
     <!-- Add Recipe Tab Content -->
-    <div id="add-recipe" class="tab-content active">
+    <div id="add-recipe" class="tab-content">
         <div class="form-container">
             <form id="addRecipeForm" class="recipe-form">
                 <!-- Recipe Photo Upload -->
@@ -144,6 +280,21 @@
                         <option value="chocolates" data-i18n="chocolates">🍫 Chocolates</option>
                         <option value="other" data-i18n="other">✨ Other</option>
                     </select>
+                </div>
+
+                <!-- Visibility -->
+                <div class="form-group">
+                    <label data-i18n="visibility">Visibility</label>
+                    <div class="toggle-wrapper" style="display: flex; align-items: center;">
+                        <label class="switch">
+                            <input type="checkbox" id="isPrivate" name="isPrivate" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span id="privacyLabel" class="toggle-label">Private 🔒</span>
+
+                    </div>
+                    <p class="help-text" style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary);">
+                        Toggle to make this recipe private (visible only to you).</p>
                 </div>
 
                 <!-- Prep & Cook Time -->
@@ -301,6 +452,24 @@
                         <input type="password" id="editPassword" name="password" placeholder="Min. 4 characters">
                     </div>
 
+                    <!-- CV Upload -->
+                    <div class="form-group cv-upload-group"
+                        style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                        <label data-i18n="uploadCv">Resume / CV (PDF)</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" class="btn btn-secondary" id="editCvUploadBtn" style="flex: 1;">
+                                <span class="btn-icon">📄</span> Upload CV
+                            </button>
+                            <a id="viewUserCvBtn" href="#" target="_blank" class="btn btn-outline"
+                                style="display: none; white-space: nowrap;" title="View Uploaded CV">
+                                👁️ View
+                            </a>
+                        </div>
+                        <input type="file" id="editCvFile" accept="application/pdf" hidden>
+                        <p id="cvUploadStatus"
+                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;"></p>
+                    </div>
+
                     <div class="form-actions" style="margin-top: 20px; justify-content: space-between;">
                         <button type="button" class="btn btn-danger" id="modalLogoutBtn" style="padding: 10px 20px;">
                             <span>🚪</span> <span data-i18n="logout">Logout</span>
@@ -363,6 +532,52 @@
     </footer>
 
     <script type="module" src="./main.js"></script>
+    <script>
+        // Sidebar Toggle Logic
+        (function() {
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('userHeader');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            function openSidebar() {
+                sidebar.classList.add('sidebar-open');
+                overlay.classList.add('active');
+                toggle.classList.add('active');
+                document.body.classList.add('sidebar-is-open');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('sidebar-open');
+                overlay.classList.remove('active');
+                toggle.classList.remove('active');
+                document.body.classList.remove('sidebar-is-open');
+            }
+
+            toggle.addEventListener('click', function() {
+                if (sidebar.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+
+            overlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar when a nav link is clicked on mobile
+            sidebar.querySelectorAll('.sidebar-link').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 992) {
+                        closeSidebar();
+                    }
+                });
+            });
+
+            // Handle keyboard escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeSidebar();
+            });
+        })();
+    </script>
 </body>
 
 </html>

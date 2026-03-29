@@ -129,10 +129,21 @@ function constructWebhookEvent(payload, signature) {
     );
 }
 
+
+// Create a Customer Portal session
+async function createPortalSession(customerId, returnUrl) {
+    const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+    });
+    return session;
+}
+
 export {
     stripe,
     PLANS,
     createCheckoutSession,
     verifyCheckoutSession,
+    createPortalSession,
     constructWebhookEvent
 };

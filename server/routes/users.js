@@ -12,7 +12,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const result = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, cv_file
             FROM users WHERE id = $1
         `, [req.user.userId]);
 
@@ -31,6 +31,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
             birthday: user.birthday,
             isAdmin: user.is_admin === 1,
             profilePicture: user.profile_picture,
+            cvFile: user.cv_file,
             createdAt: user.created_at
         });
 
@@ -43,7 +44,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture } = req.body;
+        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, cvFile } = req.body;
         const db = getDatabase();
         const userId = req.user.userId;
 
@@ -87,6 +88,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
             params.push(profilePicture);
         }
 
+        // Update CV file
+        if (cvFile !== undefined) {
+            updates.push(`cv_file = $${paramIndex++}`);
+            params.push(cvFile);
+        }
+
         // Update password
         if (password) {
             const passwordHash = await bcrypt.hash(password, 10);
@@ -120,9 +127,45 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         await db.query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${whereIndex}`, params);
 
+        // Also sync matching fields to CV if CV exists
+        try {
+            const cvUpdateFields = [];
+            const cvParams = [];
+            let cvParamIndex = 1;
+
+            if (displayName) {
+                cvUpdateFields.push(`full_name = $${cvParamIndex++}`);
+                cvParams.push(displayName);
+            }
+            if (phoneValue !== undefined) {
+                cvUpdateFields.push(`phone = $${cvParamIndex++}`);
+                cvParams.push(phoneValue || null);
+            }
+            if (email && email.toLowerCase() !== user.email) {
+                cvUpdateFields.push(`email = $${cvParamIndex++}`);
+                cvParams.push(email.toLowerCase());
+            }
+            if (profilePicture !== undefined) {
+                cvUpdateFields.push(`photo = $${cvParamIndex++}`);
+                cvParams.push(profilePicture);
+            }
+
+            if (cvUpdateFields.length > 0) {
+                cvUpdateFields.push(`updated_at = NOW()`);
+                cvParams.push(userId);
+                await db.query(
+                    `UPDATE cvs SET ${cvUpdateFields.join(', ')} WHERE user_id = $${cvParamIndex}`,
+                    cvParams
+                );
+            }
+        } catch (cvErr) {
+            // CV might not exist yet, ignore error
+            console.log('CV sync skipped (CV may not exist yet)');
+        }
+
         // Get updated user
         const updatedUserResult = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, cv_file
             FROM users WHERE id = $1
         `, [userId]);
         const updatedUser = updatedUserResult.rows[0];
@@ -138,7 +181,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 phone: updatedUser.phone,
                 birthday: updatedUser.birthday,
                 isAdmin: updatedUser.is_admin === 1,
-                profilePicture: updatedUser.profile_picture
+                profilePicture: updatedUser.profile_picture,
+                cvFile: updatedUser.cv_file
             }
         });
 

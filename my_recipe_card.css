@@ -1,0 +1,80 @@
+/* My Recipe Card Specific Styles */
+
+/* Move category tag to left when toggle is present */
+.recipe-category-tag.left-tag {
+    left: 15px;
+    right: auto;
+}
+
+/* Ensure Toggle is always on top right */
+.recipe-toggle-container {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 10;
+}
+
+/* Overlay Actions Row */
+.overlay-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    /* Push to bottom */
+    padding-top: 10px;
+    justify-content: space-between;
+}
+
+.btn-overlay-action {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    border-radius: 12px;
+    padding: 8px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+    font-size: 1.2rem;
+}
+
+.btn-overlay-action:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--accent-pink);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.btn-overlay-action.btn-delete:hover {
+    background: #ef4444;
+    /* Red for delete */
+    color: white;
+    border-color: #ef4444;
+}
+
+.btn-overlay-action span {
+    pointer-events: none;
+}
+
+/* Tooltip on hover */
+.btn-overlay-action {
+    position: relative;
+}
+
+.btn-overlay-action:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    margin-bottom: 5px;
+    pointer-events: none;
+}

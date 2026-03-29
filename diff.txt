@@ -1,0 +1,729 @@
+﻿diff --git a/style.css b/style.css
+index 155a5aa..788bdef 100644
+--- a/style.css
++++ b/style.css
+@@ -257,8 +257,8 @@
+ [data-theme="light"] .daily-menu-header,
+ [data-theme="light"] .admin-header,
+ [data-theme="light"] .user-header {
+-    background: linear-gradient(145deg, rgba(40, 40, 70, 0.95), rgba(20, 20, 35, 0.98));
+-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
++    background: linear-gradient(145deg, rgba(15, 15, 30, 0.92), rgba(10, 10, 22, 0.96));
++    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 20px rgba(56, 189, 248, 0.05);
+ }
+ 
+ [data-theme="light"] .back-link {
+@@ -1169,8 +1169,8 @@ body {
+     margin: 0 auto;
+     padding: 20px;
+     display: grid;
+-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+-    gap: 25px;
++    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
++    gap: 20px;
+ }
+ 
+ .recipe-card {
+@@ -1525,6 +1525,12 @@ footer {
+ }
+ 
+ /* ===== Responsive ===== */
++@media (max-width: 1024px) {
++    .recipes-grid {
++        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
++    }
++}
++
+ @media (max-width: 768px) {
+     .form-row {
+         grid-template-columns: 1fr;
+@@ -1554,8 +1560,17 @@ footer {
+         justify-content: center;
+     }
+ 
+-    .modal-recipe-meta {
+-        justify-content: center;
++    .recipes-grid {
++        grid-template-columns: repeat(2, 1fr);
++        /* 2 columns on mobile */
++        gap: 15px;
++    }
++}
++
++@media (max-width: 480px) {
++    .recipes-grid {
++        grid-template-columns: 1fr;
++        /* 1 column on very small screens */
+     }
+ }
+ 
+@@ -1736,52 +1751,67 @@ footer {
+ 
+ .user-header {
+     display: flex;
++    justify-content: space-between;
+     align-items: center;
+     gap: 12px;
+     position: fixed;
+-    top: 20px;
+-    left: 20px;
++    top: 12px;
++    left: 50%;
++    transform: translateX(-50%);
++    width: 92%;
++    max-width: 1100px;
+     z-index: 1000;
+-    padding: 12px 20px;
+-    background: linear-gradient(145deg, rgba(25, 25, 45, 0.95), rgba(15, 15, 30, 0.98));
+-    backdrop-filter: blur(20px);
+-    border-radius: 60px;
+-    border: 1px solid rgba(255, 107, 138, 0.15);
+-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 107, 138, 0.08);
++    padding: 10px 20px;
++    background: rgba(20, 20, 35, 0.85);
++    backdrop-filter: blur(20px) saturate(180%);
++    -webkit-backdrop-filter: blur(20px) saturate(180%);
++    border-radius: 20px;
++    border: 1px solid rgba(255, 255, 255, 0.08);
++    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
++    transition: background 0.3s ease;
++}
++
++.user-header:hover {
++    background: rgba(20, 20, 35, 0.92);
+ }
+ 
+ .user-display {
+     display: flex;
+     align-items: center;
+-    gap: 10px;
+-    padding: 8px 16px;
+-    background: linear-gradient(145deg, rgba(255, 107, 138, 0.12), rgba(255, 179, 71, 0.08));
+-    border: 1px solid rgba(255, 107, 138, 0.25);
+-    border-radius: 50px;
+-    transition: all 0.3s ease;
++    gap: 12px;
+ }
+ 
+-.user-display:hover {
+-    border-color: rgba(255, 107, 138, 0.4);
+-    box-shadow: 0 0 20px rgba(255, 107, 138, 0.15);
++.user-avatar {
++    width: 42px;
++    height: 42px;
++    background: linear-gradient(135deg, var(--accent-pink, #ff6b8a), var(--accent-orange, #ff9a56));
++    border-radius: 50%;
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    font-size: 1.2rem;
++    border: 2px solid rgba(255, 255, 255, 0.15);
++    transition: transform 0.3s ease;
+ }
+ 
+-.user-avatar {
+-    font-size: 1.3rem;
++.user-display:hover .user-avatar {
++    transform: scale(1.08);
+ }
+ 
+ .user-avatar-img {
+-    width: 32px;
+-    height: 32px;
++    width: 42px;
++    height: 42px;
+     border-radius: 50%;
+     object-fit: cover;
+-    border: 2px solid rgba(255, 107, 138, 0.3);
++    border: 2px solid rgba(255, 255, 255, 0.15);
+ }
+ 
+ .user-name {
+     color: var(--text-primary);
+     font-weight: 600;
+-    font-size: 0.9rem;
++    font-size: 1rem;
++    font-family: 'Poppins', sans-serif;
++    text-transform: capitalize;
+ }
+ 
+ .premium-badge {
+@@ -1796,244 +1826,119 @@ footer {
+     box-shadow: 0 2px 10px rgba(251, 191, 36, 0.3);
+ }
+ 
+-/* Upgrade Button - Gold/Premium */
+-.btn-upgrade {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    text-decoration: none;
+-    color: #1a1a2e;
+-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+-    border: none;
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+-    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+-    animation: upgradeGlow 2s ease-in-out infinite alternate;
+-}
+-
+-@keyframes upgradeGlow {
+-    0% {
+-        box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+-    }
+-
+-    100% {
+-        box-shadow: 0 4px 25px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.2);
+-    }
+-}
+-
+-.btn-upgrade:hover {
+-    transform: translateY(-2px) scale(1.02);
+-    box-shadow: 0 8px 30px rgba(251, 191, 36, 0.5);
+-    background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #f59e0b 100%);
+-}
+-
+-/* Daily Menu Button - Orange */
+-.btn-daily-menu {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    text-decoration: none;
+-    color: white;
+-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+-    border: none;
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+-}
+-
+-.btn-daily-menu:hover {
+-    transform: translateY(-2px);
+-    box-shadow: 0 6px 25px rgba(249, 115, 22, 0.4);
+-    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+-}
+-
+-/* Calculator Button - Emerald Green */
+-.btn-calculator {
++/* ===== Unified Simple Header Buttons ===== */
++.btn-upgrade,
++.btn-daily-menu,
++.btn-calculator,
++.btn-home,
++.btn-logout,
++.btn-dashboard,
++.btn-edit-user,
++.btn-price-table {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
++    height: 40px;
++    padding: 0 20px;
++    font-size: 0.85rem;
++    font-weight: 500;
++    font-family: 'Poppins', sans-serif;
+     text-decoration: none;
+-    color: white;
+-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+-    border: none;
+-    border-radius: 50px;
++    color: var(--text-primary, #e2e8f0);
++    background: rgba(255, 255, 255, 0.06);
++    border: 1px solid rgba(255, 255, 255, 0.1);
++    border-radius: 12px;
+     cursor: pointer;
+     transition: all 0.3s ease;
+-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
++    white-space: nowrap;
+ }
+ 
+-.btn-calculator:hover {
++.btn-upgrade:hover,
++.btn-daily-menu:hover,
++.btn-calculator:hover,
++.btn-home:hover,
++.btn-logout:hover,
++.btn-dashboard:hover,
++.btn-edit-user:hover,
++.btn-price-table:hover {
++    background: rgba(255, 255, 255, 0.12);
++    border-color: rgba(255, 255, 255, 0.2);
+     transform: translateY(-2px);
+-    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+-    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
++    color: #ffffff;
+ }
+ 
+-/* Home Button - Pink */
++/* Home/Back button gets the active gradient */
+ .btn-home {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    text-decoration: none;
++    background: linear-gradient(135deg, var(--accent-pink, #ff6b8a), var(--accent-orange, #ff9a56));
+     color: white;
+-    background: linear-gradient(135deg, #ff6b8a 0%, #f43f5e 100%);
+-    border: none;
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
++    border-color: transparent;
+     box-shadow: 0 4px 15px rgba(255, 107, 138, 0.3);
+-}
+-
+-.btn-home:hover {
+-    transform: translateY(-2px);
+-    box-shadow: 0 6px 25px rgba(255, 107, 138, 0.4);
+-    background: linear-gradient(135deg, #fb7185 0%, #ff6b8a 100%);
+-}
+-
+-/* Logout Button - Slate/Red Hover */
+-.btn-logout {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+     font-weight: 600;
+-    font-family: inherit;
+-    color: var(--text-secondary);
+-    background: rgba(100, 116, 139, 0.15);
+-    border: 1px solid rgba(100, 116, 139, 0.3);
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+ }
+ 
+-.btn-logout:hover {
+-    color: #f87171;
+-    border-color: rgba(248, 113, 113, 0.5);
+-    background: rgba(248, 113, 113, 0.15);
+-    transform: translateY(-2px);
+-    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.2);
+-}
+-
+-
+-
+-.btn-dashboard {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    color: #ffd700;
+-    background: rgba(255, 215, 0, 0.1);
+-    border: 1px solid rgba(255, 215, 0, 0.3);
+-    border-radius: 50px;
+-    text-decoration: none;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+-}
+-
+-.btn-dashboard:hover {
+-    color: #ffe44d;
+-    background: rgba(255, 215, 0, 0.2);
+-    border-color: #ffd700;
+-    transform: translateY(-2px);
+-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
++.btn-home:hover {
++    box-shadow: 0 6px 20px rgba(255, 107, 138, 0.4);
+ }
+ 
+-.btn-edit-user {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    color: #0ea5e9;
+-    background: rgba(14, 165, 233, 0.1);
+-    border: 1px solid rgba(14, 165, 233, 0.3);
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+-}
++@keyframes upgradeGlow {
++    0% {
++        box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
++    }
+ 
+-.btn-edit-user:hover {
+-    color: #38bdf8;
+-    background: rgba(14, 165, 233, 0.2);
+-    border-color: #0ea5e9;
+-    transform: translateY(-2px);
+-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
++    100% {
++        box-shadow: 0 4px 25px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.2);
++    }
+ }
+ 
+ @media (max-width: 600px) {
+     .user-header {
+-        position: fixed;
++        padding: 8px 12px;
++        border-radius: 16px;
+         top: 10px;
+-        right: 10px;
+-        gap: 8px;
++        width: 95%;
+     }
+ 
+     .user-display {
+-        padding: 8px 12px;
+-    }
+-
+-    .user-name {
+-        display: none;
+-    }
+-
+-    .btn-logout {
+-        padding: 8px 12px;
+-    }
+-
+-    .btn-logout span:last-child {
+-        display: none;
++        gap: 8px;
+     }
+ 
+-    .btn-dashboard {
+-        padding: 8px 12px;
++    .user-avatar, .user-avatar-img {
++        width: 36px;
++        height: 36px;
++        font-size: 1rem;
+     }
+ 
+-    .btn-dashboard span:last-child {
++    .user-name {
+         display: none;
+     }
+ 
+-    .btn-edit-user {
+-        padding: 8px 12px;
++    .btn-upgrade,
++    .btn-daily-menu,
++    .btn-calculator,
++    .btn-home,
++    .btn-logout,
++    .btn-dashboard,
++    .btn-edit-user,
++    .btn-price-table {
++        height: 36px;
++        padding: 0 10px;
++        border-radius: 10px;
++        font-size: 0.8rem;
+     }
+ 
+-    .btn-edit-user span:last-child {
++    .btn-logout span:last-child,
++    .btn-dashboard span:last-child,
++    .btn-edit-user span:last-child,
++    .btn-daily-menu span:last-child,
++    .btn-calculator span:last-child,
++    .btn-price-table span:last-child {
+         display: none;
+     }
+ }
+ 
+ /* ===== Auth Switch Links ===== */
+ .auth-switch {
+-    margin-top: 1.5rem;
+     text-align: center;
+     font-size: 0.9rem;
+     color: var(--text-secondary);
+@@ -6989,28 +6894,6 @@ body:has(.calculator-container) .btn-logout:hover {
+ }
+ 
+ /* ===== Price Table Button ===== */
+-.btn-price-table {
+-    display: inline-flex;
+-    align-items: center;
+-    justify-content: center;
+-    gap: 8px;
+-    padding: 10px 18px;
+-    font-size: 0.9rem;
+-    font-weight: 600;
+-    font-family: inherit;
+-    color: white;
+-    background: linear-gradient(135deg, #10b981, #059669);
+-    border: none;
+-    border-radius: 50px;
+-    cursor: pointer;
+-    transition: all 0.3s ease;
+-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+-}
+-
+-.btn-price-table:hover {
+-    transform: translateY(-2px);
+-    box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+-}
+ 
+ /* ===== Price Table Modal ===== */
+ #priceTableModal .modal-content.modal-lg {
+@@ -7613,7 +7496,8 @@ body.rtl .btn-daily-menu,
+ body.rtl .btn-calculator,
+ body.rtl .btn-dashboard,
+ body.rtl .btn-logout,
+-body.rtl .btn-edit-user {
++body.rtl .btn-edit-user,
++body.rtl .btn-cv {
+     flex-direction: row-reverse;
+ }
+ 
+@@ -7862,6 +7746,33 @@ body.rtl {
+     }
+ }
+ 
++/* ========== My CV Button ========== */
++.btn-cv {
++    display: inline-flex;
++    align-items: center;
++    justify-content: center;
++    gap: 8px;
++    padding: 10px 18px;
++    font-size: 0.9rem;
++    font-weight: 600;
++    font-family: inherit;
++    text-decoration: none;
++    color: white;
++    background: rgba(255, 255, 255, 0.1);
++    border: 1px solid rgba(255, 255, 255, 0.2);
++    border-radius: 50px;
++    cursor: pointer;
++    transition: all 0.3s ease;
++    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
++}
++
++.btn-cv:hover {
++    background: rgba(255, 255, 255, 0.2);
++    transform: translateY(-2px);
++    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
++    border-color: rgba(255, 255, 255, 0.4);
++}
++
+ /* ===== Social Login Styles ===== */
+ .social-divider {
+     display: flex;
+@@ -8152,4 +8063,189 @@ body.rtl .social-btn.loading::after {
+ .notification span,
+ .notification-message {
+     color: #ffffff !important;
+-}
+\ No newline at end of file
++}
++
++/* ===== Premium Profile Modal Pop-up ===== */
++.premium-profile-modal {
++    text-align: center;
++    padding: 30px 20px;
++    background: var(--modal-bg);
++    border-radius: 20px;
++    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
++    border: 1px solid rgba(255, 107, 138, 0.2);
++}
++
++.premium-header {
++    margin-bottom: 25px;
++}
++
++.premium-avatar {
++    width: 90px;
++    height: 90px;
++    margin: 0 auto 15px;
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    font-size: 3.5rem;
++    background: radial-gradient(circle, rgba(255, 215, 0, 0.1), transparent 70%);
++    border-radius: 50%;
++}
++
++.premium-avatar img {
++    width: 100%;
++    height: 100%;
++    border-radius: 50%;
++    object-fit: cover;
++    border: 3px solid var(--accent-orange);
++    box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
++}
++
++.premium-header h2 {
++    margin-bottom: 8px;
++    font-size: 1.5rem;
++    background: var(--primary-gradient);
++    -webkit-background-clip: text;
++    -webkit-text-fill-color: transparent;
++    background-clip: text;
++}
++
++.premium-tag {
++    display: inline-block;
++    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
++    color: #3e2723;
++    padding: 6px 16px;
++    border-radius: 50px;
++    font-weight: 700;
++    font-size: 0.75rem;
++    text-transform: uppercase;
++    letter-spacing: 0.5px;
++    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
++    animation: pulse 2s infinite;
++}
++
++.premium-details {
++    background: rgba(255, 255, 255, 0.03);
++    border: 1px solid rgba(255, 255, 255, 0.1);
++    border-radius: 16px;
++    padding: 20px;
++    margin-bottom: 25px;
++    text-align: left;
++}
++
++.detail-item {
++    display: flex;
++    justify-content: space-between;
++    align-items: center;
++    padding: 12px 0;
++    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
++}
++
++.detail-item:last-child {
++    border-bottom: none;
++    padding-bottom: 0;
++}
++
++.detail-item:first-child {
++    padding-top: 0;
++}
++
++.detail-item .label {
++    color: var(--text-secondary);
++    font-size: 0.9rem;
++    display: flex;
++    align-items: center;
++    gap: 8px;
++}
++
++.detail-item .value {
++    color: var(--text-primary);
++    font-weight: 600;
++    font-size: 0.95rem;
++}
++
++/* Light theme overrides for modal */
++[data-theme="light"] .premium-details {
++    background: rgba(0, 0, 0, 0.02);
++    border-color: rgba(0, 0, 0, 0.05);
++}
++
++[data-theme="light"] .detail-item {
++    border-bottom-color: rgba(0, 0, 0, 0.05);
++}
++
++[data-theme="light"] .premium-tag {
++    color: #5d4037;
++
++}
++
++.recipe-private-badge {
++    position: absolute;
++    top: 10px;
++    right: 10px;
++    background: rgba(0, 0, 0, 0.6);
++    color: white;
++    padding: 5px;
++    border-radius: 50%;
++    font-size: 1.2rem;
++    z-index: 2;
++    display: flex;
++    align-items: center;
++    justify-content: center;
++    width: 30px;
++    height: 30px;
++}
++
++/* ===== CV Options Page ===== */
++.cv-options-container {
++    display: flex;
++    justify-content: center;
++    gap: 30px;
++    padding: 20px;
++    max-width: 1200px;
++    margin: 0 auto;
++    flex-wrap: wrap;
++    position: relative;
++    z-index: 10;
++}
++
++.cv-option-card {
++    background: var(--card-bg);
++    border: 1px solid rgba(255, 107, 138, 0.2);
++    border-radius: 20px;
++    padding: 40px;
++    text-align: center;
++    width: 300px;
++    backdrop-filter: blur(10px);
++    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
++    transition: transform 0.3s ease, box-shadow 0.3s ease;
++    display: flex;
++    flex-direction: column;
++    align-items: center;
++    justify-content: center;
++}
++
++.cv-option-card:hover {
++    transform: translateY(-10px);
++    box-shadow: 0 20px 40px rgba(255, 107, 138, 0.2);
++    border-color: var(--accent-pink);
++}
++
++.cv-icon {
++    font-size: 4rem;
++    margin-bottom: 20px;
++}
++
++.cv-option-card h3 {
++    margin-bottom: 10px;
++    color: var(--text-primary);
++    font-size: 1.5rem;
++}
++
++.cv-option-card p {
++    color: var(--text-secondary);
++    margin-bottom: 20px;
++}
++
++.cv-option-card .btn {
++    width: 100%;
++}

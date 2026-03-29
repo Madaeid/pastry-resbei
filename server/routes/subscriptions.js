@@ -8,6 +8,7 @@ import {
     PLANS as STRIPE_PLANS,
     createCheckoutSession,
     verifyCheckoutSession,
+    createPortalSession,
     constructWebhookEvent
 } from '../config/stripe.js';
 
@@ -503,6 +504,33 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
     } catch (error) {
         console.error('Verify session error:', error);
         res.status(500).json({ error: 'Failed to verify session' });
+    }
+});
+
+// Create Customer Portal Session (for managing subscription/payment methods)
+router.post('/create-portal-session', authenticateToken, async (req, res) => {
+    try {
+        const { returnUrl } = req.body;
+        const db = getDatabase();
+
+        // Get subscription to find Stripe Customer ID
+        const subResult = await db.query('SELECT stripe_customer_id FROM subscriptions WHERE user_id = $1', [req.user.userId]);
+        const subscription = subResult.rows[0];
+
+        if (!subscription || !subscription.stripe_customer_id) {
+            return res.status(404).json({ error: 'No active subscription or customer ID found' });
+        }
+
+        const session = await createPortalSession(
+            subscription.stripe_customer_id,
+            returnUrl || `${process.env.FRONTEND_URL}/payment.html`
+        );
+
+        res.json({ url: session.url });
+
+    } catch (error) {
+        console.error('Create portal session error:', error);
+        res.status(500).json({ error: 'Failed to create portal session' });
     }
 });
 

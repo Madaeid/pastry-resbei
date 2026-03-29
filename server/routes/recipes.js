@@ -31,6 +31,7 @@ router.get('/', authenticateToken, async (req, res) => {
             instructions: recipe.instructions,
             notes: recipe.notes,
             photo: recipe.photo,
+            visibility: recipe.visibility,
             dateAdded: recipe.created_at
         }));
 
@@ -39,6 +40,48 @@ router.get('/', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Get recipes error:', error);
         res.status(500).json({ error: 'Failed to get recipes' });
+    }
+});
+
+// ===== Get Public Recipes (Home Feed) =====
+router.get('/public', async (req, res) => {
+    try {
+        const db = getDatabase();
+        // Join with users table to get author info
+        const result = await db.query(`
+            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic 
+            FROM recipes r
+            JOIN users u ON r.user_id = u.id
+            WHERE r.visibility = 'public'
+            ORDER BY r.created_at DESC
+            LIMIT 50
+        `);
+
+        const recipes = result.rows.map(recipe => ({
+            id: recipe.id,
+            name: recipe.name,
+            category: recipe.category,
+            prepTime: recipe.prep_time,
+            cookTime: recipe.cook_time,
+            servings: recipe.servings,
+            difficulty: recipe.difficulty,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            notes: recipe.notes,
+            photo: recipe.photo,
+            visibility: recipe.visibility,
+            dateAdded: recipe.created_at,
+            author: {
+                name: recipe.author_name,
+                pic: recipe.author_pic
+            }
+        }));
+
+        res.json(recipes);
+
+    } catch (error) {
+        console.error('Get public recipes error:', error);
+        res.status(500).json({ error: 'Failed to get public recipes' });
     }
 });
 
@@ -68,6 +111,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             instructions: recipe.instructions,
             notes: recipe.notes,
             photo: recipe.photo,
+            visibility: recipe.visibility,
             dateAdded: recipe.created_at
         });
 
@@ -94,7 +138,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
         const subResult = await db.query(`
             SELECT * FROM subscriptions 
-            WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+            WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
         `, [req.user.userId]);
         const subscription = subResult.rows[0];
 
@@ -115,8 +159,8 @@ router.post('/', authenticateToken, async (req, res) => {
         }
 
         const insertResult = await db.query(`
-            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, visibility)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
         `, [
             req.user.userId,
@@ -129,7 +173,8 @@ router.post('/', authenticateToken, async (req, res) => {
             ingredients,
             instructions,
             notes || null,
-            photo || null
+            photo || null,
+            (req.body.visibility === 'public') ? 'public' : 'private'
         ]);
 
         const newRecipe = insertResult.rows[0];
@@ -149,6 +194,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 instructions: newRecipe.instructions,
                 notes: newRecipe.notes,
                 photo: newRecipe.photo,
+                visibility: newRecipe.visibility,
                 dateAdded: newRecipe.created_at
             }
         });
@@ -164,6 +210,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo } = req.body;
+
+        // Check premium status
+        const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
+        const subResult = await db.query(`
+            SELECT * FROM subscriptions 
+            WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
+        `, [req.user.userId]);
+        const subscription = subResult.rows[0];
+        const isPremium = (user?.is_admin === 1) || (subscription != null);
 
         // Check if recipe exists and belongs to user
         const existingResult = await db.query('SELECT * FROM recipes WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
@@ -185,7 +241,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 instructions = $8,
                 notes = $9,
                 photo = $10,
-                updated_at = NOW()
+                updated_at = NOW(),
+                visibility = $13
             WHERE id = $11 AND user_id = $12
         `, [
             name || existingRecipe.name,
@@ -199,7 +256,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             notes !== undefined ? notes : existingRecipe.notes,
             photo !== undefined ? photo : existingRecipe.photo,
             req.params.id,
-            req.user.userId
+            req.user.userId,
+            (req.body.visibility === 'public') ? 'public' : 'private'
         ]);
 
         const updatedResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);

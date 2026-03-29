@@ -10,7 +10,7 @@ const router = express.Router();
 async function isPremiumUser(db, userId) {
     const subResult = await db.query(`
         SELECT * FROM subscriptions 
-        WHERE user_id = $1 AND status = 'active' AND end_date > NOW()
+        WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
     `, [userId]);
     const subscription = subResult.rows[0];
 

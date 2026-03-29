@@ -19,6 +19,7 @@ import recipeRoutes from './routes/recipes.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import adminRoutes from './routes/admin.js';
 import dailyMenuRoutes from './routes/dailyMenu.js';
+import cvRoutes from './routes/cv.js'; // CV routes
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -60,6 +61,7 @@ app.use('/api/recipes', recipeRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/daily-menu', dailyMenuRoutes);
+app.use('/api/cv', cvRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
