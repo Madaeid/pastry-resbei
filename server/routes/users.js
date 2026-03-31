@@ -7,12 +7,45 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// ===== Get Public Chef Profiles =====
+router.get('/public', async (req, res) => {
+    try {
+        const db = getDatabase();
+        // Return all non-admin users. 
+        // In a more complex app, we'd check for an is_public column, 
+        // but for now we follow the existing pattern of returning display data.
+        const result = await db.query(`
+            SELECT username, display_name, profile_picture, gallery, cv_file, created_at, is_admin, is_public
+            FROM users 
+            ORDER BY created_at DESC
+        `);
+
+        // Filter out admins and format
+        const chefs = result.rows
+            .filter(user => user.username !== 'admin' && user.is_admin !== 1 && user.is_public !== false)
+            .map(user => ({
+                username: user.username,
+                displayName: user.display_name,
+                profilePicture: user.profile_picture,
+                isPublic: user.is_public !== false,
+                gallery: user.gallery || [],
+                cvFile: user.cv_file,
+                createdAt: user.created_at
+            }));
+
+        res.json(chefs);
+    } catch (error) {
+        console.error('Get public profiles error:', error);
+        res.status(500).json({ error: 'Failed to get public profiles' });
+    }
+});
+
 // ===== Get User Profile =====
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const result = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public
             FROM users WHERE id = $1
         `, [req.user.userId]);
 
@@ -30,6 +63,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
             phone: user.phone,
             birthday: user.birthday,
             isAdmin: user.is_admin === 1,
+            isPublic: user.is_public !== false,
             profilePicture: user.profile_picture,
             gallery: user.gallery || [],
             cvFile: user.cv_file,
@@ -45,7 +79,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile } = req.body;
+        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile, isPublic } = req.body;
         const db = getDatabase();
         const userId = req.user.userId;
 
@@ -93,6 +127,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
         if (cvFile !== undefined) {
             updates.push(`cv_file = $${paramIndex++}`);
             params.push(cvFile);
+        }
+
+        // Update visibility
+        if (isPublic !== undefined) {
+            updates.push(`is_public = $${paramIndex++}`);
+            params.push(isPublic);
         }
 
         // Update gallery
@@ -172,7 +212,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         // Get updated user
         const updatedUserResult = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public
             FROM users WHERE id = $1
         `, [userId]);
         const updatedUser = updatedUserResult.rows[0];
@@ -188,6 +228,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 phone: updatedUser.phone,
                 birthday: updatedUser.birthday,
                 isAdmin: updatedUser.is_admin === 1,
+                isPublic: updatedUser.is_public !== false,
                 profilePicture: updatedUser.profile_picture,
                 gallery: updatedUser.gallery || [],
                 cvFile: updatedUser.cv_file

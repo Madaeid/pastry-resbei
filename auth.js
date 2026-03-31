@@ -75,6 +75,7 @@ function getAllUsers() {
         profilePicture: users[key].profilePicture || null,
         cvFile: users[key].cvFile || null,
         isPublic: users[key].isPublic !== undefined ? users[key].isPublic : true,
+        gallery: users[key].gallery || [],
         createdAt: users[key].createdAt
     }));
 }

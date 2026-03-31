@@ -230,11 +230,11 @@
                     </button>
                     <input type="file" id="galleryInput" accept="image/*" multiple style="display: none;">
                 </div>
-                
+
                 <div id="galleryGrid" class="gallery-grid">
                     <!-- Photos will be added here dynamically -->
                 </div>
-                
+
                 <p id="galleryStatus" style="font-size: 0.8rem; color: var(--text-secondary); text-align: left;"></p>
             </div>
         </div>
@@ -255,7 +255,7 @@
         const galleryInput = document.getElementById('galleryInput');
         const addToGalleryBtn = document.getElementById('addToGalleryBtn');
         const galleryStatus = document.getElementById('galleryStatus');
-        
+
         const lightbox = document.getElementById('photoLightbox');
         const lightboxImg = document.getElementById('lightboxImg');
 
@@ -275,7 +275,7 @@
             // Always try to fetch from backend first
             galleryStatus.textContent = '🔄 Syncing with Postgres...';
             const result = await fetchUserProfile();
-            
+
             if (result.success && result.user) {
                 userGallery = result.user.gallery || [];
                 galleryStatus.textContent = '✅ Sync complete';
@@ -290,7 +290,7 @@
                 galleryStatus.textContent = '⚠️ Offline mode: Loading from local storage';
                 setTimeout(() => galleryStatus.textContent = '', 3000);
             }
-            
+
             renderGallery();
         }
 
@@ -302,7 +302,7 @@
             if (files.length === 0) return;
 
             galleryStatus.textContent = `Processing ${files.length} items...`;
-            
+
             for (const file of files) {
                 if (file.size > 1024 * 1024) {
                     galleryStatus.textContent = '❌ Some images were skipped (too large, >1MB)';
@@ -329,7 +329,7 @@
 
         function renderGallery() {
             galleryGrid.innerHTML = '';
-            
+
             if (userGallery.length === 0) {
                 galleryGrid.innerHTML = '<div class="empty-gallery">No extra photos in your gallery yet. Click above to add some!</div>';
                 return;
@@ -338,7 +338,7 @@
             userGallery.forEach((photo, index) => {
                 const item = document.createElement('div');
                 item.className = 'gallery-item';
-                
+
                 item.innerHTML = `
                     <img src="${photo}" alt="Gallery item">
                     <div class="gallery-item-overlay">
@@ -362,7 +362,7 @@
             const photo = userGallery[index];
             const currentUser = getCurrentUser();
             const result = await updateUser(currentUser, { profilePicture: photo });
-            
+
             if (result.success) {
                 galleryStatus.textContent = '✅ Set as profile photo!';
                 setTimeout(() => galleryStatus.textContent = '', 3000);

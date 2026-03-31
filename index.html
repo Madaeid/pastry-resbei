@@ -100,17 +100,12 @@
                 <span class="sidebar-link-indicator"></span>
             </button>
 
-            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn_old" data-tab="my-recipes" style="display: none;">
+            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn_old" data-tab="my-recipes"
+                style="display: none;">
                 <span class="sidebar-link-icon">📖</span>
                 <span class="sidebar-link-text" data-i18n="myRecipesTab">My Recipes</span>
                 <span class="sidebar-link-indicator"></span>
             </button>
-
-            <a href="./profile-photo.html" class="sidebar-link" id="headerMyPhotoBtn">
-                <span class="sidebar-link-icon">📸</span>
-                <span class="sidebar-link-text" data-i18n="myGallery">My Gallery</span>
-                <span class="sidebar-link-indicator"></span>
-            </a>
 
             <a href="./admin.html" id="adminDashboardBtn" class="sidebar-link" style="display: none;">
                 <span class="sidebar-link-icon">👑</span>
@@ -181,11 +176,6 @@
         </div>
         <h1 data-i18n="appTitle">My Recipe Book</h1>
         <p data-i18n="appSubtitle">Create your personal collection of delicious recipes</p>
-        <a href="./profile-photo.html" id="headerAddPhotoBtn" class="btn-header-action"
-            style="display: none; text-decoration: none;">
-            <span class="btn-icon">📸</span>
-            <span data-i18n="myGallery">My Gallery</span>
-        </a>
         <div class="header-decoration">
             <span></span>
             <span></span>
@@ -369,6 +359,11 @@
                 <span id="recipeCount">0</span> <span data-i18n="recipes">Recipes</span>
             </div>
             <div class="recipes-actions">
+                <button id="myRecipesAddBtn" class="btn btn-primary" style="background: var(--accent-orange, #ff9a56);">
+                    <span class="btn-icon">➕</span>
+                    <span data-i18n="addRecipeTab">Add Recipe</span>
+                </button>
+
                 <button id="downloadPdfBtn" class="btn btn-primary">
                     <span class="btn-icon">📄</span>
                     <span data-i18n="saveAsPdf">Save as PDF</span>

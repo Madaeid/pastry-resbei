@@ -11,7 +11,7 @@ const FREE_RECIPE_LIMIT = 10;
 // DOM Elements - will be initialized after DOM is ready
 let tabs, tabContents, form, photoPreview, photoInput, recipesGrid, emptyState, recipeCount;
 let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
-let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn, headerAddPhotoBtn, headerMyPhotoBtn;
+let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn;
 let editProfilePreview, editProfilePhoto;
 let dayPickerModal, closeDayPickerModalBtn;
 let themeToggle;
@@ -59,8 +59,6 @@ async function initApp() {
     dayPickerModal = document.getElementById('dayPickerModal');
     closeDayPickerModalBtn = document.getElementById('closeDayPickerModal');
     themeToggle = document.getElementById('themeToggle');
-    headerAddPhotoBtn = document.getElementById('headerAddPhotoBtn');
-    headerMyPhotoBtn = document.getElementById('headerMyPhotoBtn');
     myChefsGrid = document.getElementById('myChefsGrid');
     myChefsEmptyState = document.getElementById('myChefsEmptyState');
     myChefsSearch = document.getElementById('myChefsSearch');
@@ -305,6 +303,15 @@ function setupEventListeners() {
     // Clear All Recipes
     if (clearAllBtn) {
         clearAllBtn.addEventListener('click', handleClearAll);
+    }
+
+    // Quick Add from My Recipes
+    const myRecipesAddBtn = document.getElementById('myRecipesAddBtn');
+    if (myRecipesAddBtn) {
+        myRecipesAddBtn.addEventListener('click', () => {
+            const addTabBtn = document.querySelector('.nav-btn[data-tab="add-recipe"]');
+            if (addTabBtn) addTabBtn.click();
+        });
     }
 
 
@@ -802,11 +809,6 @@ function checkAuth() {
         // Always show Daily Menu button if logged in
         if (dailyMenuBtn) dailyMenuBtn.style.display = 'inline-flex';
 
-        // Show header Add Photo button only if user has no profile photo
-        if (headerAddPhotoBtn) {
-            const hasPhoto = currentUserObj && currentUserObj.profilePicture;
-            headerAddPhotoBtn.style.display = hasPhoto ? 'none' : 'inline-flex';
-        }
     }
 
     if (logoutBtn) {
@@ -1017,18 +1019,11 @@ async function loadChefs() {
     try {
         grid.innerHTML = '<div class="loading">Loading chefs...</div>';
 
-        // Fetch all users
-        const users = getAllUsers();
-        let chefs = users.map(u => ({
-            username: u.username,
-            displayName: u.displayName,
-            profilePicture: u.profilePicture,
-            cvFile: u.cvFile,
-            isPremium: u.isPremium || false,
-            recipesCount: 0
-        }));
+        // Fetch all users from real database
+        const response = await fetch('http://localhost:3001/api/users/public');
+        let chefs = response.ok ? await response.json() : [];
 
-        // Filter out admin and private profiles
+        // Extra filtering (already done on server but client-side for redundancy)
         chefs = chefs.filter(c => c.username !== 'admin' && c.isPublic !== false);
 
         // Search logic
@@ -1195,6 +1190,18 @@ async function showChefRecipesModal(chef) {
                 </div>
             </div>
             
+            <!-- Gallery Section -->
+            <div class="chef-modal-gallery-section" ${!chef.gallery || chef.gallery.length === 0 ? 'style="display:none;"' : ''}>
+                <h3 class="chef-modal-section-title">📸 Chef's Gallery</h3>
+                <div class="chef-modal-gallery-grid">
+                    ${chef.gallery ? chef.gallery.map(img => `
+                        <div class="chef-modal-gallery-item">
+                            <img src="${img}" alt="Chef Photo" class="chef-gallery-img" loading="lazy">
+                        </div>
+                    `).join('') : ''}
+                </div>
+            </div>
+            
             <!-- Recipes Grid -->
             <div class="chef-modal-recipes-section">
                 <h3 class="chef-modal-section-title">🍽️ Public Recipes</h3>
@@ -1232,6 +1239,72 @@ async function showChefRecipesModal(chef) {
             showNotification(nowFollowing ? `Following ${chef.displayName}!` : `Unfollowed ${chef.displayName}`, 'success');
         }
     };
+
+    // Gallery Lightbox in Modal
+    const galleryItems = modalEl.querySelectorAll('.chef-modal-gallery-item');
+    galleryItems.forEach(item => {
+        item.onclick = (e) => {
+            e.stopPropagation();
+            const imgSrc = item.querySelector('img').src;
+            showGalleryLightbox(imgSrc);
+        };
+    }); function showGalleryLightbox(src) {
+        const existing = document.getElementById('globalGalleryLightbox');
+        if (existing) existing.remove();
+
+        const lightbox = document.createElement('div');
+        lightbox.id = 'globalGalleryLightbox';
+        lightbox.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        cursor: zoom-out;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    `;
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+        box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        border-radius: 8px;
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+
+        lightbox.appendChild(img);
+        document.body.appendChild(lightbox);
+
+        // Fade in
+        setTimeout(() => {
+            lightbox.style.opacity = '1';
+            img.style.transform = 'scale(1)';
+        }, 10);
+
+        const closeLightbox = () => {
+            lightbox.style.opacity = '0';
+            img.style.transform = 'scale(0.9)';
+            setTimeout(() => lightbox.remove(), 300);
+        };
+
+        lightbox.onclick = closeLightbox;
+        window.addEventListener('keydown', function escHandler(e) {
+            if (e.key === 'Escape') {
+                closeLightbox();
+                window.removeEventListener('keydown', escHandler);
+            }
+        });
+    }
 
     // Fetch and render recipes
     try {
@@ -2069,6 +2142,7 @@ function toggleFollowChef(chef) {
             displayName: chef.displayName,
             profilePicture: chef.profilePicture,
             cvFile: chef.cvFile,
+            gallery: chef.gallery || [],
             recipesCount: chef.recipesCount || 0
         });
     } else {
@@ -2087,7 +2161,29 @@ async function loadMyChefs() {
     myChefsGrid.innerHTML = '<div class="loading">Loading followed chefs...</div>';
 
     try {
-        let chefs = getFollowedChefs();
+        let followed = getFollowedChefs();
+        
+        // Sync with server for latest info (gallery, pic, etc.)
+        const pubResponse = await fetch('http://localhost:3001/api/users/public');
+        if (pubResponse.ok) {
+            const allProfiles = await pubResponse.json();
+            
+            // Re-fetch all public recipes to update recipe counts
+            const recipesResponse = await fetch('http://localhost:3001/api/recipes/public');
+            const allPublicRecipes = recipesResponse.ok ? await recipesResponse.json() : [];
+
+            followed = followed.map(f => {
+                const latest = allProfiles.find(p => p.username === f.username);
+                if (latest) {
+                    // Update count too
+                    latest.recipesCount = allPublicRecipes.filter(r => r.author?.username === latest.username).length;
+                    return latest;
+                }
+                return f;
+            });
+        }
+        
+        let chefs = followed;
 
         // Filter by search
         const searchTerm = myChefsSearch ? myChefsSearch.value.trim().toLowerCase() : '';

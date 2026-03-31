@@ -630,3 +630,53 @@
 .chef-recipes-modal-content::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* Chef Modal Gallery Section */
+.chef-modal-gallery-section {
+    padding: 24px 32px 10px;
+    /* Reduced bottom padding as recipes follow */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .chef-modal-gallery-section {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+}
+
+.chef-modal-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.chef-modal-gallery-item {
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: zoom-in;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chef-modal-gallery-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-pink);
+}
+
+.chef-gallery-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 600px) {
+    .chef-modal-gallery-section {
+        padding: 20px 16px 10px;
+    }
+
+    .chef-modal-gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+    }
+}
