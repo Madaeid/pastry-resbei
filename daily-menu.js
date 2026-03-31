@@ -367,7 +367,7 @@ function renderRecipes() {
     recipesGrid.style.display = 'grid';
 
     recipesGrid.innerHTML = dayRecipes.map((recipe, index) => `
-        <div class="day-recipe-card" onclick="viewRecipe(${index})" style="animation-delay: ${index * 0.1}s">
+        <div class="day-recipe-card" onclick="event.stopPropagation(); viewRecipe(${index})" style="animation-delay: ${index * 0.1}s">
             <div class="recipe-card-image">
                 ${recipe.photo
             ? `<img src="${recipe.photo}" alt="${recipe.name}">`
@@ -430,7 +430,7 @@ function renderSelectRecipeList(recipes) {
     }
 
     selectRecipeList.innerHTML = recipes.map(recipe => `
-        <div class="select-recipe-item" onclick="selectFromMyRecipes('${recipe.id}')">
+        <div class="select-recipe-item" onclick="event.stopPropagation(); selectFromMyRecipes('${recipe.id}')">
             <div class="select-recipe-content">
                 <div class="select-recipe-image">
                     ${recipe.photo ? `<img src="${recipe.photo}" alt="${recipe.name}">` : '<span>🍰</span>'}

@@ -752,6 +752,70 @@ body {
     opacity: 0.5;
 }
 
+/* ===== Header Action Button ===== */
+.btn-header-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    margin-top: 30px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(255, 107, 138, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.btn-header-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transition: 0.6s;
+}
+
+.btn-header-action:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 35px rgba(255, 107, 138, 0.6);
+}
+
+.btn-header-action:hover::before {
+    left: 100%;
+}
+
+.btn-header-action:active {
+    transform: translateY(-2px) scale(0.98);
+}
+
+.btn-header-action .btn-icon {
+    font-size: 1.3rem;
+}
+
+/* Light theme support */
+[data-theme="light"] .btn-header-action {
+    box-shadow: 0 10px 25px rgba(255, 107, 138, 0.3);
+}
+
+[data-theme="light"] .btn-header-action:hover {
+    box-shadow: 0 15px 35px rgba(255, 107, 138, 0.4);
+}
+
 /* ===== Tabs ===== */
 .tabs-container {
     display: flex;
@@ -1358,7 +1422,7 @@ body {
     background: linear-gradient(145deg, rgba(20, 20, 35, 0.98), rgba(15, 15, 26, 0.99));
     border: 1px solid rgba(255, 107, 138, 0.2);
     border-radius: 24px;
-    max-width: 800px;
+    max-width: 900px;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
@@ -1387,21 +1451,29 @@ body {
 }
 
 .modal-recipe-image {
-    width: 100%;
-    height: 300px;
-    border-radius: 16px;
+    width: calc(100% + 80px);
+    margin-left: -40px;
+    margin-top: -40px;
+    height: 420px;
+    border-radius: 24px 24px 0 0;
     overflow: hidden;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
     background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 35, 0.95));
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .modal-recipe-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.modal-recipe-image:hover img {
+    transform: scale(1.03);
 }
 
 .modal-recipe-image .placeholder-icon {
@@ -2392,8 +2464,26 @@ footer {
 }
 
 .role-user {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-secondary);
+}
+
+.visibility-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.visibility-public {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+}
+
+.visibility-private {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
 }
 
 .action-buttons {

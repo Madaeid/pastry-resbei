@@ -49,7 +49,7 @@ router.get('/public', async (req, res) => {
         const db = getDatabase();
         // Join with users table to get author info
         const result = await db.query(`
-            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic 
+            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin
             FROM recipes r
             JOIN users u ON r.user_id = u.id
             WHERE r.visibility = 'public'
@@ -57,25 +57,40 @@ router.get('/public', async (req, res) => {
             LIMIT 50
         `);
 
-        const recipes = result.rows.map(recipe => ({
-            id: recipe.id,
-            name: recipe.name,
-            category: recipe.category,
-            prepTime: recipe.prep_time,
-            cookTime: recipe.cook_time,
-            servings: recipe.servings,
-            difficulty: recipe.difficulty,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            notes: recipe.notes,
-            photo: recipe.photo,
-            visibility: recipe.visibility,
-            dateAdded: recipe.created_at,
-            author: {
-                name: recipe.author_name,
-                pic: recipe.author_pic
+        // Check premium status for each author
+        const recipes = [];
+        for (const recipe of result.rows) {
+            let authorIsPremium = recipe.author_is_admin === 1;
+            if (!authorIsPremium) {
+                const subCheck = await db.query(`
+                    SELECT id FROM subscriptions 
+                    WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
+                    LIMIT 1
+                `, [recipe.user_id]);
+                authorIsPremium = subCheck.rows.length > 0;
             }
-        }));
+            recipes.push({
+                id: recipe.id,
+                name: recipe.name,
+                category: recipe.category,
+                prepTime: recipe.prep_time,
+                cookTime: recipe.cook_time,
+                servings: recipe.servings,
+                difficulty: recipe.difficulty,
+                ingredients: recipe.ingredients,
+                instructions: recipe.instructions,
+                notes: recipe.notes,
+                photo: recipe.photo,
+                visibility: recipe.visibility,
+                dateAdded: recipe.created_at,
+                author: {
+                    username: recipe.author_username,
+                    name: recipe.author_name,
+                    pic: recipe.author_pic,
+                    isPremium: authorIsPremium
+                }
+            });
+        }
 
         res.json(recipes);
 

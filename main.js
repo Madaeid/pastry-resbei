@@ -11,7 +11,7 @@ const FREE_RECIPE_LIMIT = 10;
 // DOM Elements - will be initialized after DOM is ready
 let tabs, tabContents, form, photoPreview, photoInput, recipesGrid, emptyState, recipeCount;
 let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
-let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn;
+let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn, headerAddPhotoBtn, headerMyPhotoBtn;
 let editProfilePreview, editProfilePhoto;
 let dayPickerModal, closeDayPickerModalBtn;
 let themeToggle;
@@ -59,6 +59,8 @@ async function initApp() {
     dayPickerModal = document.getElementById('dayPickerModal');
     closeDayPickerModalBtn = document.getElementById('closeDayPickerModal');
     themeToggle = document.getElementById('themeToggle');
+    headerAddPhotoBtn = document.getElementById('headerAddPhotoBtn');
+    headerMyPhotoBtn = document.getElementById('headerMyPhotoBtn');
     myChefsGrid = document.getElementById('myChefsGrid');
     myChefsEmptyState = document.getElementById('myChefsEmptyState');
     myChefsSearch = document.getElementById('myChefsSearch');
@@ -112,7 +114,7 @@ async function initApp() {
     // Initialize app
     checkAuth();
     loadRecipes();
-    
+
     // Handle initial tab from hash or default to home
     handleHashRouting();
 }
@@ -122,8 +124,8 @@ async function initApp() {
  */
 function handleHashRouting() {
     const hash = window.location.hash.substring(1);
-    const validTabs = ['home', 'chefs', 'my-chefs', 'add-recipe', 'my-recipes'];
-    
+    const validTabs = ['chefs', 'my-chefs', 'add-recipe', 'my-recipes'];
+
     // If we have a hash and it's a valid tab, switch to it
     if (hash && validTabs.includes(hash)) {
         const tabButton = document.querySelector(`.nav-btn[data-tab="${hash}"]`);
@@ -132,11 +134,11 @@ function handleHashRouting() {
             return;
         }
     }
-    
-    // Default fallback: If on home tab, load public recipes
+
+    // Default fallback: Load My Recipes
     const activeTab = document.querySelector('.tab-content.active');
-    if (activeTab && activeTab.id === 'home') {
-        loadPublicRecipes();
+    if (activeTab && activeTab.id === 'my-recipes') {
+        loadRecipes();
     } else if (activeTab && activeTab.id === 'chefs') {
         loadChefs();
     } else if (activeTab && activeTab.id === 'my-chefs') {
@@ -225,8 +227,6 @@ function setupEventListeners() {
             // Refresh recipes when switching to My Recipes tab
             if (targetTab === 'my-recipes') {
                 loadRecipes();
-            } else if (targetTab === 'home') {
-                loadPublicRecipes();
             } else if (targetTab === 'chefs') {
                 loadChefs();
             } else if (targetTab === 'my-chefs') {
@@ -336,7 +336,7 @@ function setupEventListeners() {
     if (modalLogoutBtn) {
         modalLogoutBtn.addEventListener('click', logout);
     }
-    
+
     if (profileLogoutBtn) {
         profileLogoutBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // prevent opening edit profile
@@ -405,6 +405,9 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Header Add Photo Button
+    // Note: These now navigate to profile-photo.html via href
 }
 
 // ===== Theme Functions =====
@@ -480,6 +483,13 @@ function openEditUserModal() {
         }
     }
 
+    // Set Visibility Toggle
+    const editIsPublic = document.getElementById('userIsPublic');
+    if (editIsPublic) {
+        // Users are public by default
+        editIsPublic.checked = user.isPublic !== false;
+    }
+
     editUserModal.classList.add('show');
 }
 
@@ -499,7 +509,8 @@ async function handleEditUserSubmit(e) {
     const updateData = {
         displayName: displayName,
         email: email,
-        phoneNumber: phoneNumber
+        phoneNumber: phoneNumber,
+        isPublic: document.getElementById('userIsPublic')?.checked
     };
 
     if (newUsername !== currentUser) {
@@ -790,6 +801,12 @@ function checkAuth() {
 
         // Always show Daily Menu button if logged in
         if (dailyMenuBtn) dailyMenuBtn.style.display = 'inline-flex';
+
+        // Show header Add Photo button only if user has no profile photo
+        if (headerAddPhotoBtn) {
+            const hasPhoto = currentUserObj && currentUserObj.profilePicture;
+            headerAddPhotoBtn.style.display = hasPhoto ? 'none' : 'inline-flex';
+        }
     }
 
     if (logoutBtn) {
@@ -987,128 +1004,7 @@ function renderRecipes(recipes) {
     }
 }
 
-// Load Public Recipes
-async function loadPublicRecipes() {
-    const grid = document.getElementById('publicRecipesGrid');
-    const empty = document.getElementById('publicEmptyState');
-    const search = document.getElementById('publicSearch');
 
-    if (!grid) return;
-
-    try {
-        const token = sessionStorage.getItem('authToken');
-        // Build query param for search
-        let url = 'http://localhost:3001/api/recipes/public';
-
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        let recipes = [];
-        if (response.ok) {
-            recipes = await response.json();
-        }
-
-        // Apply client-side search filtering if needed (or backend param)
-        if (search && search.value.trim()) {
-            const term = search.value.toLowerCase().trim();
-            recipes = recipes.filter(r =>
-                r.name.toLowerCase().includes(term) ||
-                r.category.toLowerCase().includes(term) ||
-                (r.ingredients && r.ingredients.toLowerCase().includes(term))
-            );
-        }
-
-        grid.innerHTML = '';
-
-        if (recipes.length === 0) {
-            empty.style.display = 'block';
-            grid.style.display = 'none';
-        } else {
-            empty.style.display = 'none';
-            grid.style.display = 'grid';
-
-            recipes.forEach(recipe => {
-                const card = createPublicRecipeCard(recipe);
-                grid.appendChild(card);
-            });
-        }
-
-    } catch (e) {
-        console.error('Error loading public recipes:', e);
-    }
-}
-
-// Create Public Recipe Card
-function createPublicRecipeCard(recipe) {
-    const card = document.createElement('div');
-    card.className = 'recipe-card public-recipe-card';
-
-    // Image logic
-    let photoDisplay = '';
-    if (recipe.photo) {
-        photoDisplay = `<img src="${recipe.photo}" alt="${recipe.name}" loading="lazy">`;
-    } else {
-        const emoji = getCategoryEmoji(recipe.category);
-        photoDisplay = `<div class="no-photo">${emoji}</div>`;
-    }
-
-    const authorName = recipe.author?.name || 'Unknown Chef';
-
-    // Use uploaded photo or generate one from name
-    let authorPicUrl = recipe.author?.pic;
-    if (!authorPicUrl) {
-        authorPicUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=random&color=fff&size=64`;
-    }
-
-    const authorPic = `<img src="${authorPicUrl}" class="author-pic-sm" alt="${authorName}">`;
-    const isPremiumAuthor = recipe.author?.isPremium; // Assuming backend sends this or we default false
-
-    // Premium badge if author is premium
-    const premiumBadge = isPremiumAuthor ? '<span class="author-premium-badge" title="Premium Chef">💎</span>' : '';
-
-    card.innerHTML = `
-        <div class="recipe-card-image">
-            ${photoDisplay}
-        </div>
-        
-        <div class="recipe-category-tag">${recipe.category}</div>
-        
-        <div class="public-card-overlay">
-            <h3 class="recipe-title">${recipe.name}</h3>
-            
-            <div class="recipe-author-row">
-                <div class="author-info">
-                    ${authorPic}
-                    <span class="author-name">${authorName}</span>
-                    ${premiumBadge}
-                </div>
-            </div>
-
-            <div class="recipe-meta">
-                <span>⏱️ ${recipe.prepTime + recipe.cookTime} m</span>
-                <span>🍽️ ${recipe.servings}</span>
-                <span>${recipe.difficulty === 'easy' ? '🟢' : recipe.difficulty === 'medium' ? '🟡' : '🔴'}</span>
-            </div>
-            
-            <button class="btn-view-card">View Recipe</button>
-        </div>
-    `;
-
-    // Add view click handler to the button
-    const viewBtn = card.querySelector('.btn-view-card');
-    viewBtn.onclick = (e) => {
-        e.stopPropagation();
-        viewRecipe(recipe, true);
-    };
-
-    // Make whole card clickable
-    card.onclick = () => viewRecipe(recipe, true);
-
-    return card;
-}
 
 // Load Chefs
 async function loadChefs() {
@@ -1120,25 +1016,26 @@ async function loadChefs() {
 
     try {
         grid.innerHTML = '<div class="loading">Loading chefs...</div>';
-        
+
         // Fetch all users
         const users = getAllUsers();
         let chefs = users.map(u => ({
             username: u.username,
             displayName: u.displayName,
             profilePicture: u.profilePicture,
-            isPremium: false, // This would ideally come from the user object
-            recipesCount: 0 // Placeholder
+            cvFile: u.cvFile,
+            isPremium: u.isPremium || false,
+            recipesCount: 0
         }));
 
-        // Filter out admin if you want
-        chefs = chefs.filter(c => c.username !== 'admin');
+        // Filter out admin and private profiles
+        chefs = chefs.filter(c => c.username !== 'admin' && c.isPublic !== false);
 
         // Search logic
         if (searchInput && searchInput.value.trim()) {
             const term = searchInput.value.toLowerCase().trim();
-            chefs = chefs.filter(c => 
-                c.displayName.toLowerCase().includes(term) || 
+            chefs = chefs.filter(c =>
+                c.displayName.toLowerCase().includes(term) ||
                 c.username.toLowerCase().includes(term)
             );
         }
@@ -1199,28 +1096,31 @@ function createChefCard(chef) {
                 <span>👥 <b>${Math.floor(Math.random() * 500) + 50}</b> Followers</span>
             </div>
             
-            <div class="chef-actions" style="display: flex; gap: 10px; width: 100%;">
-                <button class="btn btn-primary btn-sm view-chef-recipes" style="flex: 1; padding: 8px; font-size: 0.8rem;">
+            <div class="chef-actions" style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
+                <button class="btn btn-primary btn-sm view-chef-recipes" style="flex: 1; padding: 8px; font-size: 0.75rem; white-space: nowrap;">
                     View Profile
                 </button>
-                <button class="btn btn-outline btn-sm follow-chef">
+                ${chef.cvFile ? `
+                <a href="${chef.cvFile}" target="_blank" class="btn btn-outline btn-sm view-cv" style="padding: 8px; font-size: 0.75rem;" title="View Chef's CV">
+                    📄 CV
+                </a>` : ''}
+                <button class="btn btn-outline btn-sm follow-chef" style="padding: 8px; font-size: 0.75rem;">
                     Follow
                 </button>
             </div>
         </div>
     `;
 
-    // Add click event for "View Profile" to filter public feed by this author
+    // Add click event for "View Profile" to show chef's recipes in a modal
     const viewBtn = card.querySelector('.view-chef-recipes');
     viewBtn.onclick = (e) => {
         e.stopPropagation();
-        const publicSearch = document.getElementById('publicSearch');
-        if (publicSearch) {
-            publicSearch.value = chef.displayName;
-            document.querySelector('.nav-btn[data-tab="home"]').click();
-            // Trigger search
-            publicSearch.dispatchEvent(new Event('input'));
-        }
+        showChefRecipesModal(chef);
+    };
+
+    // Make whole card clickable too
+    card.onclick = () => {
+        showChefRecipesModal(chef);
     };
 
     // Follow button logic
@@ -1241,7 +1141,7 @@ function createChefCard(chef) {
             updateFollowBtnStyle();
             const isFollowing = isChefFollowed(chef.username);
             showNotification(isFollowing ? `Following ${chef.displayName}!` : `Unfollowed ${chef.displayName}`, 'success');
-            
+
             // If we are on the My Chefs tab, reload it
             const activeTab = document.querySelector('.tab-content.active');
             if (activeTab && activeTab.id === 'my-chefs') {
@@ -1253,6 +1153,164 @@ function createChefCard(chef) {
     return card;
 }
 
+// ===== Show Chef Recipes Modal =====
+async function showChefRecipesModal(chef) {
+    // Remove existing modal if any
+    const existing = document.getElementById('chefRecipesModal');
+    if (existing) existing.remove();
+
+    let picUrl = chef.profilePicture;
+    if (!picUrl) {
+        picUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(chef.displayName)}&background=random&color=fff&size=150`;
+    }
+
+    const isFollowing = isChefFollowed(chef.username);
+
+    // Create modal
+    const modalEl = document.createElement('div');
+    modalEl.id = 'chefRecipesModal';
+    modalEl.className = 'modal show';
+    modalEl.innerHTML = `
+        <div class="modal-content chef-recipes-modal-content">
+            <button class="modal-close" id="closeChefRecipesModal">&times;</button>
+            
+            <!-- Chef Profile Header -->
+            <div class="chef-modal-header">
+                <div class="chef-modal-avatar">
+                    <img src="${picUrl}" alt="${chef.displayName}">
+                </div>
+                <div class="chef-modal-info">
+                    <h2 class="chef-modal-name">${chef.displayName}</h2>
+                    <p class="chef-modal-username">@${chef.username}</p>
+                    <div class="chef-modal-stats">
+                        <span class="chef-stat">📖 <b id="chefModalRecipeCount">...</b> Recipes</span>
+                        ${chef.isPremium ? '<span class="chef-stat chef-stat-premium">💎 Premium Chef</span>' : ''}
+                    </div>
+                    <div class="chef-modal-actions-row">
+                        <button class="btn btn-primary btn-sm chef-modal-follow" id="chefModalFollowBtn">
+                            ${isFollowing ? '💖 Following' : '➕ Follow'}
+                        </button>
+                        ${chef.cvFile ? `<a href="${chef.cvFile}" target="_blank" class="btn btn-outline btn-sm">📄 View CV</a>` : ''}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recipes Grid -->
+            <div class="chef-modal-recipes-section">
+                <h3 class="chef-modal-section-title">🍽️ Public Recipes</h3>
+                <div id="chefModalRecipesGrid" class="chef-modal-recipes-grid">
+                    <div class="loading" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <span style="font-size: 2rem;">👨‍🍳</span>
+                        <p>Loading recipes...</p>
+                    </div>
+                </div>
+                <div id="chefModalEmptyState" class="chef-modal-empty" style="display: none;">
+                    <span style="font-size: 3rem;">📭</span>
+                    <h4>No public recipes yet</h4>
+                    <p>This chef hasn't shared any recipes publicly.</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalEl);
+
+    // Close handlers
+    document.getElementById('closeChefRecipesModal').addEventListener('click', () => modalEl.remove());
+    modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) modalEl.remove();
+    });
+
+    // Follow button in modal
+    const followBtn = document.getElementById('chefModalFollowBtn');
+    followBtn.onclick = () => {
+        const success = toggleFollowChef(chef);
+        if (success) {
+            const nowFollowing = isChefFollowed(chef.username);
+            followBtn.innerHTML = nowFollowing ? '💖 Following' : '➕ Follow';
+            followBtn.style.background = nowFollowing ? 'var(--accent-pink)' : '';
+            showNotification(nowFollowing ? `Following ${chef.displayName}!` : `Unfollowed ${chef.displayName}`, 'success');
+        }
+    };
+
+    // Fetch and render recipes
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch('http://localhost:3001/api/recipes/public', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const allRecipes = response.ok ? await response.json() : [];
+        const chefRecipes = allRecipes.filter(r =>
+            r.author?.username === chef.username ||
+            r.author?.name === chef.displayName
+        );
+
+        const grid = document.getElementById('chefModalRecipesGrid');
+        const emptyEl = document.getElementById('chefModalEmptyState');
+        const countEl = document.getElementById('chefModalRecipeCount');
+
+        if (countEl) countEl.textContent = chefRecipes.length;
+
+        if (chefRecipes.length === 0) {
+            grid.style.display = 'none';
+            emptyEl.style.display = 'flex';
+        } else {
+            grid.innerHTML = '';
+            emptyEl.style.display = 'none';
+
+            chefRecipes.forEach(recipe => {
+                const recipeCard = document.createElement('div');
+                recipeCard.className = 'chef-modal-recipe-card';
+
+                let photoDisplay = '';
+                if (recipe.photo) {
+                    photoDisplay = `<img src="${recipe.photo}" alt="${recipe.name}" loading="lazy">`;
+                } else {
+                    const emoji = getCategoryEmoji(recipe.category);
+                    photoDisplay = `<div class="no-photo" style="display:flex; align-items:center; justify-content:center; height:100%; font-size:3rem; background:linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">${emoji}</div>`;
+                }
+
+                const totalTime = recipe.prepTime + recipe.cookTime;
+                const difficultyIcon = recipe.difficulty === 'easy' ? '🟢' : recipe.difficulty === 'medium' ? '🟡' : '🔴';
+
+                recipeCard.innerHTML = `
+                    <div class="chef-recipe-card-img">
+                        ${photoDisplay}
+                    </div>
+                    <div class="chef-recipe-card-body">
+                        <span class="chef-recipe-category">${recipe.category}</span>
+                        <h4 class="chef-recipe-name">${recipe.name}</h4>
+                        <div class="chef-recipe-meta">
+                            <span>⏱️ ${totalTime}m</span>
+                            <span>🍽️ ${recipe.servings}</span>
+                            <span>${difficultyIcon}</span>
+                        </div>
+                        <button class="btn-view-chef-recipe">View Recipe</button>
+                    </div>
+                `;
+
+                // Click to view recipe details
+                recipeCard.querySelector('.btn-view-chef-recipe').onclick = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    viewRecipe(recipe, true);
+                };
+
+                recipeCard.onclick = (e) => {
+                    e.stopPropagation();
+                    viewRecipe(recipe, true);
+                };
+
+                grid.appendChild(recipeCard);
+            });
+        }
+    } catch (e) {
+        console.error('Error loading chef recipes:', e);
+        const grid = document.getElementById('chefModalRecipesGrid');
+        if (grid) grid.innerHTML = '<div class="error" style="grid-column: 1 / -1; text-align: center; padding: 20px;">Failed to load recipes. Please try again.</div>';
+    }
+}
 
 // Create Recipe Card (User's)
 function createRecipeCard(recipe) {
@@ -1309,7 +1367,11 @@ function createRecipeCard(recipe) {
     `;
 
     // Add event listeners
-    card.querySelector('[data-action="view"]').addEventListener('click', () => viewRecipe(recipe.id));
+    card.querySelector('[data-action="view"]').addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        viewRecipe(recipe.id);
+    });
     card.querySelector('[data-action="menu"]').addEventListener('click', (e) => {
         e.stopPropagation();
         openDayPickerModal(recipe);
@@ -2006,6 +2068,7 @@ function toggleFollowChef(chef) {
             username: chef.username,
             displayName: chef.displayName,
             profilePicture: chef.profilePicture,
+            cvFile: chef.cvFile,
             recipesCount: chef.recipesCount || 0
         });
     } else {
@@ -2020,17 +2083,17 @@ function toggleFollowChef(chef) {
 // ===== Load & Render My Chefs =====
 async function loadMyChefs() {
     if (!myChefsGrid) return;
-    
+
     myChefsGrid.innerHTML = '<div class="loading">Loading followed chefs...</div>';
-    
+
     try {
         let chefs = getFollowedChefs();
-        
+
         // Filter by search
         const searchTerm = myChefsSearch ? myChefsSearch.value.trim().toLowerCase() : '';
         if (searchTerm) {
-            chefs = chefs.filter(c => 
-                c.displayName.toLowerCase().includes(searchTerm) || 
+            chefs = chefs.filter(c =>
+                c.displayName.toLowerCase().includes(searchTerm) ||
                 c.username.toLowerCase().includes(searchTerm)
             );
         }
@@ -2044,14 +2107,14 @@ async function loadMyChefs() {
 
 function renderMyChefs(chefs) {
     myChefsGrid.innerHTML = '';
-    
+
     if (chefs.length === 0) {
         myChefsGrid.style.display = 'none';
         myChefsEmptyState.style.display = 'block';
     } else {
         myChefsGrid.style.display = 'grid';
         myChefsEmptyState.style.display = 'none';
-        
+
         chefs.forEach(chef => {
             const card = createChefCard(chef);
             myChefsGrid.appendChild(card);

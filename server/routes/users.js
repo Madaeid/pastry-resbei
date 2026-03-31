@@ -12,7 +12,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const result = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, cv_file
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file
             FROM users WHERE id = $1
         `, [req.user.userId]);
 
@@ -31,6 +31,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
             birthday: user.birthday,
             isAdmin: user.is_admin === 1,
             profilePicture: user.profile_picture,
+            gallery: user.gallery || [],
             cvFile: user.cv_file,
             createdAt: user.created_at
         });
@@ -44,7 +45,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, cvFile } = req.body;
+        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile } = req.body;
         const db = getDatabase();
         const userId = req.user.userId;
 
@@ -92,6 +93,12 @@ router.put('/profile', authenticateToken, async (req, res) => {
         if (cvFile !== undefined) {
             updates.push(`cv_file = $${paramIndex++}`);
             params.push(cvFile);
+        }
+
+        // Update gallery
+        if (gallery !== undefined) {
+            updates.push(`gallery = $${paramIndex++}`);
+            params.push(JSON.stringify(gallery));
         }
 
         // Update password
@@ -165,7 +172,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         // Get updated user
         const updatedUserResult = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, cv_file
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file
             FROM users WHERE id = $1
         `, [userId]);
         const updatedUser = updatedUserResult.rows[0];
@@ -182,6 +189,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 birthday: updatedUser.birthday,
                 isAdmin: updatedUser.is_admin === 1,
                 profilePicture: updatedUser.profile_picture,
+                gallery: updatedUser.gallery || [],
                 cvFile: updatedUser.cv_file
             }
         });

@@ -59,9 +59,11 @@
                 <div class="avatar-edit-overlay">📷</div>
             </div>
             <span class="user-name" id="userName"></span>
-            
-            <div class="user-badges-container" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px;">
-                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎 Premium</span>
+
+            <div class="user-badges-container"
+                style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px;">
+                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
+                    Premium</span>
                 <button class="profile-logout-btn" id="profileLogoutBtn" title="Logout">
                     <span style="font-size: 0.9em;">🚪</span> <span data-i18n="logout">Logout</span>
                 </button>
@@ -74,18 +76,18 @@
         <div class="sidebar-nav">
             <span class="sidebar-section-label">Navigation</span>
 
-            <button class="sidebar-link nav-btn active" id="headerHomeBtn" data-tab="home">
+            <button class="sidebar-link nav-btn active" id="headerMyRecipesBtn" data-tab="my-recipes">
                 <span class="sidebar-link-icon">🏠</span>
                 <span class="sidebar-link-text" data-i18n="homeTab">Home</span>
                 <span class="sidebar-link-indicator"></span>
             </button>
- 
+
             <button class="sidebar-link nav-btn" id="headerChefsBtn" data-tab="chefs">
                 <span class="sidebar-link-icon">👩‍🍳</span>
                 <span class="sidebar-link-text" data-i18n="chefsTab">Chefs</span>
                 <span class="sidebar-link-indicator"></span>
             </button>
- 
+
             <button class="sidebar-link nav-btn" id="headerMyChefsBtn" data-tab="my-chefs">
                 <span class="sidebar-link-icon">💖</span>
                 <span class="sidebar-link-text" data-i18n="myChefsTab">My Chefs</span>
@@ -98,11 +100,17 @@
                 <span class="sidebar-link-indicator"></span>
             </button>
 
-            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn" data-tab="my-recipes">
+            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn_old" data-tab="my-recipes" style="display: none;">
                 <span class="sidebar-link-icon">📖</span>
                 <span class="sidebar-link-text" data-i18n="myRecipesTab">My Recipes</span>
                 <span class="sidebar-link-indicator"></span>
             </button>
+
+            <a href="./profile-photo.html" class="sidebar-link" id="headerMyPhotoBtn">
+                <span class="sidebar-link-icon">📸</span>
+                <span class="sidebar-link-text" data-i18n="myGallery">My Gallery</span>
+                <span class="sidebar-link-indicator"></span>
+            </a>
 
             <a href="./admin.html" id="adminDashboardBtn" class="sidebar-link" style="display: none;">
                 <span class="sidebar-link-icon">👑</span>
@@ -173,6 +181,11 @@
         </div>
         <h1 data-i18n="appTitle">My Recipe Book</h1>
         <p data-i18n="appSubtitle">Create your personal collection of delicious recipes</p>
+        <a href="./profile-photo.html" id="headerAddPhotoBtn" class="btn-header-action"
+            style="display: none; text-decoration: none;">
+            <span class="btn-icon">📸</span>
+            <span data-i18n="myGallery">My Gallery</span>
+        </a>
         <div class="header-decoration">
             <span></span>
             <span></span>
@@ -182,27 +195,8 @@
 
 
 
-    <!-- Home / Public Feed Tab Content -->
-    <div id="home" class="tab-content active">
-        <div class="recipes-header">
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="publicSearch" class="search-input" data-i18n="searchPublicRecipes"
-                    placeholder="Search public recipes...">
-            </div>
-        </div>
 
-        <div id="publicRecipesGrid" class="recipes-grid">
-            <!-- Public Recipes will be dynamically inserted here -->
-        </div>
 
-        <div id="publicEmptyState" class="empty-state">
-            <div class="empty-icon">🌍</div>
-            <h3>No public recipes yet</h3>
-            <p>Be the first to share a recipe with the community!</p>
-        </div>
-    </div>
- 
     <!-- Chefs Tab Content -->
     <div id="chefs" class="tab-content">
         <div class="recipes-header">
@@ -212,18 +206,18 @@
                     placeholder="Search chefs...">
             </div>
         </div>
- 
+
         <div id="chefsGrid" class="recipes-grid chefs-grid">
             <!-- Chefs will be dynamically inserted here -->
         </div>
- 
+
         <div id="chefsEmptyState" class="empty-state">
             <div class="empty-icon">👩‍🍳</div>
             <h3>No chefs found</h3>
             <p>Be the first to join our community!</p>
         </div>
     </div>
- 
+
     <!-- My Chefs Tab Content -->
     <div id="my-chefs" class="tab-content">
         <div class="recipes-header">
@@ -233,11 +227,11 @@
                     placeholder="Search followed chefs...">
             </div>
         </div>
- 
+
         <div id="myChefsGrid" class="recipes-grid chefs-grid">
             <!-- Followed Chefs will be dynamically inserted here -->
         </div>
- 
+
         <div id="myChefsEmptyState" class="empty-state">
             <div class="empty-icon">💖</div>
             <h3 data-i18n="noFollowedChefsTitle">No followed chefs yet</h3>
@@ -364,7 +358,7 @@
     </div>
 
     <!-- My Recipes Tab Content -->
-    <div id="my-recipes" class="tab-content">
+    <div id="my-recipes" class="tab-content active">
         <div class="recipes-header">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
@@ -470,6 +464,21 @@
                             style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;"></p>
                     </div>
 
+                    <!-- Visibility Toggle -->
+                    <div class="form-group"
+                        style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <div>
+                            <label style="margin-bottom: 0px; text-transform: none; font-size: 1rem;">🌍 Public
+                                Profile</label>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">If enabled,
+                                your profile will be visible in the chefs directory.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="userIsPublic" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+
                     <div class="form-actions" style="margin-top: 20px; justify-content: space-between;">
                         <button type="button" class="btn btn-danger" id="modalLogoutBtn" style="padding: 10px 20px;">
                             <span>🚪</span> <span data-i18n="logout">Logout</span>
@@ -534,7 +543,7 @@
     <script type="module" src="./main.js"></script>
     <script>
         // Sidebar Toggle Logic
-        (function() {
+        (function () {
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('userHeader');
             const overlay = document.getElementById('sidebarOverlay');
@@ -553,7 +562,7 @@
                 document.body.classList.remove('sidebar-is-open');
             }
 
-            toggle.addEventListener('click', function() {
+            toggle.addEventListener('click', function () {
                 if (sidebar.classList.contains('sidebar-open')) {
                     closeSidebar();
                 } else {
@@ -564,8 +573,8 @@
             overlay.addEventListener('click', closeSidebar);
 
             // Close sidebar when a nav link is clicked on mobile
-            sidebar.querySelectorAll('.sidebar-link').forEach(function(link) {
-                link.addEventListener('click', function() {
+            sidebar.querySelectorAll('.sidebar-link').forEach(function (link) {
+                link.addEventListener('click', function () {
                     if (window.innerWidth <= 992) {
                         closeSidebar();
                     }
@@ -573,7 +582,7 @@
             });
 
             // Handle keyboard escape
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') closeSidebar();
             });
         })();

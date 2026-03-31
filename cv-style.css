@@ -49,6 +49,15 @@
     font-size: 1.2rem;
     border: 2px solid rgba(255, 255, 255, 0.15);
     transition: transform 0.3s ease;
+    overflow: hidden; /* For the image */
+    position: relative;
+}
+
+.user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none; /* Hidden by default */
 }
 
 .user-display:hover .user-avatar {

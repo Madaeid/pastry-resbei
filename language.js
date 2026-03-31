@@ -27,6 +27,10 @@ const translations = {
         searchMyChefs: "Search followed chefs...",
         noFollowedChefsTitle: "No followed chefs yet",
         followedChefsEmptyDesc: "Follow your favorite chefs to see them here!",
+        addPhoto: "Add Photo",
+        myPhoto: "My Photo",
+        myGallery: "My Gallery",
+        add: "Add",
 
         // Auth Page
         signIn: "Sign In",
@@ -609,6 +613,10 @@ const translations = {
         searchMyChefs: "البحث في الطهاة المتابعين...",
         noFollowedChefsTitle: "لا يوجد طهاة متابعون بعد",
         followedChefsEmptyDesc: "تابع الطهاة المفضلين لديك لتراهم هنا!",
+        addPhoto: "إضافة صورة",
+        myPhoto: "صورتي",
+        myGallery: "معرضي",
+        add: "إضافة",
 
         // Admin Page
         adminDashboard: "لوحة تحكم المدير",

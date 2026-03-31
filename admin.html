@@ -124,6 +124,7 @@
                             <th data-i18n="birthday">Birthday</th>
                             <th data-i18n="role">Role</th>
                             <th data-i18n="premium">Premium</th>
+                            <th data-i18n="visibility">Visibility</th>
                             <th data-i18n="joined">Joined</th>
                             <th data-i18n="actions">Actions</th>
                         </tr>
@@ -216,6 +217,10 @@
                 <div class="form-group">
                     <label for="editPassword" data-i18n="newPasswordKeep">New Password (leave blank to keep)</label>
                     <input type="password" id="editPassword" placeholder="Minimum 4 characters" minlength="4">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="editIsPublic" style="width: auto;">
+                    <label for="editIsPublic" style="margin-bottom: 0;">Public Profile (Visible in Chefs tab)</label>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelEditUser"

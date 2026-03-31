@@ -32,7 +32,10 @@
     <!-- User Header -->
     <div class="user-header" id="userHeader">
         <div class="user-display">
-            <span class="user-avatar">👤</span>
+            <div class="user-avatar" id="headerAvatarWrapper">
+                <img id="headerUserPic" src="" alt="Profile" class="user-avatar-img">
+                <span id="headerDefaultIcon">👤</span>
+            </div>
             <span class="user-name" id="userName"></span>
         </div>
         <div class="header-nav-btns">
@@ -76,6 +79,11 @@
                 </label>
                 <input type="file" id="photoInput" accept="image/*" style="display: none;">
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Click image to upload photo (Max 2MB)</p>
+                
+                <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                     <input type="checkbox" id="syncToProfile" checked style="width: 18px; height: 18px; cursor: pointer;">
+                     <label for="syncToProfile" style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">Use as site-wide profile photo</label>
+                </div>
             </div>
 
             <div class="form-grid">
@@ -195,6 +203,57 @@
         if (currentUser) {
             document.getElementById('userName').textContent = currentUser.displayName;
         }
+
+        async function initHeader() {
+            const picEl = document.getElementById('headerUserPic');
+            const iconEl = document.getElementById('headerDefaultIcon');
+            const nameEl = document.getElementById('userName');
+
+            if (!currentUser) return;
+
+            // Try localStorage first for immediate results
+            const users = JSON.parse(localStorage.getItem('pastryUsers') || '{}');
+            const localUser = users[currentUser.username.toLowerCase()];
+            if (localUser) {
+                if (localUser.profilePicture && picEl && iconEl) {
+                    picEl.src = localUser.profilePicture;
+                    picEl.style.display = 'block';
+                    iconEl.style.display = 'none';
+                }
+                if (localUser.displayName && nameEl) {
+                    nameEl.textContent = localUser.displayName;
+                }
+            }
+
+            const authToken = sessionStorage.getItem('authToken');
+            if (authToken) {
+                try {
+                    const response = await fetch('/api/users/profile', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (response.ok) {
+                        const profile = await response.json();
+                        if (profile.profilePicture && picEl && iconEl) {
+                            picEl.src = profile.profilePicture;
+                            picEl.style.display = 'block';
+                            iconEl.style.display = 'none';
+                            
+                            // Also update local storage to keep in sync
+                            if (localUser) {
+                                localUser.profilePicture = profile.profilePicture;
+                                localStorage.setItem('pastryUsers', JSON.stringify(users));
+                            }
+                        }
+                        if (profile.displayName && nameEl) {
+                             nameEl.textContent = profile.displayName;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Failed to load profile for header:', err);
+                }
+            }
+        }
+        initHeader();
 
         // Track whether a real photo was uploaded
         let hasRealPhoto = false;
@@ -579,8 +638,33 @@
                 window.location.href = './cv-view.html';
             };
 
+            const syncToProfile = document.getElementById('syncToProfile')?.checked;
+
             if (authToken) {
                 try {
+                    // Sync to profile if needed
+                    if (syncToProfile && hasRealPhoto) {
+                        // Update backend
+                        await fetch('/api/users/profile', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + authToken
+                            },
+                            body: JSON.stringify({
+                                profilePicture: formData.photo
+                            })
+                        });
+
+                        // Update local storage
+                        const users = JSON.parse(localStorage.getItem('pastryUsers') || '{}');
+                        const localUser = users[currentUser.username.toLowerCase()];
+                        if (localUser) {
+                            localUser.profilePicture = formData.photo;
+                            localStorage.setItem('pastryUsers', JSON.stringify(users));
+                        }
+                    }
+
                     var response = await fetch('/api/cv', {
                         method: 'POST',
                         headers: {

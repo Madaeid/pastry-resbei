@@ -73,6 +73,8 @@ function getAllUsers() {
         birthday: users[key].birthday || 'N/A',
         isAdmin: users[key].isAdmin || false,
         profilePicture: users[key].profilePicture || null,
+        cvFile: users[key].cvFile || null,
+        isPublic: users[key].isPublic !== undefined ? users[key].isPublic : true,
         createdAt: users[key].createdAt
     }));
 }
@@ -172,6 +174,21 @@ async function updateUser(username, data) {
         user.profilePicture = data.profilePicture;
     }
 
+    // 5b. Handle CV File Update
+    if (data.cvFile) {
+        user.cvFile = data.cvFile;
+    }
+
+    // 5c. Handle Profile Visibility Update
+    if (data.isPublic !== undefined) {
+        user.isPublic = data.isPublic;
+    }
+
+    // 5d. Handle Gallery Update
+    if (data.gallery !== undefined) {
+        user.gallery = data.gallery;
+    }
+
     // 6. Handle Username Update (Renaming User)
     let newUsernameForSession = null;
     if (data.newUsername && data.newUsername.toLowerCase() !== username.toLowerCase()) {
@@ -227,7 +244,10 @@ async function updateUser(username, data) {
                 phone: data.phoneNumber,
                 password: data.password,
                 newUsername: data.newUsername,
-                profilePicture: data.profilePicture
+                profilePicture: data.profilePicture,
+                cvFile: data.cvFile,
+                isPublic: data.isPublic,
+                gallery: data.gallery
             };
 
             fetch(`${API_URL}/users/profile`, {
@@ -1031,13 +1051,13 @@ function initAuthPage() {
                     return;
                 }
 
-                                // Redirect admin to admin dashboard, others to home page
-                                if (result.isAdmin) {
-                                    window.location.href = './admin.html';
-                                } else {
-                                    window.location.href = './index.html#home';
-                                }
-                            }, 1000);
+                // Redirect admin to admin dashboard, others to home page
+                if (result.isAdmin) {
+                    window.location.href = './admin.html';
+                } else {
+                    window.location.href = './index.html#home';
+                }
+            }, 1000);
         } else {
             showMessage(result.error, 'error');
         }
@@ -1413,5 +1433,44 @@ function initAuthPage() {
     }
 }
 
+// Fetch profile from backend
+async function fetchUserProfile() {
+    const authToken = getAuthToken();
+    if (!authToken) return { success: false, error: 'No auth token' };
+
+    try {
+        const response = await fetch(`${API_URL}/users/profile`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Sync local storage with backend data
+            const users = getUsers();
+            const currentUser = getCurrentUser();
+            if (currentUser && users[currentUser.toLowerCase()]) {
+                const userKey = currentUser.toLowerCase();
+                users[userKey].gallery = data.gallery || [];
+                users[userKey].profilePicture = data.profilePicture;
+                users[userKey].displayName = data.displayName;
+                users[userKey].email = data.email;
+                users[userKey].phone = data.phone;
+                saveUsers(users);
+            }
+            
+            return { success: true, user: data };
+        }
+        return { success: false, error: 'Failed to fetch backend profile' };
+    } catch (err) {
+        console.error('Fetch profile error:', err);
+        return { success: false, error: err.message };
+    }
+}
+
 // Export functions for use in main.js and admin.js
-export { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser, getAuthToken };
+export { 
+    isLoggedIn, logout, getCurrentUser, isAdmin, 
+    getAllUsers, deleteUser, toggleAdminStatus, 
+    updateUser, getAuthToken, fetchUserProfile 
+};

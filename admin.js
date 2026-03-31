@@ -163,6 +163,11 @@ function loadUsers() {
                         ` : '<span class="admin-premium-label">(Admin)</span>'}
                     </div>
                 </td>
+                <td>
+                    <span class="visibility-tag ${user.isPublic !== false ? 'visibility-public' : 'visibility-private'}">
+                        ${user.isPublic !== false ? '🌍 Public' : '🔒 Private'}
+                    </span>
+                </td>
                 <td>${joinDate}</td>
                 <td>
                     <div class="action-buttons">
@@ -287,6 +292,7 @@ function handleEditUser(username) {
     document.getElementById('editDisplayName').value = user.displayName;
     document.getElementById('editEmail').value = user.email !== 'N/A' ? user.email : '';
     document.getElementById('editPassword').value = '';
+    document.getElementById('editIsPublic').checked = user.isPublic !== false;
 
     editUserModal.classList.add('active');
 }
@@ -317,7 +323,8 @@ async function saveEditedUser(e) {
     const updateData = {
         displayName,
         email,
-        password: password || undefined
+        password: password || undefined,
+        isPublic: document.getElementById('editIsPublic').checked
     };
 
     const result = await updateUser(username, updateData);
