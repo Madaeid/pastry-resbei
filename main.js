@@ -248,27 +248,80 @@ async function initApp() {
     const quickPostText = document.getElementById('quickPostText');
     const quickPostFooter = document.getElementById('quickPostFooter');
     const submitQuickPostBtn = document.getElementById('submitQuickPostBtn');
+    const addPhotoBtn = document.getElementById('addPhotoBtn');
+    const quickPostPhotoInput = document.getElementById('quickPostPhotoInput');
+    const quickPostPhotoPreview = document.getElementById('quickPostPhotoPreview');
+    const removePostPhotoBtn = document.getElementById('removePostPhotoBtn');
+    let quickPostPhoto = null;
 
     if (quickPostText && quickPostFooter && submitQuickPostBtn) {
-        quickPostText.addEventListener('input', () => {
+        const updateQuickPostUI = () => {
             const hasText = quickPostText.value.trim().length > 0;
-            quickPostFooter.style.display = hasText ? 'flex' : 'none';
+            const hasPhoto = !!quickPostPhoto;
+            quickPostFooter.style.display = (hasText || hasPhoto) ? 'flex' : 'none';
+        };
+
+        quickPostText.addEventListener('input', () => {
+            updateQuickPostUI();
             // Auto expand
             quickPostText.style.height = 'auto';
             quickPostText.style.height = (quickPostText.scrollHeight) + 'px';
         });
 
+        // Photo Handling
+        if (addPhotoBtn && quickPostPhotoInput) {
+            addPhotoBtn.onclick = (e) => {
+                e.preventDefault();
+                quickPostPhotoInput.click();
+            };
+
+            quickPostPhotoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Check size limit (max 1MB for base64 safety)
+                    if (file.size > 1024 * 1024) {
+                        showNotification('❌ Photo is too large (Max 1MB)', 'error');
+                        quickPostPhotoInput.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        quickPostPhoto = event.target.result;
+                        const previewImg = quickPostPhotoPreview.querySelector('img');
+                        if (previewImg) previewImg.src = quickPostPhoto;
+                        quickPostPhotoPreview.style.display = 'block';
+                        updateQuickPostUI();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+
+        if (removePostPhotoBtn) {
+            removePostPhotoBtn.onclick = (e) => {
+                e.preventDefault();
+                quickPostPhoto = null;
+                quickPostPhotoInput.value = '';
+                quickPostPhotoPreview.style.display = 'none';
+                updateQuickPostUI();
+            };
+        }
+
         submitQuickPostBtn.addEventListener('click', async () => {
             const text = quickPostText.value.trim();
-            if (!text) return;
+            if (!text && !quickPostPhoto) return;
 
             submitQuickPostBtn.disabled = true;
             submitQuickPostBtn.innerHTML = '<span class="loading-spinner"></span>';
 
-            const success = await submitQuickTextPost(text);
-            
+            const success = await submitQuickTextPost(text, quickPostPhoto);
+
             if (success) {
                 quickPostText.value = '';
+                quickPostPhoto = null;
+                quickPostPhotoInput.value = '';
+                quickPostPhotoPreview.style.display = 'none';
                 quickPostFooter.style.display = 'none';
                 quickPostText.style.height = '45px';
                 await loadHomeFeed();
@@ -279,7 +332,7 @@ async function initApp() {
         });
     }
 
-    async function submitQuickTextPost(text) {
+    async function submitQuickTextPost(text, photo = null) {
         const currentUser = getCurrentUser();
         const token = sessionStorage.getItem('authToken');
 
@@ -290,6 +343,7 @@ async function initApp() {
 
         // Create a truncated name for the recipe
         let name = text.split('\n')[0].substring(0, 40);
+        if (!name && photo) name = "Shared a photo";
         if (text.length > 40) name += '...';
 
         const recipeData = {
@@ -299,9 +353,9 @@ async function initApp() {
             prepTime: 0,
             cookTime: 0,
             ingredients: "N/A",
-            instructions: text,
+            instructions: text || "Shared a photo",
             notes: "Shared via Quick Post",
-            photo: null,
+            photo: photo,
             visibility: "public",
             createdAt: new Date().toISOString()
         };
@@ -1066,17 +1120,24 @@ async function loadHomeFeed() {
             homeEmpty.classList.add('show');
             homeGrid.style.display = 'none';
         } else {
-            homeEmpty.classList.remove('show');
-            homeGrid.style.display = 'grid';
+            // Filter to show only posts (Quick Updates)
+            const posts = publicRecipes.filter(r =>
+                r.notes === "Shared via Quick Post" ||
+                r.category === "Other"
+            );
 
-            publicRecipes.forEach(recipe => {
-                // If there's no author provided by backend, just fail softly
-                recipe.authorName = recipe.author?.name || 'Chef';
-                // Need to decide whether createRecipeCard supports public view seamlessly or we need createPublicRecipeCard
-                // Based on chefsGrid it seems there's top-level recipe cards
-                const card = createRecipeCard(recipe, true);
-                homeGrid.appendChild(card);
-            });
+            if (posts.length === 0) {
+                homeEmpty.classList.add('show');
+                homeGrid.style.display = 'none';
+            } else {
+                homeEmpty.classList.remove('show');
+                homeGrid.style.display = 'grid';
+
+                posts.forEach(post => {
+                    const card = createPostCard(post);
+                    homeGrid.appendChild(card);
+                });
+            }
         }
     } catch (error) {
         console.error('Error loading home feed:', error);
@@ -1517,6 +1578,78 @@ async function showChefRecipesModal(chef) {
     }
 }
 
+// Create Post Card (Text-only social post)
+function createPostCard(post) {
+    const card = document.createElement('div');
+    card.className = 'post-card';
+
+    // Author handling
+    let authorName = post.author?.name || post.authorName || 'Chef';
+    let authorPic = post.author?.pic || 'assets/default-avatar.png';
+    let isPremium = post.author?.isPremium || post.isPremium || false;
+
+    const timeAgo = formatTimeAgo(post.dateAdded || post.createdAt);
+
+    // Image logic for post
+    let photoHtml = '';
+    if (post.photo) {
+        photoHtml = `
+            <div class="post-media" style="margin-top: 15px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <img src="${post.photo}" alt="Post Photo" style="width: 100%; display: block; max-height: 500px; object-fit: cover;">
+            </div>
+        `;
+    }
+
+    card.innerHTML = `
+        <div class="post-header">
+            <div class="post-author-info">
+                <div class="author-avatar-med">
+                    <img src="${authorPic}" alt="${authorName}" onerror="this.src='https://ui-avatars.com/api/?name=${authorName}&background=random'">
+                </div>
+                <div class="author-details">
+                    <div class="author-name-row">
+                        <span class="author-display-name">${authorName}</span>
+                        ${isPremium ? '<span class="premium-star" title="Premium Chef">💎</span>' : ''}
+                    </div>
+                    <span class="post-time">${timeAgo}</span>
+                </div>
+            </div>
+            <div class="post-menu-btn">⋮</div>
+        </div>
+        <div class="post-content">
+            <p>${post.instructions}</p>
+            ${photoHtml}
+        </div>
+        <div class="post-footer">
+            <div class="post-stats">
+                <span class="post-stat">❤️ 0</span>
+                <span class="post-stat">💬 0</span>
+                <span class="post-stat">🔁 0</span>
+            </div>
+            <div class="post-actions">
+                <button class="post-btn-action">Like</button>
+                <button class="post-btn-action">Comment</button>
+                <button class="post-btn-action">Share</button>
+            </div>
+        </div>
+    `;
+
+    return card;
+}
+
+function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+
+    return date.toLocaleDateString();
+}
+
 // Create Recipe Card (User's)
 function createRecipeCard(recipe, isPublicFeed = false) {
     const card = document.createElement('div');
@@ -1548,7 +1681,7 @@ function createRecipeCard(recipe, isPublicFeed = false) {
             </span>
         </div>`;
     }
-    
+
     // Author handling for public feed
     let authorName = 'Chef';
     if (recipe.author?.name) {

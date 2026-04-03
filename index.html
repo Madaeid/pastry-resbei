@@ -189,27 +189,45 @@
     <!-- Home Tab Content -->
     <div id="home" class="tab-content active">
         <div class="recipes-header">
-            <h2 style="margin: 0; font-size: 1.5rem;" data-i18n="communityRecipes">Community Recipes</h2>
+            <h2 style="margin: 0; font-size: 1.5rem;" data-i18n="communityFeed">Community Feed</h2>
         </div>
 
         <!-- Quick Post Section (Facebook style) -->
         <div class="quick-post-card">
-            <div class="quick-post-header">
-                <div class="user-avatar-small">
+            <div class="quick-post-header" style="align-items: flex-start;">
+                <div class="user-avatar-small" style="margin-top: 5px;">
                     <img id="postUserAvatar" src="" alt="👤">
                 </div>
-                <div class="quick-post-input-wrapper">
-                    <textarea id="quickPostText" class="quick-post-textarea" placeholder="What are you baking today?" data-i18n="whatsOnYourMind"></textarea>
+                <div class="quick-post-input-wrapper" style="flex: 1;">
+                    <textarea id="quickPostText" class="quick-post-textarea" placeholder="What are you baking today?"
+                        data-i18n="whatsOnYourMind"></textarea>
+                    
+                    <!-- Photo Preview Area -->
+                    <div id="quickPostPhotoPreview" class="quick-post-photo-preview" style="display: none; position: relative; margin-top: 10px;">
+                        <img src="" alt="Preview">
+                        <button id="removePostPhotoBtn" class="remove-photo-btn" title="Remove Photo">&times;</button>
+                    </div>
+
+                    <!-- Extra Actions Bar (Integrated) -->
+                    <div class="quick-post-actions" style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="addPhotoBtn" class="btn-extra-action" style="background: rgba(255, 107, 138, 0.15); border-color: rgba(255, 107, 138, 0.4); color: white;">
+                            <span>📷</span> <span class="action-label" data-i18n="photo">Photo</span>
+                        </button>
+                        <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
+                    </div>
                 </div>
             </div>
-            <div class="quick-post-footer" id="quickPostFooter" style="display: none; justify-content: flex-end; margin-top: 10px;">
-                <button id="submitQuickPostBtn" class="btn btn-primary btn-sm" style="padding: 6px 20px; border-radius: 20px;">
+
+            <div class="quick-post-footer" id="quickPostFooter"
+                style="display: none; justify-content: flex-end; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+                <button id="submitQuickPostBtn" class="btn btn-primary btn-sm"
+                    style="padding: 6px 20px; border-radius: 20px;">
                     <span data-i18n="postBtn">Post</span>
                 </button>
             </div>
         </div>
 
-        <div id="homeGrid" class="recipes-grid">
+        <div id="homeGrid" class="recipes-grid communities-grid">
             <!-- Public recipes will be dynamically inserted here -->
         </div>
 

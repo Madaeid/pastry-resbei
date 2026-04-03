@@ -24,6 +24,7 @@ const translations = {
         premiumBadge: "💎 Premium",
         whatsOnYourMind: "What's on your mind?",
         postBtn: "Post",
+        communityFeed: "Community Feed",
         chefsTab: "Chefs",
         myChefsTab: "My Chefs",
         searchMyChefs: "Search followed chefs...",
@@ -393,6 +394,7 @@ const translations = {
         premiumBadge: "💎 مميز",
         whatsOnYourMind: "بماذا تفكر؟",
         postBtn: "نشر",
+        communityFeed: "خلاصة المجتمع",
 
         // Auth Page
         signIn: "تسجيل الدخول",
