@@ -9,9 +9,10 @@ import { initLanguage, t, getCurrentLanguage } from './language.js';
 const FREE_RECIPE_LIMIT = 10;
 
 // DOM Elements - will be initialized after DOM is ready
-let tabs, tabContents, form, photoPreview, photoInput, recipesGrid, emptyState, recipeCount;
+let tabs, tabContents, recipesGrid, emptyState, recipeCount;
 let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
 let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn;
+const API_URL = 'http://localhost:3001/api';
 let editProfilePreview, editProfilePhoto;
 let dayPickerModal, closeDayPickerModalBtn;
 let themeToggle;
@@ -33,9 +34,6 @@ async function initApp() {
     // Initialize DOM Elements
     tabs = document.querySelectorAll('.nav-btn');
     tabContents = document.querySelectorAll('.tab-content');
-    form = document.getElementById('addRecipeForm');
-    photoPreview = document.getElementById('photoPreview');
-    photoInput = document.getElementById('recipePhoto');
     recipesGrid = document.getElementById('recipesGrid');
     emptyState = document.getElementById('emptyState');
     recipeCount = document.getElementById('recipeCount');
@@ -62,6 +60,129 @@ async function initApp() {
     myChefsGrid = document.getElementById('myChefsGrid');
     myChefsEmptyState = document.getElementById('myChefsEmptyState');
     myChefsSearch = document.getElementById('myChefsSearch');
+
+    // Add Recipe Modal Elements
+    const sidebarAddRecipeBtn = document.getElementById('sidebarAddRecipeBtn');
+    const addRecipeModal = document.getElementById('addRecipeModal');
+    const closeAddRecipeModal = document.getElementById('closeAddRecipeModal');
+    const addRecipeForm = document.getElementById('addRecipeForm');
+    const recipeImageUpload = document.getElementById('recipeImageUpload');
+    const addRecipePhotoInput = document.getElementById('addRecipePhotoInput');
+    const addRecipePreview = document.getElementById('addRecipePreview');
+    const addUploadPlaceholder = document.getElementById('addUploadPlaceholder');
+    let addRecipePhoto = null;
+
+    if (addRecipeModal) {
+        if (sidebarAddRecipeBtn) {
+            sidebarAddRecipeBtn.addEventListener('click', () => {
+                addRecipeModal.style.display = 'flex';
+            });
+        }
+
+        const myRecipesAddBtn = document.getElementById('myRecipesAddBtn');
+        if (myRecipesAddBtn && addRecipeModal) {
+            myRecipesAddBtn.addEventListener('click', () => {
+                addRecipeModal.style.display = 'flex';
+            });
+        }
+
+        if (closeAddRecipeModal) {
+            closeAddRecipeModal.addEventListener('click', () => {
+                addRecipeModal.style.display = 'none';
+            });
+        }
+
+        // Form Photo Upload Preview
+        if (recipeImageUpload && addRecipePhotoInput) {
+            recipeImageUpload.onclick = () => addRecipePhotoInput.click();
+            addRecipePhotoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        addRecipePhoto = event.target.result;
+                        addRecipePreview.src = addRecipePhoto;
+                        addRecipePreview.style.display = 'block';
+                        addUploadPlaceholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+
+        // Difficulty Selection
+        const diffBtns = addRecipeModal.querySelectorAll('.diff-btn');
+        const diffInput = document.getElementById('addRecipeDifficulty');
+        diffBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                diffBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (diffInput) diffInput.value = btn.getAttribute('data-value');
+            });
+        });
+
+        // Form Submission
+        if (addRecipeForm) {
+            addRecipeForm.onsubmit = async (e) => {
+                e.preventDefault();
+
+                const recipeData = {
+                    name: document.getElementById('addRecipeName').value.trim(),
+                    category: document.getElementById('addRecipeCategory').value,
+                    difficulty: diffInput ? diffInput.value : 'Medium',
+                    prepTime: parseInt(document.getElementById('addPrepTime').value) || 0,
+                    cookTime: parseInt(document.getElementById('addCookTime').value) || 0,
+                    ingredients: document.getElementById('addRecipeIngredients').value.trim(),
+                    instructions: document.getElementById('addRecipeInstructions').value.trim(),
+                    notes: document.getElementById('addRecipeNotes').value.trim(),
+                    photo: addRecipePhoto,
+                    createdAt: new Date().toISOString()
+                };
+
+                const token = sessionStorage.getItem('authToken');
+                if (!token) {
+                    showNotification('❌ Session expired. Please log in again.', 'error');
+                    window.location.href = 'auth.html';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/recipes`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(recipeData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        if (data.requiresPremium) {
+                            showNotification('❌ Free tier limit reached! Upgrade to premium.', 'error');
+                            setTimeout(() => window.location.href = 'payment.html', 2000);
+                            return;
+                        }
+
+                        showNotification('✅ Recipe added successfully! 🧁', 'success');
+                        addRecipeModal.style.display = 'none';
+                        addRecipeForm.reset();
+                        addRecipePreview.style.display = 'none';
+                        addUploadPlaceholder.style.display = 'block';
+                        addRecipePhoto = null;
+
+                        await loadRecipes();
+                    } else {
+                        showNotification(data.error || '❌ Failed to save recipe', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Connection error. Please try again.', 'error');
+                }
+            };
+        }
+    }
 
     // CV Upload Elements
     const editCvUploadBtn = document.getElementById('editCvUploadBtn');
@@ -112,6 +233,104 @@ async function initApp() {
     // Initialize app
     checkAuth();
     loadRecipes();
+    loadHomeFeed();
+
+    // Initialize Quick Post User Avatar
+    const currentUser = getCurrentUser();
+    const users = getAllUsers();
+    const user = users.find(u => u.username === currentUser);
+    const postUserAvatar = document.getElementById('postUserAvatar');
+    if (postUserAvatar && user && user.profilePicture) {
+        postUserAvatar.src = user.profilePicture;
+    }
+
+    // Quick Post Logic
+    const quickPostText = document.getElementById('quickPostText');
+    const quickPostFooter = document.getElementById('quickPostFooter');
+    const submitQuickPostBtn = document.getElementById('submitQuickPostBtn');
+
+    if (quickPostText && quickPostFooter && submitQuickPostBtn) {
+        quickPostText.addEventListener('input', () => {
+            const hasText = quickPostText.value.trim().length > 0;
+            quickPostFooter.style.display = hasText ? 'flex' : 'none';
+            // Auto expand
+            quickPostText.style.height = 'auto';
+            quickPostText.style.height = (quickPostText.scrollHeight) + 'px';
+        });
+
+        submitQuickPostBtn.addEventListener('click', async () => {
+            const text = quickPostText.value.trim();
+            if (!text) return;
+
+            submitQuickPostBtn.disabled = true;
+            submitQuickPostBtn.innerHTML = '<span class="loading-spinner"></span>';
+
+            const success = await submitQuickTextPost(text);
+            
+            if (success) {
+                quickPostText.value = '';
+                quickPostFooter.style.display = 'none';
+                quickPostText.style.height = '45px';
+                await loadHomeFeed();
+            }
+
+            submitQuickPostBtn.disabled = false;
+            submitQuickPostBtn.innerHTML = `<span data-i18n="postBtn">${t('postBtn')}</span>`;
+        });
+    }
+
+    async function submitQuickTextPost(text) {
+        const currentUser = getCurrentUser();
+        const token = sessionStorage.getItem('authToken');
+
+        if (!token) {
+            showNotification('❌ Please log in to post.', 'error');
+            return false;
+        }
+
+        // Create a truncated name for the recipe
+        let name = text.split('\n')[0].substring(0, 40);
+        if (text.length > 40) name += '...';
+
+        const recipeData = {
+            name: name || "Quick Update",
+            category: "Other",
+            difficulty: "Medium",
+            prepTime: 0,
+            cookTime: 0,
+            ingredients: "N/A",
+            instructions: text,
+            notes: "Shared via Quick Post",
+            photo: null,
+            visibility: "public",
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/recipes`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(recipeData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showNotification('✅ Post shared to community! 🧁', 'success');
+                return true;
+            } else {
+                showNotification(data.error || '❌ Failed to share post', 'error');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error posting:', error);
+            showNotification('❌ Connection error.', 'error');
+            return false;
+        }
+    }
 
     // Handle initial tab from hash or default to home
     handleHashRouting();
@@ -122,7 +341,7 @@ async function initApp() {
  */
 function handleHashRouting() {
     const hash = window.location.hash.substring(1);
-    const validTabs = ['chefs', 'my-chefs', 'add-recipe', 'my-recipes'];
+    const validTabs = ['home', 'chefs', 'my-chefs', 'add-recipe', 'my-recipes'];
 
     // If we have a hash and it's a valid tab, switch to it
     if (hash && validTabs.includes(hash)) {
@@ -141,6 +360,8 @@ function handleHashRouting() {
         loadChefs();
     } else if (activeTab && activeTab.id === 'my-chefs') {
         loadMyChefs();
+    } else if (activeTab && activeTab.id === 'home') {
+        loadHomeFeed();
     }
 }
 
@@ -222,70 +443,22 @@ function setupEventListeners() {
                 }
             });
 
-            // Refresh recipes when switching to My Recipes tab
+            // Refresh recipes when switching to tabs
             if (targetTab === 'my-recipes') {
                 loadRecipes();
             } else if (targetTab === 'chefs') {
                 loadChefs();
             } else if (targetTab === 'my-chefs') {
                 loadMyChefs();
+            } else if (targetTab === 'home') {
+                loadHomeFeed();
             }
 
 
         });
     });
 
-    // Photo Upload
-    if (photoPreview && photoInput) {
-        photoPreview.addEventListener('click', () => photoInput.click());
 
-        photoInput.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Check file size (max 200KB)
-                const maxSize = 200 * 1024; // 200KB in bytes
-                if (file.size > maxSize) {
-                    showNotification('❌ Image is too large! Please choose an image under 200KB.', 'error');
-                    photoInput.value = ''; // Clear the input
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const existingImg = photoPreview.querySelector('img');
-                    if (existingImg) existingImg.remove();
-
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.alt = 'Recipe Photo';
-                    photoPreview.appendChild(img);
-                    photoPreview.classList.add('has-image');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    // Form Submission
-    if (form) {
-        form.addEventListener('submit', handleFormSubmit);
-
-        // Form validation feedback
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            input.addEventListener('blur', function () {
-                if (this.hasAttribute('required') && !this.value) {
-                    this.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-                } else {
-                    this.style.borderColor = '';
-                }
-            });
-
-            input.addEventListener('input', function () {
-                this.style.borderColor = '';
-            });
-        });
-    }
 
     // Close Modal
     if (closeModal && modal) {
@@ -305,14 +478,7 @@ function setupEventListeners() {
         clearAllBtn.addEventListener('click', handleClearAll);
     }
 
-    // Quick Add from My Recipes
-    const myRecipesAddBtn = document.getElementById('myRecipesAddBtn');
-    if (myRecipesAddBtn) {
-        myRecipesAddBtn.addEventListener('click', () => {
-            const addTabBtn = document.querySelector('.nav-btn[data-tab="add-recipe"]');
-            if (addTabBtn) addTabBtn.click();
-        });
-    }
+
 
 
 
@@ -342,6 +508,13 @@ function setupEventListeners() {
 
     if (modalLogoutBtn) {
         modalLogoutBtn.addEventListener('click', logout);
+    }
+
+    const addRecipeModal = document.getElementById('addRecipeModal');
+    if (addRecipeModal) {
+        addRecipeModal.addEventListener('click', (e) => {
+            if (e.target === addRecipeModal) addRecipeModal.classList.remove('show');
+        });
     }
 
     if (profileLogoutBtn) {
@@ -385,6 +558,7 @@ function setupEventListeners() {
     setupDayPickerModal();
 
     // Premium Badge Click
+    const premiumBadge = document.getElementById('premiumBadge');
     if (premiumBadge) {
         premiumBadge.style.cursor = 'pointer';
         premiumBadge.addEventListener('click', (e) => {
@@ -393,27 +567,8 @@ function setupEventListeners() {
         });
     }
 
-    // Visibility Checkbox Logic
-    // Visibility Checkbox Logic
-    const isPrivateCheckbox = document.getElementById('isPrivate');
-    const privacyLabel = document.getElementById('privacyLabel');
-    const premiumLabel = document.getElementById('premiumLabel');
 
-    if (isPrivateCheckbox) {
-        // Initial state check
-        if (privacyLabel) {
-            privacyLabel.textContent = isPrivateCheckbox.checked ? 'Private 🔒' : 'Public 🌍';
-        }
 
-        isPrivateCheckbox.addEventListener('change', function () {
-            // Update label based on state
-            if (privacyLabel) {
-                privacyLabel.textContent = this.checked ? 'Private 🔒' : 'Public 🌍';
-            }
-        });
-    }
-
-    // Header Add Photo Button
     // Note: These now navigate to profile-photo.html via href
 }
 
@@ -816,56 +971,7 @@ function checkAuth() {
     }
 }
 
-// Form Submission Handler
-function handleFormSubmit(e) {
-    e.preventDefault();
 
-    const recipe = {
-        id: Date.now(),
-        name: document.getElementById('recipeName').value,
-        category: document.getElementById('category').value,
-        prepTime: parseInt(document.getElementById('prepTime').value),
-        cookTime: parseInt(document.getElementById('cookTime').value),
-        servings: parseInt(document.getElementById('servings').value),
-        difficulty: document.getElementById('difficulty').value,
-        ingredients: document.getElementById('ingredients').value,
-        instructions: document.getElementById('instructions').value,
-        ingredients: document.getElementById('ingredients').value,
-        instructions: document.getElementById('instructions').value,
-        notes: document.getElementById('notes').value,
-        visibility: document.getElementById('isPrivate').checked ? 'private' : 'public',
-        dateAdded: new Date().toISOString(),
-        photo: null
-    };
-
-    // Get photo as base64
-    const photoFile = photoInput.files[0];
-    if (photoFile) {
-        // Check file size (limit to 200KB)
-        if (photoFile.size > 200 * 1024) {
-            showNotification('❌ Image is too large! Please choose an image under 200KB.', 'error');
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            recipe.photo = e.target.result;
-            saveRecipe(recipe);
-        };
-        reader.readAsDataURL(photoFile);
-    } else {
-        // Prepare recipe object for saving
-        // If editing, preserve existing photo if no new one selected
-        if (editingRecipeId) {
-            const recipes = getUserRecipes();
-            const existingRecipe = recipes.find(r => r.id === editingRecipeId);
-            if (existingRecipe) {
-                recipe.photo = existingRecipe.photo;
-            }
-        }
-        saveRecipe(recipe);
-    }
-}
 
 // Filter recipes by search term
 function filterRecipes(searchTerm) {
@@ -899,11 +1005,11 @@ async function saveRecipe(recipe) {
     }
 
     try {
-        let url = 'http://localhost:3001/api/recipes';
+        let url = `${API_URL}/recipes`;
         let method = 'POST';
 
         if (editingRecipeId) {
-            url = `http://localhost:3001/api/recipes/${editingRecipeId}`;
+            url = `${API_URL}/recipes/${editingRecipeId}`;
             method = 'PUT';
         }
 
@@ -931,27 +1037,52 @@ async function saveRecipe(recipe) {
 
         editingRecipeId = null;
 
-        // Reset form
-        form.reset();
-        photoPreview.classList.remove('has-image');
-        const img = photoPreview.querySelector('img');
-        if (img) img.remove();
-
-        // Reset button text
-        const submitBtn = form.querySelector('button[type="submit"]');
-        submitBtn.innerHTML = '<span class="btn-icon">✨</span> Add Recipe';
-
         // Reload recipes
         await loadRecipes();
-
-        // Switch to My Recipes tab
-        setTimeout(() => {
-            document.querySelector('.nav-btn[data-tab="my-recipes"]').click();
-        }, 500);
 
     } catch (error) {
         console.error('Error saving recipe:', error);
         showNotification(error.message || '❌ Error saving recipe.', 'error');
+    }
+}
+
+// Load Home Feed (Public Recipes)
+async function loadHomeFeed() {
+    const homeGrid = document.getElementById('homeGrid');
+    const homeEmpty = document.getElementById('homeEmptyState');
+    if (!homeGrid || !homeEmpty) return;
+
+    homeGrid.innerHTML = '<div class="loading">Loading community recipes...</div>';
+
+    try {
+        const response = await fetch(`${API_URL}/recipes/public`);
+        if (!response.ok) throw new Error('Failed to load home feed');
+
+        const result = await response.json();
+        const publicRecipes = Array.isArray(result) ? result : [];
+
+        homeGrid.innerHTML = '';
+        if (publicRecipes.length === 0) {
+            homeEmpty.classList.add('show');
+            homeGrid.style.display = 'none';
+        } else {
+            homeEmpty.classList.remove('show');
+            homeGrid.style.display = 'grid';
+
+            publicRecipes.forEach(recipe => {
+                // If there's no author provided by backend, just fail softly
+                recipe.authorName = recipe.author?.name || 'Chef';
+                // Need to decide whether createRecipeCard supports public view seamlessly or we need createPublicRecipeCard
+                // Based on chefsGrid it seems there's top-level recipe cards
+                const card = createRecipeCard(recipe, true);
+                homeGrid.appendChild(card);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading home feed:', error);
+        homeGrid.innerHTML = '';
+        homeEmpty.classList.add('show');
+        homeGrid.style.display = 'none';
     }
 }
 
@@ -961,13 +1092,14 @@ async function loadRecipes() {
 
     try {
         const token = sessionStorage.getItem('authToken');
-        const response = await fetch('http://localhost:3001/api/recipes', {
+        const response = await fetch(`${API_URL}/recipes`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (!response.ok) throw new Error('Failed to load recipes');
 
-        currentUserRecipes = await response.json();
+        const result = await response.json();
+        currentUserRecipes = Array.isArray(result) ? result : [];
         renderRecipes(currentUserRecipes);
 
     } catch (error) {
@@ -1019,11 +1151,12 @@ async function loadChefs() {
     try {
         grid.innerHTML = '<div class="loading">Loading chefs...</div>';
 
-        // Fetch all users from real database
-        const response = await fetch('http://localhost:3001/api/users/public');
+        const response = await fetch(`${API_URL}/users/public`);
         let chefs = response.ok ? await response.json() : [];
 
-        // Extra filtering (already done on server but client-side for redundancy)
+        if (!Array.isArray(chefs)) chefs = [];
+
+        // Filter out admins
         chefs = chefs.filter(c => c.username !== 'admin' && c.isPublic !== false);
 
         // Search logic
@@ -1035,21 +1168,20 @@ async function loadChefs() {
             );
         }
 
-        grid.innerHTML = '';
-
         if (chefs.length === 0) {
-            empty.style.display = 'block';
+            empty.classList.add('show');
             grid.style.display = 'none';
+            empty.style.display = 'block';
         } else {
+            empty.classList.remove('show');
             empty.style.display = 'none';
             grid.style.display = 'grid';
+            grid.innerHTML = '';
 
-            // Get all public recipes to count them per author
-            const token = sessionStorage.getItem('authToken');
-            const pubResponse = await fetch('http://localhost:3001/api/recipes/public', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const publicRecipes = pubResponse.ok ? await pubResponse.json() : [];
+            // Fetch public recipes counts
+            const pubResponse = await fetch(`${API_URL}/recipes/public`);
+            const publicRecipesResult = pubResponse.ok ? await pubResponse.json() : [];
+            const publicRecipes = Array.isArray(publicRecipesResult) ? publicRecipesResult : [];
 
             chefs.forEach(chef => {
                 // Count this chef's public recipes
@@ -1386,7 +1518,7 @@ async function showChefRecipesModal(chef) {
 }
 
 // Create Recipe Card (User's)
-function createRecipeCard(recipe) {
+function createRecipeCard(recipe, isPublicFeed = false) {
     const card = document.createElement('div');
     // Use public card base style
     card.className = 'recipe-card public-recipe-card';
@@ -1403,11 +1535,9 @@ function createRecipeCard(recipe) {
         photoDisplay = `<div class="no-photo" style="display:flex; align-items:center; justify-content:center; height:100%; font-size:4rem; background:linear-gradient(135deg, #eee 0%, #ddd 100%);">${categoryEmoji}</div>`;
     }
 
-    card.innerHTML = `
-        <div class="recipe-card-image">
-            ${photoDisplay}
-        </div>
-
+    let toggleHtml = '';
+    if (!isPublicFeed) {
+        toggleHtml = `
         <div class="recipe-toggle-container">
             <label class="switch">
                 <input type="checkbox" class="recipe-privacy-toggle" data-id="${recipe.id}" ${recipe.visibility === 'private' ? 'checked' : ''}>
@@ -1416,13 +1546,31 @@ function createRecipeCard(recipe) {
             <span class="toggle-status-label" style="color: white; font-size: 0.8rem; font-weight: bold; margin-left: 5px; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">
                 ${recipe.visibility === 'private' ? 'Private 🔒' : 'Public 🌍'}
             </span>
+        </div>`;
+    }
+    
+    // Author handling for public feed
+    let authorName = 'Chef';
+    if (recipe.author?.name) {
+        authorName = recipe.author.name;
+    } else if (recipe.authorName) {
+        authorName = recipe.authorName;
+    }
+
+    const authorHtml = isPublicFeed ? `<p class="author-name" style="font-size: 0.8rem; color: #ccc; margin: 0 0 5px 0;">By: ${authorName}</p>` : '';
+
+    card.innerHTML = `
+        <div class="recipe-card-image">
+            ${photoDisplay}
         </div>
+
+        ${toggleHtml}
 
         <div class="recipe-category-tag" style="left: 15px; right: auto;">${recipe.category}</div>
 
         <div class="public-card-overlay">
             <h3 class="recipe-title">${recipe.name}</h3>
-            
+            ${authorHtml}
             <div class="recipe-meta">
                 <span>⏱️ ${totalTime} min</span>
                 <span>👥 ${recipe.servings}</span>
@@ -1432,9 +1580,9 @@ function createRecipeCard(recipe) {
             <div class="overlay-actions">
                 <button class="btn-overlay-action" data-action="view" title="View Recipe">👁️</button>
                 <button class="btn-overlay-action" data-action="menu" title="Add to Menu">📅</button>
+                <button class="btn-overlay-action" data-action="share" title="Share Recipe">🔗</button>
                 <button class="btn-overlay-action" data-action="pdf" title="Save PDF">📄</button>
-                <button class="btn-overlay-action" data-action="edit" title="Edit Recipe">✏️</button>
-                <button class="btn-overlay-action btn-delete" data-action="delete" title="Delete Recipe">🗑️</button>
+                ${!isPublicFeed ? `<button class="btn-overlay-action btn-delete" data-action="delete" title="Delete Recipe">🗑️</button>` : ''}
             </div>
         </div>
     `;
@@ -1443,7 +1591,7 @@ function createRecipeCard(recipe) {
     card.querySelector('[data-action="view"]').addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        viewRecipe(recipe.id);
+        viewRecipe(recipe, isPublicFeed);
     });
     card.querySelector('[data-action="menu"]').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1453,130 +1601,80 @@ function createRecipeCard(recipe) {
         e.stopPropagation(); // Prevent card click if any
         saveRecipeAsPdf(recipe);
     });
-    card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+    card.querySelector('[data-action="share"]').addEventListener('click', (e) => {
         e.stopPropagation();
-        deleteRecipe(recipe.id);
-    });
-    card.querySelector('[data-action="edit"]').addEventListener('click', (e) => {
-        e.stopPropagation();
-        editRecipe(recipe.id);
+        handleShareRecipe(recipe);
     });
 
-    // Checkbox click event (Toggle Privacy)
-    const privacyToggle = card.querySelector('.recipe-privacy-toggle');
-    const statusLabel = card.querySelector('.toggle-status-label');
+    if (!isPublicFeed) {
+        card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteRecipe(recipe.id);
+        });
 
-    privacyToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
+        // Checkbox click event (Toggle Privacy)
+        const privacyToggle = card.querySelector('.recipe-privacy-toggle');
+        const statusLabel = card.querySelector('.toggle-status-label');
 
-    privacyToggle.addEventListener('change', async (e) => {
-        e.stopPropagation();
+        privacyToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
 
-        // Premium check
-        if (e.target.checked && !isPremium()) {
-            e.target.checked = false; // Revert
-            showPremiumUpgradeModal('Private recipes are a premium feature. Upgrade to keep your secret family recipes safe! 🤫');
-            return;
-        }
+        privacyToggle.addEventListener('change', async (e) => {
+            e.stopPropagation();
 
-        const newVisibility = e.target.checked ? 'private' : 'public';
-
-        // Optimistic UI Update
-        statusLabel.textContent = newVisibility === 'private' ? 'Private 🔒' : 'Public 🌍';
-
-        // Call Update API
-        try {
-            const token = sessionStorage.getItem('authToken');
-            const response = await fetch(`http://localhost:3001/api/recipes/${recipe.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    visibility: newVisibility,
-                    name: recipe.name // Ensure name is sent as required by some implementations
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to update');
+            // Premium check
+            if (e.target.checked && !isPremium()) {
+                e.target.checked = false; // Revert
+                showPremiumUpgradeModal('Private recipes are a premium feature. Upgrade to keep your secret family recipes safe! 🤫');
+                return;
             }
 
-            // Update local model in memory
-            recipe.visibility = newVisibility;
-            const idx = currentUserRecipes.findIndex(r => r.id === recipe.id);
-            if (idx !== -1) currentUserRecipes[idx].visibility = newVisibility;
+            const newVisibility = e.target.checked ? 'private' : 'public';
 
-            showNotification(newVisibility === 'private' ? '🔒 Recipe is now Private' : '🌍 Recipe is now Public');
+            // Optimistic UI Update
+            statusLabel.textContent = newVisibility === 'private' ? 'Private 🔒' : 'Public 🌍';
 
-        } catch (err) {
-            console.error('Error updating privacy:', err);
-            // Revert UI on failure
-            e.target.checked = !e.target.checked;
-            statusLabel.textContent = !e.target.checked ? 'Private 🔒' : 'Public 🌍';
-            showNotification('❌ Error updating privacy', 'error');
-        }
-    });
+            // Call Update API
+            try {
+                const token = sessionStorage.getItem('authToken');
+                const response = await fetch(`${API_URL}/recipes/${recipe.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        visibility: newVisibility,
+                        name: recipe.name // Ensure name is sent as required by some implementations
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update');
+                }
+
+                // Update local model in memory
+                recipe.visibility = newVisibility;
+                const idx = currentUserRecipes.findIndex(r => r.id === recipe.id);
+                if (idx !== -1) currentUserRecipes[idx].visibility = newVisibility;
+
+                showNotification(newVisibility === 'private' ? '🔒 Recipe is now Private' : '🌍 Recipe is now Public');
+
+            } catch (err) {
+                console.error('Error updating privacy:', err);
+                // Revert UI on failure
+                e.target.checked = !e.target.checked;
+                statusLabel.textContent = !e.target.checked ? 'Private 🔒' : 'Public 🌍';
+                showNotification('❌ Error updating privacy', 'error');
+            }
+        });
+    }
 
     return card;
 }
 
-// Edit Recipe
-function editRecipe(id) {
-    const recipe = currentUserRecipes.find(r => r.id === id);
-    if (!recipe) return;
 
-    editingRecipeId = id;
-
-    // Populate form fields
-    document.getElementById('recipeName').value = recipe.name;
-    document.getElementById('category').value = recipe.category;
-    document.getElementById('prepTime').value = recipe.prepTime;
-    document.getElementById('cookTime').value = recipe.cookTime;
-    document.getElementById('servings').value = recipe.servings;
-    document.getElementById('difficulty').value = recipe.difficulty;
-    document.getElementById('ingredients').value = recipe.ingredients;
-    document.getElementById('instructions').value = recipe.instructions;
-    document.getElementById('notes').value = recipe.notes || '';
-
-    // Set visibility
-    const isPrivate = recipe.visibility === 'private';
-    const isPrivateCheckbox = document.getElementById('isPrivate');
-    const privacyLabel = document.getElementById('privacyLabel');
-
-    if (isPrivateCheckbox) {
-        isPrivateCheckbox.checked = isPrivate;
-    }
-
-    if (privacyLabel) {
-        privacyLabel.textContent = isPrivate ? 'Private 🔒' : 'Public 🌍';
-    }
-
-    // Handle photo preview
-    if (recipe.photo) {
-        const existingImg = photoPreview.querySelector('img');
-        if (existingImg) existingImg.remove();
-
-        const img = document.createElement('img');
-        img.src = recipe.photo;
-        img.alt = 'Recipe Photo';
-        photoPreview.appendChild(img);
-        photoPreview.classList.add('has-image');
-    } else {
-        photoPreview.classList.remove('has-image');
-        const img = photoPreview.querySelector('img');
-        if (img) img.remove();
-    }
-
-    // Change submit button text
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.innerHTML = '<span class="btn-icon">💾</span> Update Recipe';
-
-    // Switch to Add Recipe tab
-    document.querySelector('[data-tab="add-recipe"]').click();
-}
 
 // Helper Functions
 function getCategoryEmoji(category) {
@@ -1600,6 +1698,30 @@ function getDifficultyText(difficulty) {
         'hard': '🔴 Hard'
     };
     return levels[difficulty] || '🟡 Medium';
+}
+
+// Handle Share Recipe
+function handleShareRecipe(recipe) {
+    if (navigator.share) {
+        navigator.share({
+            title: `Check out this recipe: ${recipe.name}`,
+            text: `I found this delicious ${recipe.name} recipe on Pastry Recipe Book!`,
+            url: window.location.href
+        }).then(() => {
+            showNotification('✅ Shared successfully!', 'success');
+        }).catch((error) => {
+            console.error('Error sharing:', error);
+        });
+    } else {
+        // Fallback: Copy to clipboard
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+        showNotification('📋 Link copied to clipboard!', 'success');
+    }
 }
 
 // View Recipe
@@ -1689,7 +1811,7 @@ async function deleteRecipe(id) {
 
     try {
         const token = sessionStorage.getItem('authToken');
-        const response = await fetch(`http://localhost:3001/api/recipes/${id}`, {
+        const response = await fetch(`${API_URL}/recipes/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1963,7 +2085,7 @@ async function handleClearAll() {
 
     try {
         const token = sessionStorage.getItem('authToken');
-        const response = await fetch('http://localhost:3001/api/recipes', {
+        const response = await fetch(`${API_URL}/recipes`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -2162,15 +2284,16 @@ async function loadMyChefs() {
 
     try {
         let followed = getFollowedChefs();
-        
+
         // Sync with server for latest info (gallery, pic, etc.)
-        const pubResponse = await fetch('http://localhost:3001/api/users/public');
+        const pubResponse = await fetch(`${API_URL}/users/public`);
         if (pubResponse.ok) {
             const allProfiles = await pubResponse.json();
-            
+
             // Re-fetch all public recipes to update recipe counts
-            const recipesResponse = await fetch('http://localhost:3001/api/recipes/public');
-            const allPublicRecipes = recipesResponse.ok ? await recipesResponse.json() : [];
+            const recipesResponse = await fetch(`${API_URL}/recipes/public`);
+            const allPublicRecipesResult = recipesResponse.ok ? await recipesResponse.json() : [];
+            const allPublicRecipes = Array.isArray(allPublicRecipesResult) ? allPublicRecipesResult : [];
 
             followed = followed.map(f => {
                 const latest = allProfiles.find(p => p.username === f.username);
@@ -2182,7 +2305,7 @@ async function loadMyChefs() {
                 return f;
             });
         }
-        
+
         let chefs = followed;
 
         // Filter by search

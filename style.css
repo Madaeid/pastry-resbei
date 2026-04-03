@@ -1,4 +1,4 @@
-/* ===== Pastry Recipe Book Styles ===== */
+﻿/* ===== Pastry Recipe Book Styles ===== */
 
 /* ===== Root Variables (Dark Theme - Default) ===== */
 :root {
@@ -752,13 +752,20 @@ body {
     opacity: 0.5;
 }
 
-/* ===== Header Action Button ===== */
+/* ===== Header Action Group ===== */
+.header-actions-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
 .btn-header-action {
     display: inline-flex;
     align-items: center;
     gap: 12px;
     padding: 14px 28px;
-    margin-top: 30px;
     background: var(--primary-gradient);
     color: white;
     border: none;
@@ -781,12 +788,10 @@ body {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
     transition: 0.6s;
 }
 
@@ -1539,7 +1544,7 @@ body {
 }
 
 .modal-section ul li::before {
-    content: '•';
+    content: 'â€¢';
     color: var(--accent-pink);
     font-size: 1.2rem;
 }
@@ -1668,7 +1673,7 @@ footer {
 }
 
 .recipe-checkbox:checked::after {
-    content: '✔';
+    content: 'âœ”';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -3883,7 +3888,7 @@ footer {
 }
 
 .premium-lock::after {
-    content: '🔒';
+    content: 'ðŸ”’';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -5831,7 +5836,7 @@ footer {
 }
 
 .day-cover-preview.has-cover::after {
-    content: '📷 Click to change photo';
+    content: 'ðŸ“· Click to change photo';
     position: absolute;
     bottom: 0;
     left: 0;
@@ -8239,3 +8244,126 @@ body.rtl .social-btn.loading::after {
 .notification-message {
     color: #ffffff !important;
 }
+
+/* Add Recipe Modal Enhancements */
+.recipe-form-card {
+    padding-top: 20px;
+}
+
+.recipe-form-card .modal-header {
+    margin-bottom: 20px;
+    padding: 0 20px;
+}
+
+.recipe-form-card .modal-body {
+    padding: 0 20px 20px 20px;
+}
+
+.recipe-form-card .modal-close {
+    top: 15px;
+    right: 15px;
+}
+
+.difficulty-select {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.diff-btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 30, 50, 0.5);
+    color: var(--text-secondary);
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.diff-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.diff-btn.active {
+    background: linear-gradient(135deg, rgba(255, 107, 138, 0.2), rgba(255, 179, 71, 0.2));
+    border-color: var(--accent-pink);
+    color: var(--text-primary);
+    box-shadow: 0 0 15px rgba(255, 107, 138, 0.2);
+}
+
+/* Quick Post Card Styling */
+.quick-post-card {
+    background: var(--card-bg, rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 15px 20px;
+    margin: 15px 0 30px 0;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.6s ease-out;
+}
+
+.quick-post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 3px;
+}
+
+.user-avatar-small {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid var(--accent-pink);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.user-avatar-small:hover {
+    transform: scale(1.05);
+}
+
+[data-theme="light"] .quick-post-textarea {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1a1a2e;
+}
+
+.quick-post-textarea:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-pink);
+    min-height: 80px;
+}
+
+[data-theme="light"] .quick-post-textarea:focus {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: var(--accent-pink);
+}
+
+.quick-post-footer {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 500px) {
+    .quick-post-card {
+        padding: 12px 15px;
+    }
+} .user-avatar-small img { width: 100%; height: 100%; object-fit: cover; } .quick-post-textarea { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 12px 18px; border-radius: 12px; color: var(--text-primary, #fff); font-size: 1rem; resize: none; min-height: 45px; font-family: inherit; transition: all 0.3s ease; overflow: hidden; }

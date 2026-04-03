@@ -22,6 +22,8 @@ const translations = {
         logout: "Logout",
         editProfile: "Edit Profile",
         premiumBadge: "💎 Premium",
+        whatsOnYourMind: "What's on your mind?",
+        postBtn: "Post",
         chefsTab: "Chefs",
         myChefsTab: "My Chefs",
         searchMyChefs: "Search followed chefs...",
@@ -389,6 +391,8 @@ const translations = {
         logout: "تسجيل الخروج",
         editProfile: "تعديل الملف",
         premiumBadge: "💎 مميز",
+        whatsOnYourMind: "بماذا تفكر؟",
+        postBtn: "نشر",
 
         // Auth Page
         signIn: "تسجيل الدخول",

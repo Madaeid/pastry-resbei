@@ -76,11 +76,12 @@
         <div class="sidebar-nav">
             <span class="sidebar-section-label">Navigation</span>
 
-            <button class="sidebar-link nav-btn active" id="headerMyRecipesBtn" data-tab="my-recipes">
+            <button class="sidebar-link nav-btn active" id="headerMyRecipesBtn" data-tab="home">
                 <span class="sidebar-link-icon">🏠</span>
                 <span class="sidebar-link-text" data-i18n="homeTab">Home</span>
                 <span class="sidebar-link-indicator"></span>
             </button>
+
 
             <button class="sidebar-link nav-btn" id="headerChefsBtn" data-tab="chefs">
                 <span class="sidebar-link-icon">👩‍🍳</span>
@@ -94,14 +95,9 @@
                 <span class="sidebar-link-indicator"></span>
             </button>
 
-            <button class="sidebar-link nav-btn" id="headerAddRecipeBtn" data-tab="add-recipe">
-                <span class="sidebar-link-icon">➕</span>
-                <span class="sidebar-link-text" data-i18n="addRecipeTab">Add Recipe</span>
-                <span class="sidebar-link-indicator"></span>
-            </button>
 
-            <button class="sidebar-link nav-btn" id="headerMyRecipesBtn_old" data-tab="my-recipes"
-                style="display: none;">
+
+            <button class="sidebar-link nav-btn" id="sidebarMyRecipesBtn" data-tab="my-recipes">
                 <span class="sidebar-link-icon">📖</span>
                 <span class="sidebar-link-text" data-i18n="myRecipesTab">My Recipes</span>
                 <span class="sidebar-link-indicator"></span>
@@ -176,6 +172,9 @@
         </div>
         <h1 data-i18n="appTitle">My Recipe Book</h1>
         <p data-i18n="appSubtitle">Create your personal collection of delicious recipes</p>
+
+
+
         <div class="header-decoration">
             <span></span>
             <span></span>
@@ -186,6 +185,40 @@
 
 
 
+
+    <!-- Home Tab Content -->
+    <div id="home" class="tab-content active">
+        <div class="recipes-header">
+            <h2 style="margin: 0; font-size: 1.5rem;" data-i18n="communityRecipes">Community Recipes</h2>
+        </div>
+
+        <!-- Quick Post Section (Facebook style) -->
+        <div class="quick-post-card">
+            <div class="quick-post-header">
+                <div class="user-avatar-small">
+                    <img id="postUserAvatar" src="" alt="👤">
+                </div>
+                <div class="quick-post-input-wrapper">
+                    <textarea id="quickPostText" class="quick-post-textarea" placeholder="What are you baking today?" data-i18n="whatsOnYourMind"></textarea>
+                </div>
+            </div>
+            <div class="quick-post-footer" id="quickPostFooter" style="display: none; justify-content: flex-end; margin-top: 10px;">
+                <button id="submitQuickPostBtn" class="btn btn-primary btn-sm" style="padding: 6px 20px; border-radius: 20px;">
+                    <span data-i18n="postBtn">Post</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="homeGrid" class="recipes-grid">
+            <!-- Public recipes will be dynamically inserted here -->
+        </div>
+
+        <div id="homeEmptyState" class="empty-state">
+            <div class="empty-icon">🌍</div>
+            <h3 data-i18n="noCommunityRecipes">No community recipes yet</h3>
+            <p data-i18n="beFirstToShare">Be the first to share a recipe publicly!</p>
+        </div>
+    </div>
 
     <!-- Chefs Tab Content -->
     <div id="chefs" class="tab-content">
@@ -229,126 +262,10 @@
         </div>
     </div>
 
-    <!-- Add Recipe Tab Content -->
-    <div id="add-recipe" class="tab-content">
-        <div class="form-container">
-            <form id="addRecipeForm" class="recipe-form">
-                <!-- Recipe Photo Upload -->
-                <div class="form-group cover-upload">
-                    <label data-i18n="recipePhoto">Recipe Photo (Optional)</label>
-                    <div class="cover-preview" id="photoPreview">
-                        <span class="upload-icon">📷</span>
-                        <span class="upload-text" data-i18n="clickToUpload">Click to upload photo</span>
-                    </div>
-                    <input type="file" id="recipePhoto" name="recipePhoto" accept="image/*" hidden>
-                </div>
 
-                <!-- Recipe Name -->
-                <div class="form-group">
-                    <label for="recipeName" data-i18n="recipeName">Recipe Name *</label>
-                    <input type="text" id="recipeName" name="recipeName" data-i18n="recipeNamePlaceholder"
-                        placeholder="e.g., Chocolate Croissant" required>
-                </div>
-
-                <!-- Category -->
-                <div class="form-group">
-                    <label for="category" data-i18n="category">Category *</label>
-                    <select id="category" name="category" required>
-                        <option value="" data-i18n="selectCategory">Select a category</option>
-                        <option value="cakes" data-i18n="cakes">🎂 Cakes</option>
-                        <option value="cookies" data-i18n="cookies">🍪 Cookies</option>
-                        <option value="pastries" data-i18n="pastries">🥐 Pastries</option>
-                        <option value="pies" data-i18n="piesTarts">🥧 Pies & Tarts</option>
-                        <option value="breads" data-i18n="breads">🍞 Breads</option>
-                        <option value="desserts" data-i18n="desserts">🍰 Desserts</option>
-                        <option value="chocolates" data-i18n="chocolates">🍫 Chocolates</option>
-                        <option value="other" data-i18n="other">✨ Other</option>
-                    </select>
-                </div>
-
-                <!-- Visibility -->
-                <div class="form-group">
-                    <label data-i18n="visibility">Visibility</label>
-                    <div class="toggle-wrapper" style="display: flex; align-items: center;">
-                        <label class="switch">
-                            <input type="checkbox" id="isPrivate" name="isPrivate" checked>
-                            <span class="slider round"></span>
-                        </label>
-                        <span id="privacyLabel" class="toggle-label">Private 🔒</span>
-
-                    </div>
-                    <p class="help-text" style="margin-top: 5px; font-size: 0.85rem; color: var(--text-secondary);">
-                        Toggle to make this recipe private (visible only to you).</p>
-                </div>
-
-                <!-- Prep & Cook Time -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="prepTime" data-i18n="prepTime">Prep Time (min) *</label>
-                        <input type="number" id="prepTime" name="prepTime" placeholder="30" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="cookTime" data-i18n="cookTime">Cook Time (min) *</label>
-                        <input type="number" id="cookTime" name="cookTime" placeholder="45" min="0" required>
-                    </div>
-                </div>
-
-                <!-- Servings & Difficulty -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="servings" data-i18n="servings">Servings *</label>
-                        <input type="number" id="servings" name="servings" placeholder="8" min="1" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="difficulty" data-i18n="difficulty">Difficulty</label>
-                        <select id="difficulty" name="difficulty">
-                            <option value="easy" data-i18n="easy">🟢 Easy</option>
-                            <option value="medium" selected data-i18n="medium">🟡 Medium</option>
-                            <option value="hard" data-i18n="hard">🔴 Hard</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Ingredients -->
-                <div class="form-group">
-                    <label for="ingredients" data-i18n="ingredients">Ingredients *</label>
-                    <textarea id="ingredients" name="ingredients" rows="6" data-i18n="ingredientsPlaceholder"
-                        placeholder="Enter each ingredient on a new line:&#10;2 cups all-purpose flour&#10;1 cup sugar&#10;1/2 cup butter&#10;2 eggs&#10;1 tsp vanilla extract"
-                        required></textarea>
-                </div>
-
-                <!-- Instructions -->
-                <div class="form-group">
-                    <label for="instructions" data-i18n="instructions">Instructions *</label>
-                    <textarea id="instructions" name="instructions" rows="8" data-i18n="instructionsPlaceholder"
-                        placeholder="Enter step-by-step instructions:&#10;1. Preheat oven to 350°F&#10;2. Mix dry ingredients&#10;3. Add wet ingredients&#10;4. Pour into pan..."
-                        required></textarea>
-                </div>
-
-                <!-- Notes -->
-                <div class="form-group">
-                    <label for="notes" data-i18n="chefsNotes">Chef's Notes (Optional)</label>
-                    <textarea id="notes" name="notes" rows="3" data-i18n="notesPlaceholder"
-                        placeholder="Any tips, variations, or special notes..."></textarea>
-                </div>
-
-                <!-- Submit Button -->
-                <div class="form-actions">
-                    <button type="reset" class="btn btn-secondary">
-                        <span class="btn-icon">🗑️</span>
-                        <span data-i18n="clearForm">Clear Form</span>
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <span class="btn-icon">✨</span>
-                        <span data-i18n="addRecipeBtn">Add Recipe</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- My Recipes Tab Content -->
-    <div id="my-recipes" class="tab-content active">
+    <div id="my-recipes" class="tab-content">
         <div class="recipes-header">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
@@ -359,9 +276,10 @@
                 <span id="recipeCount">0</span> <span data-i18n="recipes">Recipes</span>
             </div>
             <div class="recipes-actions">
-                <button id="myRecipesAddBtn" class="btn btn-primary" style="background: var(--accent-orange, #ff9a56);">
+
+                <button id="myRecipesAddBtn" class="btn btn-primary">
                     <span class="btn-icon">➕</span>
-                    <span data-i18n="addRecipeTab">Add Recipe</span>
+                    <span data-i18n="addRecipeBtn">Add Recipe</span>
                 </button>
 
                 <button id="downloadPdfBtn" class="btn btn-primary">
@@ -527,6 +445,103 @@
                     <span class="day-emoji">🎉</span>
                     <span class="day-name" data-i18n="friday">Friday</span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Recipe Modal -->
+    <div id="addRecipeModal" class="modal" style="display: none;">
+        <div class="modal-content recipe-form-card">
+            <button class="modal-close" id="closeAddRecipeModal">&times;</button>
+            <div class="modal-header">
+                <h2>➕ <span data-i18n="addRecipeTab">Add New Recipe</span></h2>
+            </div>
+            <div class="modal-body">
+                <form id="addRecipeForm" class="recipe-form">
+                    <!-- Recipe Photo Upload -->
+                    <div class="form-group recipe-upload-group">
+                        <div class="recipe-image-upload" id="recipeImageUpload">
+                            <img id="addRecipePreview" src="" alt="Recipe preview" style="display: none;">
+                            <div class="upload-placeholder" id="addUploadPlaceholder">
+                                <span class="upload-icon">📷</span>
+                                <p data-i18n="clickToUpload">Click to upload recipe photo</p>
+                            </div>
+                            <input type="file" id="addRecipePhotoInput" accept="image/*" hidden>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="addRecipeName" data-i18n="recipeName">Recipe Name</label>
+                        <input type="text" id="addRecipeName" required placeholder="e.g., Signature Chocolate Cake"
+                            data-i18n-placeholder="recipeNamePlaceholder">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addRecipeCategory" data-i18n="category">Category</label>
+                            <select id="addRecipeCategory" required>
+                                <option value="" disabled selected data-i18n="selectCategory">Select a category</option>
+                                <option value="Cakes" data-i18n="cakes">🎂 Cakes</option>
+                                <option value="Cookies" data-i18n="cookies">🍪 Cookies</option>
+                                <option value="Pastries" data-i18n="pastries">🥐 Pastries</option>
+                                <option value="Pies & Tarts" data-i18n="piesTarts">🥧 Pies & Tarts</option>
+                                <option value="Breads" data-i18n="breads">🍞 Breads</option>
+                                <option value="Desserts" data-i18n="desserts">🍰 Desserts</option>
+                                <option value="Chocolates" data-i18n="chocolates">🍫 Chocolates</option>
+                                <option value="Other" data-i18n="other">✨ Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="difficulty">Difficulty</label>
+                            <div class="difficulty-select">
+                                <button type="button" class="diff-btn" data-value="Easy" data-i18n="easy">🟢
+                                    Easy</button>
+                                <button type="button" class="diff-btn active" data-value="Medium" data-i18n="medium">🟡
+                                    Medium</button>
+                                <button type="button" class="diff-btn" data-value="Hard" data-i18n="hard">🔴
+                                    Hard</button>
+                            </div>
+                            <input type="hidden" id="addRecipeDifficulty" value="Medium">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addPrepTime" data-i18n="prepTime">Prep Time (min)</label>
+                            <input type="number" id="addPrepTime" min="0" value="15">
+                        </div>
+                        <div class="form-group">
+                            <label for="addCookTime" data-i18n="cookTime">Cook Time (min)</label>
+                            <input type="number" id="addCookTime" min="0" value="30">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="addRecipeIngredients" data-i18n="ingredients">Ingredients</label>
+                        <textarea id="addRecipeIngredients" rows="5" required placeholder="Enter ingredients..."
+                            data-i18n-placeholder="ingredientsPlaceholder"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="addRecipeInstructions" data-i18n="instructions">Instructions</label>
+                        <textarea id="addRecipeInstructions" rows="6" required
+                            placeholder="Step by step instructions..."
+                            data-i18n-placeholder="instructionsPlaceholder"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="addRecipeNotes" data-i18n="chefsNotes">Chef's Notes (Optional)</label>
+                        <textarea id="addRecipeNotes" rows="3" placeholder="Tips or variations..."
+                            data-i18n-placeholder="notesPlaceholder"></textarea>
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <span class="btn-icon">💾</span>
+                            <span data-i18n="addRecipeBtn">Add Recipe</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
