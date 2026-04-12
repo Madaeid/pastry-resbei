@@ -1,6 +1,6 @@
-# 🧁 Pastry Recipe Book - Backend API
+# 🧁 Chef Book - Backend API
 
-A Node.js + Express + SQLite backend server for the Pastry Recipe Book application.
+A Node.js + Express + SQLite backend server for the Chef Book application.
 
 ## 🚀 Quick Start
 

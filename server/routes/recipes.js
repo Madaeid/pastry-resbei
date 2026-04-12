@@ -2,7 +2,7 @@
 // Recipe Routes
 import express from 'express';
 import { getDatabase } from '../database/db.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuthenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,22 +18,61 @@ router.get('/', authenticateToken, async (req, res) => {
         `, [req.user.userId]);
 
         const recipes = result.rows;
+        const formattedRecipes = [];
+        const currentUserId = req.user.userId;
 
-        const formattedRecipes = recipes.map(recipe => ({
-            id: recipe.id,
-            name: recipe.name,
-            category: recipe.category,
-            prepTime: recipe.prep_time,
-            cookTime: recipe.cook_time,
-            servings: recipe.servings,
-            difficulty: recipe.difficulty,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            notes: recipe.notes,
-            photo: recipe.photo,
-            visibility: recipe.visibility,
-            dateAdded: recipe.created_at
-        }));
+        for (const recipe of recipes) {
+            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
+            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
+            const commentsResult = await db.query(`
+                SELECT c.id, c.user_id, c.comment_text, c.created_at, c.parent_id, u.display_name, u.profile_picture, u.username 
+                FROM recipe_comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.recipe_id = $1 
+                ORDER BY c.created_at ASC
+            `, [recipe.id]);
+
+            // Process comments to include likes
+            const comments = [];
+            for (const row of commentsResult.rows) {
+                const cLikesRes = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [row.id]);
+                const myLikeRes = await db.query('SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [row.id, currentUserId]);
+
+                comments.push({
+                    id: row.id,
+                    userId: row.user_id,
+                    parentId: row.parent_id,
+                    text: row.comment_text,
+                    dateAdded: row.created_at,
+                    authorName: row.display_name,
+                    authorUsername: row.username,
+                    authorPic: row.profile_picture || null,
+                    likes: parseInt(cLikesRes.rows[0].count) || 0,
+                    isLikedByMe: myLikeRes.rows.length > 0
+                });
+            }
+
+            formattedRecipes.push({
+                id: recipe.id,
+                name: recipe.name,
+                category: recipe.category,
+                prepTime: recipe.prep_time,
+                cookTime: recipe.cook_time,
+                servings: recipe.servings,
+                difficulty: recipe.difficulty,
+                ingredients: recipe.ingredients,
+                instructions: recipe.instructions,
+                notes: recipe.notes,
+                photo: recipe.photo,
+                video: recipe.video,
+                visibility: recipe.visibility,
+                dateAdded: recipe.created_at,
+                author: { userId: recipe.user_id },
+                likes: parseInt(likesResult.rows[0].count),
+                shares: parseInt(sharesResult.rows[0].count),
+                comments: comments
+            });
+        }
 
         res.json(formattedRecipes);
 
@@ -44,13 +83,19 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // ===== Get Public Recipes (Home Feed) =====
-router.get('/public', async (req, res) => {
+router.get('/public', optionalAuthenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
+        const currentUserId = req.user ? req.user.userId : null;
+
         // Join with users table to get author info
         const result = await db.query(`
-            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin
+            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+                orig_r.id as orig_id, orig_r.instructions as orig_instructions, orig_r.photo as orig_photo, orig_r.video as orig_video,
+                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username
             FROM recipes r
+            LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
+            LEFT JOIN users orig_u ON orig_r.user_id = orig_u.id
             JOIN users u ON r.user_id = u.id
             WHERE r.visibility = 'public'
             ORDER BY r.created_at DESC
@@ -69,6 +114,41 @@ router.get('/public', async (req, res) => {
                 `, [recipe.user_id]);
                 authorIsPremium = subCheck.rows.length > 0;
             }
+            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
+            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
+            
+            const commentsResult = await db.query(`
+                SELECT c.id, c.user_id, c.comment_text, c.created_at, c.parent_id, u.display_name, u.profile_picture, u.username 
+                FROM recipe_comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.recipe_id = $1 
+                ORDER BY c.created_at ASC
+            `, [recipe.id]);
+
+            // Process comments to include likes
+            const comments = [];
+            for (const row of commentsResult.rows) {
+                const cLikesRes = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [row.id]);
+                let isLikedByMe = false;
+                if (currentUserId) {
+                    const myLikeRes = await db.query('SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [row.id, currentUserId]);
+                    isLikedByMe = myLikeRes.rows.length > 0;
+                }
+
+                comments.push({
+                    id: row.id,
+                    userId: row.user_id,
+                    parentId: row.parent_id,
+                    text: row.comment_text,
+                    dateAdded: row.created_at,
+                    authorName: row.display_name,
+                    authorUsername: row.username,
+                    authorPic: row.profile_picture || null,
+                    likes: parseInt(cLikesRes.rows[0].count) || 0,
+                    isLikedByMe: isLikedByMe
+                });
+            }
+
             recipes.push({
                 id: recipe.id,
                 name: recipe.name,
@@ -81,14 +161,30 @@ router.get('/public', async (req, res) => {
                 instructions: recipe.instructions,
                 notes: recipe.notes,
                 photo: recipe.photo,
+                video: recipe.video,
                 visibility: recipe.visibility,
                 dateAdded: recipe.created_at,
                 author: {
+                    userId: recipe.user_id,
                     username: recipe.author_username,
                     name: recipe.author_name,
                     pic: recipe.author_pic,
                     isPremium: authorIsPremium
-                }
+                },
+                likes: parseInt(likesResult.rows[0].count),
+                shares: parseInt(sharesResult.rows[0].count),
+                comments: comments,
+                sharedFrom: recipe.orig_id ? {
+                    id: recipe.orig_id,
+                    instructions: recipe.orig_instructions,
+                    photo: recipe.orig_photo,
+                    video: recipe.orig_video,
+                    author: {
+                        name: recipe.orig_author_name,
+                        username: recipe.orig_author_username,
+                        pic: recipe.orig_author_pic || null
+                    }
+                } : null
             });
         }
 
@@ -97,6 +193,108 @@ router.get('/public', async (req, res) => {
     } catch (error) {
         console.error('Get public recipes error:', error);
         res.status(500).json({ error: 'Failed to get public recipes' });
+    }
+});
+
+// ===== Get Public Recipes for a Specific User =====
+router.get('/public/user/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        const db = getDatabase();
+        
+        // First get the user id
+        const userRes = await db.query('SELECT id FROM users WHERE username = $1', [username]);
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const userId = userRes.rows[0].id;
+
+        // Then get their public recipes
+        const result = await db.query(`
+            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+                orig_r.id as orig_id, orig_r.instructions as orig_instructions, orig_r.photo as orig_photo, orig_r.video as orig_video,
+                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username
+            FROM recipes r
+            LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
+            LEFT JOIN users orig_u ON orig_r.user_id = orig_u.id
+            JOIN users u ON r.user_id = u.id
+            WHERE r.user_id = $1 AND r.visibility = 'public'
+            ORDER BY r.created_at DESC
+        `, [userId]);
+
+        const recipes = [];
+        for (const recipe of result.rows) {
+            let authorIsPremium = recipe.author_is_admin === 1;
+            if (!authorIsPremium) {
+                const subCheck = await db.query(`
+                    SELECT id FROM subscriptions 
+                    WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
+                    LIMIT 1
+                `, [recipe.user_id]);
+                authorIsPremium = subCheck.rows.length > 0;
+            }
+            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
+            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
+            
+            const commentsResult = await db.query(`
+                SELECT c.id, c.user_id, c.comment_text, c.created_at, u.display_name, u.profile_picture 
+                FROM recipe_comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.recipe_id = $1 
+                ORDER BY c.created_at ASC
+            `, [recipe.id]);
+
+            recipes.push({
+                id: recipe.id,
+                name: recipe.name,
+                category: recipe.category,
+                prepTime: recipe.prep_time,
+                cookTime: recipe.cook_time,
+                servings: recipe.servings,
+                difficulty: recipe.difficulty,
+                ingredients: recipe.ingredients,
+                instructions: recipe.instructions,
+                notes: recipe.notes,
+                photo: recipe.photo,
+                video: recipe.video,
+                visibility: recipe.visibility,
+                dateAdded: recipe.created_at,
+                author: {
+                    userId: recipe.user_id,
+                    username: recipe.author_username,
+                    name: recipe.author_name,
+                    pic: recipe.author_pic,
+                    isPremium: authorIsPremium
+                },
+                likes: parseInt(likesResult.rows[0].count),
+                shares: parseInt(sharesResult.rows[0].count),
+                comments: commentsResult.rows.map(row => ({
+                    id: row.id,
+                    userId: row.user_id,
+                    text: row.comment_text,
+                    dateAdded: row.created_at,
+                    authorName: row.display_name,
+                    authorUsername: row.username,
+                    authorPic: row.profile_picture || null
+                })),
+                sharedFrom: recipe.orig_id ? {
+                    id: recipe.orig_id,
+                    instructions: recipe.orig_instructions,
+                    photo: recipe.orig_photo,
+                    video: recipe.orig_video,
+                    author: {
+                        name: recipe.orig_author_name,
+                        username: recipe.orig_author_username,
+                        pic: recipe.orig_author_pic || null
+                    }
+                } : null
+            });
+        }
+
+        res.json(recipes);
+    } catch (error) {
+        console.error('Get user public recipes error:', error);
+        res.status(500).json({ error: 'Failed to get user public recipes' });
     }
 });
 
@@ -126,6 +324,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             instructions: recipe.instructions,
             notes: recipe.notes,
             photo: recipe.photo,
+            video: recipe.video,
             visibility: recipe.visibility,
             dateAdded: recipe.created_at
         });
@@ -140,7 +339,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo } = req.body;
+        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
 
         // Validation
         if (!name || !category || !ingredients || !instructions) {
@@ -174,8 +373,8 @@ router.post('/', authenticateToken, async (req, res) => {
         }
 
         const insertResult = await db.query(`
-            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, visibility)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, video, visibility)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
         `, [
             req.user.userId,
@@ -189,6 +388,7 @@ router.post('/', authenticateToken, async (req, res) => {
             instructions,
             notes || null,
             photo || null,
+            video || null,
             (req.body.visibility === 'public') ? 'public' : 'private'
         ]);
 
@@ -209,6 +409,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 instructions: newRecipe.instructions,
                 notes: newRecipe.notes,
                 photo: newRecipe.photo,
+                video: newRecipe.video,
                 visibility: newRecipe.visibility,
                 dateAdded: newRecipe.created_at
             }
@@ -224,7 +425,7 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo } = req.body;
+        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
 
         // Check premium status
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
@@ -256,6 +457,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 instructions = $8,
                 notes = $9,
                 photo = $10,
+                video = $14,
                 updated_at = NOW(),
                 visibility = $13
             WHERE id = $11 AND user_id = $12
@@ -272,7 +474,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
             photo !== undefined ? photo : existingRecipe.photo,
             req.params.id,
             req.user.userId,
-            (req.body.visibility === 'public') ? 'public' : 'private'
+            (req.body.visibility === 'public') ? 'public' : 'private',
+            video !== undefined ? video : existingRecipe.video
         ]);
 
         const updatedResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);
@@ -293,6 +496,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 instructions: updatedRecipe.instructions,
                 notes: updatedRecipe.notes,
                 photo: updatedRecipe.photo,
+                video: updatedRecipe.video,
                 dateAdded: updatedRecipe.created_at
             }
         });
@@ -354,6 +558,177 @@ router.get('/count/total', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Get recipe count error:', error);
         res.status(500).json({ error: 'Failed to get recipe count' });
+    }
+});
+
+// ===== Social Features =====
+
+// Like a recipe
+router.post('/:id/like', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        // Check if already liked
+        const checkResult = await db.query('SELECT * FROM recipe_likes WHERE recipe_id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        if (checkResult.rows.length === 0) {
+            await db.query('INSERT INTO recipe_likes (recipe_id, user_id) VALUES ($1, $2)', [req.params.id, req.user.userId]);
+        } else {
+            await db.query('DELETE FROM recipe_likes WHERE recipe_id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
+        }
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Like error:', error);
+        res.status(500).json({ error: 'Failed to toggle like' });
+    }
+});
+
+// Comment on a recipe
+router.post('/:id/comment', authenticateToken, async (req, res) => {
+    try {
+        const { text, parentId } = req.body;
+        if (!text) return res.status(400).json({ error: 'Comment text required' });
+
+        const db = getDatabase();
+        const insertResult = await db.query(`
+            INSERT INTO recipe_comments (recipe_id, user_id, comment_text, parent_id) 
+            VALUES ($1, $2, $3, $4) RETURNING id, created_at, parent_id
+        `, [req.params.id, req.user.userId, text, parentId || null]);
+
+        const userResult = await db.query('SELECT display_name, profile_picture, username FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
+
+        res.json({ 
+            success: true, 
+            comment: {
+                id: insertResult.rows[0].id,
+                text,
+                dateAdded: insertResult.rows[0].created_at,
+                parentId: insertResult.rows[0].parent_id,
+                authorName: user.display_name,
+                authorUsername: user.username,
+                authorPic: user.profile_picture || null,
+                userId: req.user.userId
+            }
+        });
+    } catch (error) {
+        console.error('Comment error:', error);
+        res.status(500).json({ error: 'Failed to add comment' });
+    }
+});
+
+// Get Likes List
+router.get('/:id/likes', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT u.id, u.username, u.display_name, u.profile_picture 
+            FROM recipe_likes l
+            JOIN users u ON l.user_id = u.id
+            WHERE l.recipe_id = $1
+            ORDER BY l.created_at DESC
+        `, [req.params.id]);
+
+        res.json(result.rows.map(row => ({
+            id: row.id,
+            username: row.username,
+            displayName: row.display_name,
+            profilePic: row.profile_picture || null
+        })));
+    } catch (error) {
+        console.error('Get likes error:', error);
+        res.status(500).json({ error: 'Failed to get likes' });
+    }
+});
+
+// Share a recipe
+router.post('/:id/share', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const { notes } = req.body;
+        const origResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);
+        if (origResult.rows.length === 0) return res.status(404).json({ error: 'Original post not found' });
+        const orig = origResult.rows[0];
+
+        await db.query(`
+            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, video, visibility, shared_from_id, shared_notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `, [req.user.userId, 'Reshare of ' + orig.name, orig.category, 0, 0, 1, orig.difficulty, 'N/A', notes || 'Shared this post!', notes || null, null, null, 'public', orig.id, notes || null]);
+
+        await db.query('INSERT INTO recipe_shares (recipe_id, user_id) VALUES ($1, $2)', [req.params.id, req.user.userId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Share error:', error);
+        res.status(500).json({ error: 'Failed to record share' });
+    }
+});
+
+// Edit a comment
+router.put('/comments/:commentId', authenticateToken, async (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text) return res.status(400).json({ error: 'Comment text required' });
+
+        const db = getDatabase();
+        const checkResult = await db.query('SELECT user_id FROM recipe_comments WHERE id = $1', [req.params.commentId]);
+        if (checkResult.rows.length === 0) return res.status(404).json({ error: 'Comment not found' });
+        if (checkResult.rows[0].user_id !== req.user.userId) return res.status(403).json({ error: 'Unauthorized' });
+
+        await db.query('UPDATE recipe_comments SET comment_text = $1 WHERE id = $2', [text, req.params.commentId]);
+        res.json({ success: true, message: 'Comment updated' });
+    } catch (error) {
+        console.error('Update comment error:', error);
+        res.status(500).json({ error: 'Failed to update comment' });
+    }
+});
+
+// Delete a comment
+router.delete('/comments/:commentId', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const checkResult = await db.query(`
+            SELECT c.user_id as comment_author_id, r.user_id as recipe_author_id
+            FROM recipe_comments c
+            JOIN recipes r ON c.recipe_id = r.id
+            WHERE c.id = $1
+        `, [req.params.commentId]);
+
+        if (checkResult.rows.length === 0) return res.status(404).json({ error: 'Comment not found' });
+        
+        const isCommentAuthor = checkResult.rows[0].comment_author_id === req.user.userId;
+        const isRecipeAuthor = (checkResult.rows[0].recipe_author_id === req.user.userId);
+
+        if (!isCommentAuthor && !isRecipeAuthor) return res.status(403).json({ error: 'Unauthorized' });
+
+        await db.query('DELETE FROM recipe_comments WHERE id = $1', [req.params.commentId]);
+        res.json({ success: true, message: 'Comment deleted' });
+    } catch (error) {
+        console.error('Delete comment error:', error);
+        res.status(500).json({ error: 'Failed to delete comment' });
+    }
+});
+
+// Toggle Like on a comment
+router.post('/comments/:commentId/like', authenticateToken, async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const db = getDatabase();
+
+        // Check if like exists
+        const checkResult = await db.query('SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [commentId, req.user.userId]);
+
+        if (checkResult.rows.length > 0) {
+            // Unlike
+            await db.query('DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [commentId, req.user.userId]);
+            const countResult = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [commentId]);
+            return res.json({ liked: false, count: parseInt(countResult.rows[0].count) });
+        } else {
+            // Like
+            await db.query('INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2)', [commentId, req.user.userId]);
+            const countResult = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [commentId]);
+            return res.json({ liked: true, count: parseInt(countResult.rows[0].count) });
+        }
+    } catch (error) {
+        console.error('Comment like error:', error);
+        res.status(500).json({ error: 'Failed to toggle like' });
     }
 });
 

@@ -1,10 +1,10 @@
-# 📖 My Recipe Book
+# 👨‍🍳 Chef Book
 
 A delightful digital recipe book application designed for food lovers to manage their personal collection of delicious recipes.
 
 ## 📖 Overview
 
-My Recipe Book is a modern, responsive web application (PWA) that allows users to create, organize, and view recipes. It features a beautiful interface with rich animations, user authentication, and an administrative dashboard for managing the platform.
+Chef Book is a modern, responsive web application (PWA) that allows users to create, organize, and view recipes. It features a beautiful interface with rich animations, user authentication, and an administrative dashboard for managing the platform.
 
 ## ✨ Features
 
@@ -89,4 +89,4 @@ npx cap open android
 This project is for educational and personal use.
 
 ---
-Created with ❤️ by the My Recipe Book Team.
+Created with ❤️ by the Chef Book Team.

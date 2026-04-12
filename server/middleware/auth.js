@@ -5,7 +5,7 @@ import { getDatabase } from '../database/db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pastry-secret-key';
 
-// Verify JWT token
+// Verify JWT token (Required)
 export function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -23,6 +23,25 @@ export function authenticateToken(req, res, next) {
             return res.status(401).json({ error: 'Token expired' });
         }
         return res.status(403).json({ error: 'Invalid token' });
+    }
+}
+
+// Optional Authentication Middleware
+export function optionalAuthenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        // If token exists but is invalid, we still treat as non-authenticated
+        next();
     }
 }
 
@@ -104,6 +123,7 @@ export function generateRefreshToken(userId) {
 
 export default {
     authenticateToken,
+    optionalAuthenticateToken,
     requireAdmin,
     requirePremium,
     generateToken,

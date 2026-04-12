@@ -1,10 +1,10 @@
-// Payment Module for Pastry Recipe Book
+// Payment Module for Chef Book
 import './style.css';
 import { getCurrentUser, isAdmin, getAuthToken } from './auth.js';
 import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // API Configuration
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 
 // ===== Subscription Plans Configuration =====
 const PLANS = {
@@ -299,9 +299,87 @@ function initPaymentPage() {
     // Setup FAQ accordion
     setupFAQ();
 
+    // Check for pending recipe purchase
+    checkPendingRecipe();
+
     // Format card inputs
     setupCardInputFormatting();
 }
+
+let pendingRecipeId = null;
+let pendingRecipeData = null;
+
+async function checkPendingRecipe() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const recipeId = urlParams.get('recipeId');
+    if (!recipeId) return;
+
+    pendingRecipeId = recipeId;
+
+    try {
+        const response = await fetch(`${API_URL}/store/${recipeId}/preview`);
+        if (response.ok) {
+            const recipe = await response.json();
+            pendingRecipeData = recipe;
+            renderRecipeSpecialOffer(recipe);
+
+            // Auto-open modal to save the user an extra click if they just came from the store
+            const token = getAuthToken();
+            if (token) {
+                openPaymentModal('recipe');
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching pending recipe:', err);
+    }
+}
+
+function renderRecipeSpecialOffer(recipe) {
+    const container = document.querySelector('.pricing-container');
+    if (!container) return;
+
+    const card = document.createElement('div');
+    card.className = 'pricing-card recipe-offer';
+    card.style.borderColor = 'var(--accent-orange)';
+    card.style.background = 'rgba(255, 154, 86, 0.05)';
+    card.innerHTML = `
+        <div class="monthly-offer-badge" style="background: var(--accent-orange);">🎯 EXCLUSIVE RECIPE</div>
+        <div class="pricing-card-header">
+            <span class="plan-emoji">🥧</span>
+            <h3>${recipe.name}</h3>
+            <p class="plan-subtitle">Single Recipe Purchase</p>
+        </div>
+        <div class="pricing-card-price">
+            <span class="currency">$</span>
+            <span class="amount">${Math.floor(recipe.price)}</span>
+            <span class="cents">.${(recipe.price % 1).toFixed(2).slice(2)}</span>
+            <span class="period">once</span>
+        </div>
+        <div class="savings-badge" style="background: var(--accent-orange);">BY ${recipe.seller.name.toUpperCase()}</div>
+        <ul class="pricing-features">
+            <li><span class="feature-icon">✅</span> Detailed Ingredients</li>
+            <li><span class="feature-icon">✅</span> Step-by-Step Instructions</li>
+            <li><span class="feature-icon">✅</span> Chef's Secret Notes</li>
+            <li><span class="feature-icon">✅</span> Lifetime Access</li>
+            <li><span class="feature-icon">🖼️</span> High-Quality Photo</li>
+        </ul>
+        <button class="btn btn-subscribe" id="purchaseSingleRecipe" style="background: linear-gradient(135deg, var(--accent-orange), #ff7e5f); border: none;">
+            <span class="btn-icon">🛒</span>
+            Purchase This Recipe
+        </button>
+    `;
+
+    // Prepend to show it first
+    container.insertBefore(card, container.firstChild);
+
+    document.getElementById('purchaseSingleRecipe').addEventListener('click', () => {
+        openPaymentModal('recipe');
+    });
+
+    // Scroll to the offer
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 
 function updateSubscriptionDisplay() {
     const status = getSubscriptionStatus();
@@ -470,7 +548,7 @@ function setupEventListeners() {
 let selectedPlan = null;
 
 function openPaymentModal(planId) {
-    const plan = PLANS[planId];
+    const plan = (planId === 'recipe') ? pendingRecipeData : PLANS[planId];
     if (!plan) return;
 
     selectedPlan = planId;
@@ -481,11 +559,23 @@ function openPaymentModal(planId) {
     const summaryPrice = document.getElementById('summaryPrice');
     const summaryTotal = document.getElementById('summaryTotal');
     const payButtonText = document.getElementById('payButtonText');
+    const summaryLabel = document.querySelector('.summary-row span:first-child');
 
-    if (selectedPlanText) selectedPlanText.textContent = `${plan.name} Plan - ${plan.displayPrice}`;
-    if (summaryPlan) summaryPlan.textContent = plan.name;
-    if (summaryPrice) summaryPrice.textContent = `$${plan.price.toFixed(2)}`;
-    if (summaryTotal) summaryTotal.textContent = `$${plan.price.toFixed(2)}`;
+    if (planId === 'recipe') {
+        const recipe = pendingRecipeData;
+        if (selectedPlanText) selectedPlanText.textContent = `Recipe: ${recipe.name} - $${recipe.price.toFixed(2)}`;
+        if (summaryPlan) summaryPlan.textContent = recipe.name;
+        if (summaryPrice) summaryPrice.textContent = `$${recipe.price.toFixed(2)}`;
+        if (summaryTotal) summaryTotal.textContent = `$${recipe.price.toFixed(2)}`;
+        if (summaryLabel) summaryLabel.textContent = 'Recipe';
+    } else {
+        const planObj = PLANS[planId];
+        if (selectedPlanText) selectedPlanText.textContent = `${planObj.name} Plan - ${planObj.displayPrice}`;
+        if (summaryPlan) summaryPlan.textContent = planObj.name;
+        if (summaryPrice) summaryPrice.textContent = `$${planObj.price.toFixed(2)}`;
+        if (summaryTotal) summaryTotal.textContent = `$${planObj.price.toFixed(2)}`;
+        if (summaryLabel) summaryLabel.textContent = 'Plan';
+    }
     if (payButtonText) payButtonText.textContent = 'Proceed to Checkout';
 
     // Show modal
@@ -494,6 +584,7 @@ function openPaymentModal(planId) {
         paymentModal.style.display = 'flex';
     }
 }
+
 
 // ===== Stripe Checkout Handler =====
 async function handleStripeCheckout(e) {
@@ -571,22 +662,36 @@ async function handleStripeCheckout(e) {
         }
 
         console.log('Creating checkout session for plan:', selectedPlan);
-        const frontendUrl = window.location.origin;
-        console.log('Frontend URL:', frontendUrl);
+        // Improved URL construction to support subpath deployments (GitHub Pages) and local dev
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+
+        // Check if we are purchasing a recipe or a plan
+        let endpoint = '/subscriptions/create-checkout-session';
+        let body = {
+            planId: selectedPlan,
+            successUrl: `${baseUrl}/payment-success.html`,
+            cancelUrl: `${baseUrl}/payment.html`
+        };
+
+        if (selectedPlan === 'recipe') {
+            endpoint = '/store/create-checkout-session';
+            body = {
+                recipeId: pendingRecipeId,
+                successUrl: `${baseUrl}/payment-success.html?recipe_id=${pendingRecipeId}`,
+                cancelUrl: `${baseUrl}/payment.html?recipeId=${pendingRecipeId}`
+            };
+        }
 
         // Create checkout session via API
-        const response = await fetch(`${API_URL}/subscriptions/create-checkout-session`, {
+        const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({
-                planId: selectedPlan,
-                successUrl: `${frontendUrl}/payment-success.html`,
-                cancelUrl: `${frontendUrl}/payment.html`
-            })
+            body: JSON.stringify(body)
         });
+
 
         console.log('Response status:', response.status);
         const data = await response.json();

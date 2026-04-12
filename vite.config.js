@@ -9,8 +9,8 @@ export default defineConfig({
                 enabled: true
             },
             manifest: {
-                name: 'Pastry Recipe Book',
-                short_name: 'PastryBook',
+                name: 'Chef Book',
+                short_name: 'Chef Book',
                 description: 'A beautiful collection of pastry recipes',
                 theme_color: '#ffffff',
                 icons: [

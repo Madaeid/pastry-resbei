@@ -14,7 +14,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const dbPath = process.env.DATABASE_PATH || './pastry.db';
 const db = new Database(path.join(__dirname, '..', dbPath.replace('./', '')));
 
-console.log('🗄️  Initializing Pastry Recipe Book Database...\n');
+console.log('🗄️  Initializing Chef Book Database...\n');
 
 // Enable foreign keys
 db.pragma('foreign_keys = ON');

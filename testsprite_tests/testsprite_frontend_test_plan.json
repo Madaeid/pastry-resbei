@@ -1,0 +1,696 @@
+[
+  {
+    "id": "TC001",
+    "title": "Log in with valid credentials and reach recipe feed",
+    "description": "Verifies that a user can log in from the auth page and land on the home recipe feed.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the home recipe feed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of recipes is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Login attempt with unregistered email shows authentication error",
+    "description": "Verifies that logging in with an unregistered email results in an authentication error state.",
+    "category": "User Authentication",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with unregistered_user@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with SomePassword123!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an authentication error is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Auth page loads primary login/registration form fields",
+    "description": "Verifies the authentication page renders the primary inputs and allows interaction.",
+    "category": "User Authentication",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with user@example.com"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with ExamplePass123!"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the email field contains user@example.com"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the password field contains ExamplePass123!"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Login with empty required fields is blocked",
+    "description": "Verifies that submitting the login form without required inputs shows a validation error.",
+    "category": "User Authentication",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a required-field validation error is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Login with invalid email format shows validation error",
+    "description": "Verifies that an invalid email format is rejected before or upon submission.",
+    "category": "User Authentication",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with invalid-email-format"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with ExamplePass123!"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an email validation error is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Successful login persists across refresh to authenticated home",
+    "description": "Verifies that after a successful login, refreshing the home page keeps the user in an authenticated viewing state.",
+    "category": "User Authentication",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the home page to finish loading"
+      },
+      {
+        "type": "action",
+        "description": "Refresh the page"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the home recipe feed is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of recipes is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Export a selected recipe to PDF (UI flow without download verification)",
+    "description": "Verifies that selecting at least one recipe and triggering export initiates PDF export UI state without requiring file download validation.",
+    "category": "Export Recipes as PDF",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the recipe list to load"
+      },
+      {
+        "type": "action",
+        "description": "Select one recipe for export"
+      },
+      {
+        "type": "action",
+        "description": "Trigger export"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an export-in-progress indicator is visible or the export action completes without showing an error"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Export multiple selected recipes to PDF (UI flow without download verification)",
+    "description": "Verifies that selecting multiple recipes and triggering export initiates export without UI errors.",
+    "category": "Export Recipes as PDF",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the recipe list to load"
+      },
+      {
+        "type": "action",
+        "description": "Select two or more recipes for export"
+      },
+      {
+        "type": "action",
+        "description": "Trigger export"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the export action completes without showing an error"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Attempt export with no recipes selected shows validation or disabled state",
+    "description": "Verifies the UI prevents exporting when nothing is selected, either by disabling export or showing a validation message.",
+    "category": "Export Recipes as PDF",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the recipe list to load"
+      },
+      {
+        "type": "action",
+        "description": "Ensure no recipes are selected for export"
+      },
+      {
+        "type": "action",
+        "description": "Trigger export"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an export validation message is visible or the export action is not allowed"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Deselect a previously selected recipe updates export selection state",
+    "description": "Verifies that the selection state updates when a recipe is deselected prior to exporting.",
+    "category": "Export Recipes as PDF",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the recipe list to load"
+      },
+      {
+        "type": "action",
+        "description": "Select one recipe for export"
+      },
+      {
+        "type": "action",
+        "description": "Deselect the same recipe"
+      },
+      {
+        "type": "action",
+        "description": "Trigger export"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an export validation message is visible or the export action is not allowed"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Export failure shows an error message (only if reproducible via UI)",
+    "description": "Verifies that if the app provides a deterministic client-side way to trigger a PDF generation failure, an error message is shown.",
+    "category": "Export Recipes as PDF",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the recipe list to load"
+      },
+      {
+        "type": "action",
+        "description": "Select one or more recipes to export"
+      },
+      {
+        "type": "action",
+        "description": "Trigger the app’s built-in option to simulate or force export failure (if present)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an export error message is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Unauthenticated user is redirected to authentication from Daily Menu page",
+    "description": "Verifies route protection by redirecting unauthenticated users from daily menu planning to authentication.",
+    "category": "Daily Menu Planning",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /daily-menu.html"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the authentication page is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Authenticated user can save a daily menu for a valid date and selection",
+    "description": "Verifies end-to-end daily menu save flow after authenticating.",
+    "category": "Daily Menu Planning",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the authentication form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /daily-menu.html"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date for the daily menu"
+      },
+      {
+        "type": "action",
+        "description": "Select one or more recipes for that date"
+      },
+      {
+        "type": "action",
+        "description": "Save the daily menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a save confirmation is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Saving daily menu with invalid selection shows validation error",
+    "description": "Verifies that attempting to save a daily menu with an invalid selection results in a validation error.",
+    "category": "Daily Menu Planning",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the authentication form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /daily-menu.html"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date for the daily menu"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to save the daily menu without selecting any recipes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Changing the menu date updates the selection context",
+    "description": "Verifies that choosing a different date changes the menu planning context without carrying over unintended selections.",
+    "category": "Daily Menu Planning",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the authentication form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /daily-menu.html"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid date for the daily menu"
+      },
+      {
+        "type": "action",
+        "description": "Select one recipe for that date"
+      },
+      {
+        "type": "action",
+        "description": "Select a different valid date for the daily menu"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the menu selection list for the new date is displayed in a default or updated state"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Admin panel requires authentication (unauthenticated access)",
+    "description": "Verifies that unauthenticated users cannot access the admin panel and are redirected to authentication.",
+    "category": "Admin Dashboard",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin.html"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the authentication page is displayed"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Admin user can view metrics and perform a user management action",
+    "description": "Verifies that an authenticated admin can access the admin dashboard, see metrics, and complete an admin action with confirmation.",
+    "category": "Admin Dashboard",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the authentication form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin.html"
+      },
+      {
+        "type": "action",
+        "description": "Wait for dashboard metrics to load"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard metrics are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Perform an admin action to deactivate a user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "Non-admin authenticated user is denied access to Admin panel (if roles are supported in UI)",
+    "description": "Verifies that a signed-in non-admin cannot access the admin dashboard and sees access denied or is redirected.",
+    "category": "Admin Dashboard",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /auth.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with a non-admin username"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the authentication form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin.html"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an access denied message is visible or the user is redirected away from the admin panel"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Edit an existing comment on a post",
+    "description": "Verifies that an authenticated user can edit their own comment on a social post.",
+    "category": "Social Interactions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and navigate to the home feed"
+      },
+      {
+        "type": "action",
+        "description": "Locate a post with an existing comment by the current user"
+      },
+      {
+        "type": "action",
+        "description": "Click the 'Edit' link on the comment"
+      },
+      {
+        "type": "action",
+        "description": "Modify the comment text in the prompt and confirm"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the comment text is updated in the UI"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success notification is visible"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Delete own comment on a post",
+    "description": "Verifies that an authenticated user can delete their own comment from a social post.",
+    "category": "Social Interactions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and navigate to the home feed"
+      },
+      {
+        "type": "action",
+        "description": "Locate a post with an existing comment by the current user"
+      },
+      {
+        "type": "action",
+        "description": "Click the 'Delete' link on the comment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion in the browser dialog"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the comment is removed from the UI"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the comment count is decremented"
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Post owner can delete any comment on their post",
+    "description": "Verifies that the author of a post can delete comments made by other users.",
+    "category": "Social Interactions",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and navigate to the home feed"
+      },
+      {
+        "type": "action",
+        "description": "Locate one of the current user's posts that has comments from others"
+      },
+      {
+        "type": "action",
+        "description": "Click the 'Delete' link on another user's comment"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the comment is removed from the UI"
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Navigate to public chef profile from sidebar name click",
+    "description": "Verifies that clicking the user's name in the sidebar navigates them to their own public chef profile page.",
+    "category": "UI Navigation",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in and ensure the sidebar is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click on the user's display name in the sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the URL contains 'chef-profile.html?username='"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the profile page loads the current user's public feed"
+      }
+    ]
+  }
+]

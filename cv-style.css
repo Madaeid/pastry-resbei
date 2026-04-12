@@ -1,4 +1,4 @@
-/* CV Application Styles */
+﻿/* CV Application Styles */
 :root {
     --cv-card-height: 350px;
 }
@@ -16,7 +16,7 @@
     transform: translateX(-50%);
     width: 92%;
     max-width: 1100px;
-    background: rgba(20, 20, 35, 0.85);
+    background: rgba(30, 20, 12, 0.85);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 20px;
@@ -27,7 +27,7 @@
 }
 
 .user-header:hover {
-    background: rgba(20, 20, 35, 0.92);
+    background: rgba(30, 20, 12, 0.92);
 }
 
 /* User Display (avatar + name group) */
@@ -41,7 +41,7 @@
 .user-avatar {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--accent-pink, #ff6b8a), var(--accent-orange, #ff9a56));
+    background: linear-gradient(135deg, var(--accent-pink, #C67B4B), var(--accent-orange, #ff9a56));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -108,16 +108,16 @@
 
 /* Active state */
 .btn-cv-nav.active {
-    background: linear-gradient(135deg, var(--accent-pink, #ff6b8a), var(--accent-orange, #ff9a56));
+    background: linear-gradient(135deg, var(--accent-pink, #C67B4B), var(--accent-orange, #ff9a56));
     color: white;
     border-color: transparent;
-    box-shadow: 0 4px 15px rgba(255, 107, 138, 0.3);
+    box-shadow: 0 4px 15px rgba(198, 123, 75, 0.3);
     font-weight: 600;
 }
 
 .btn-cv-nav.active:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 138, 0.4);
+    box-shadow: 0 6px 20px rgba(198, 123, 75, 0.4);
 }
 
 /* Edit CV Form Styles */
@@ -300,13 +300,13 @@
     border: none;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 10px 20px rgba(255, 107, 138, 0.3);
+    box-shadow: 0 10px 20px rgba(198, 123, 75, 0.3);
     transition: all 0.3s ease;
 }
 
 .btn-save:hover {
     transform: translateY(-2px);
-    box-shadow: 0 15px 30px rgba(255, 107, 138, 0.5);
+    box-shadow: 0 15px 30px rgba(198, 123, 75, 0.5);
 }
 
 .btn-cancel {
@@ -367,7 +367,7 @@
     color: white;
     border-style: solid;
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255, 107, 138, 0.3);
+    box-shadow: 0 5px 15px rgba(198, 123, 75, 0.3);
 }
 
 /* Entry Cards */
@@ -395,7 +395,7 @@
 }
 
 .cv-entry-card:hover {
-    border-color: rgba(255, 107, 138, 0.2);
+    border-color: rgba(198, 123, 75, 0.2);
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -647,13 +647,13 @@
 }
 
 .cv-display-tag {
-    background: rgba(255, 107, 138, 0.12);
+    background: rgba(198, 123, 75, 0.12);
     color: var(--text-primary);
     padding: 6px 16px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
-    border: 1px solid rgba(255, 107, 138, 0.15);
+    border: 1px solid rgba(198, 123, 75, 0.15);
 }
 
 .lang-display-tag {
@@ -680,7 +680,7 @@
 }
 
 .cv-entry-display:hover {
-    border-color: rgba(255, 107, 138, 0.15);
+    border-color: rgba(198, 123, 75, 0.15);
 }
 
 .cv-entry-main {
@@ -779,7 +779,7 @@
 /* PDF Print Mode - forces clean white styling for the PDF output */
 .pdf-printing {
     background: #ffffff !important;
-    color: #1a1a2e !important;
+    color: #2D1F13 !important;
     border: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -787,7 +787,7 @@
 }
 
 .pdf-printing * {
-    color: #1a1a2e !important;
+    color: #2D1F13 !important;
     border-color: #e0e0e0 !important;
 }
 
@@ -818,7 +818,7 @@
 }
 
 .pdf-printing .cv-entry-main strong {
-    color: #1a1a2e !important;
+    color: #2D1F13 !important;
 }
 
 .pdf-printing .cv-entry-sub,
@@ -832,7 +832,7 @@
 }
 
 .pdf-printing .cv-section-title {
-    color: #1a1a2e !important;
+    color: #2D1F13 !important;
 }
 
 .pdf-printing .cv-display-header {

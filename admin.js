@@ -1,4 +1,4 @@
-// Admin Dashboard Module for Pastry Recipe Book
+// Admin Dashboard Module for Chef Book
 import './style.css';
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser } from './auth.js';
 import { isUserPremium, grantPremiumToUser, revokePremiumFromUser } from './payment.js';
@@ -557,7 +557,7 @@ function handleSystemInfo() {
             <div class="system-info-grid">
                 <div class="info-item">
                     <span class="info-label">App Name</span>
-                    <span class="info-value">Pastry Recipe Book</span>
+                    <span class="info-value">Chef Book</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Version</span>

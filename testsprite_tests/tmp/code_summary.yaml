@@ -1,0 +1,41 @@
+version: "2"
+type: backend
+tech_stack:
+  - node.js
+  - express
+  - mongodb
+  - postgresql
+features:
+  - name: Health Check
+    description: Simple health check endpoint
+    files:
+      - server/server.js
+    endpoints:
+      - method: GET
+        path: /api/health
+        description: API health status
+        auth_required: false
+        response_schema:
+          "200": Object
+  - name: Authentication
+    description: User authentication endpoints
+    files:
+      - server/routes/auth.js
+    endpoints:
+      - method: POST
+        path: /api/auth/register
+        description: Register a new user
+        auth_required: false
+        request_schema:
+          body: Object
+        response_schema:
+          "200": Object
+      - method: POST
+        path: /api/auth/login
+        description: Login a user
+        auth_required: false
+        request_schema:
+          body: Object
+        response_schema:
+          "200": Object
+known_limitations: []

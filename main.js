@@ -1,9 +1,11 @@
-// Pastry Recipe Book - ES Module Version
+// Chef Book - ES Module Version
 import './style.css';
 import { jsPDF } from 'jspdf';
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, updateUser } from './auth.js';
 import { isPremium, getSubscriptionStatus, syncSubscriptionFromServer } from './payment.js';
 import { initLanguage, t, getCurrentLanguage } from './language.js';
+import { createPostCard, formatTimeAgo, renderCommentsList } from './social-ui.js';
+import { getCategoryEmoji, getDifficultyText } from './recipe-utils.js';
 
 // Free tier limits
 const FREE_RECIPE_LIMIT = 10;
@@ -12,7 +14,7 @@ const FREE_RECIPE_LIMIT = 10;
 let tabs, tabContents, recipesGrid, emptyState, recipeCount;
 let downloadPdfBtn, clearAllBtn, modal, closeModal, modalBody, recipeSearch;
 let editUserBtn, editUserModal, closeEditUserModal, editUserForm, modalLogoutBtn, profileLogoutBtn;
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 let editProfilePreview, editProfilePhoto;
 let dayPickerModal, closeDayPickerModalBtn;
 let themeToggle;
@@ -20,6 +22,10 @@ let myChefsGrid, myChefsEmptyState, myChefsSearch;
 let editingRecipeId = null;
 let selectedRecipeForMenu = null;
 let currentUserRecipes = []; // Store recipes in memory
+let addRecipePhoto = null; // Store currently selected/uploaded photo
+let addRecipeVideo = null; // Store currently selected/uploaded video
+let currentVisibilityFilter = 'all'; // 'all', 'public', or 'private'
+
 
 
 // Wait for DOM to be fully loaded, or run immediately if already loaded
@@ -61,6 +67,13 @@ async function initApp() {
     myChefsEmptyState = document.getElementById('myChefsEmptyState');
     myChefsSearch = document.getElementById('myChefsSearch');
 
+    const likesModal = document.getElementById('likesModal');
+    const closeLikesModal = document.getElementById('closeLikesModal');
+    const likesListBody = document.getElementById('likesListBody');
+    if (closeLikesModal && likesModal) {
+        closeLikesModal.onclick = () => likesModal.style.display = 'none';
+    }
+
     // Add Recipe Modal Elements
     const sidebarAddRecipeBtn = document.getElementById('sidebarAddRecipeBtn');
     const addRecipeModal = document.getElementById('addRecipeModal');
@@ -70,7 +83,12 @@ async function initApp() {
     const addRecipePhotoInput = document.getElementById('addRecipePhotoInput');
     const addRecipePreview = document.getElementById('addRecipePreview');
     const addUploadPlaceholder = document.getElementById('addUploadPlaceholder');
-    let addRecipePhoto = null;
+    const recipeVideoUpload = document.getElementById('recipeVideoUpload');
+    const addRecipeVideoInput = document.getElementById('addRecipeVideoInput');
+    const addRecipeVideoPreview = document.getElementById('addRecipeVideoPreview');
+    const addVideoUploadPlaceholder = document.getElementById('addVideoUploadPlaceholder');
+    // addRecipePhoto/addRecipeVideo are now top-level
+
 
     if (addRecipeModal) {
         if (sidebarAddRecipeBtn) {
@@ -82,6 +100,19 @@ async function initApp() {
         const myRecipesAddBtn = document.getElementById('myRecipesAddBtn');
         if (myRecipesAddBtn && addRecipeModal) {
             myRecipesAddBtn.addEventListener('click', () => {
+                editingRecipeId = null;
+                addRecipeForm.reset();
+                addRecipePreview.style.display = 'none';
+                addUploadPlaceholder.style.display = 'block';
+                addRecipePhoto = null;
+                if (addRecipeVideoPreview) addRecipeVideoPreview.style.display = 'none';
+                if (addVideoUploadPlaceholder) addVideoUploadPlaceholder.style.display = 'block';
+                addRecipeVideo = null;
+                const submitBtn = addRecipeForm.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.querySelector('span:not(.btn-icon)').textContent = 'Add Recipe';
+                }
+                document.querySelector('#addRecipeModal h2 span').textContent = 'Add New Recipe';
                 addRecipeModal.style.display = 'flex';
             });
         }
@@ -104,6 +135,32 @@ async function initApp() {
                         addRecipePreview.src = addRecipePhoto;
                         addRecipePreview.style.display = 'block';
                         addUploadPlaceholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+
+        // Form Video Upload Preview
+        if (recipeVideoUpload && addRecipeVideoInput) {
+            recipeVideoUpload.onclick = () => addRecipeVideoInput.click();
+            addRecipeVideoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // 5MB Limit for videos to prevent storage issues
+                    const maxSize = 5 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        showNotification('❌ Video file is too large! Please choose a file under 5MB.', 'error');
+                        addRecipeVideoInput.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        addRecipeVideo = event.target.result;
+                        addRecipeVideoPreview.src = addRecipeVideo;
+                        addRecipeVideoPreview.style.display = 'block';
+                        addVideoUploadPlaceholder.style.display = 'none';
                     };
                     reader.readAsDataURL(file);
                 }
@@ -136,6 +193,8 @@ async function initApp() {
                     instructions: document.getElementById('addRecipeInstructions').value.trim(),
                     notes: document.getElementById('addRecipeNotes').value.trim(),
                     photo: addRecipePhoto,
+                    video: addRecipeVideo,
+                    visibility: document.getElementById('addRecipeIsPublic')?.checked ? 'public' : 'private',
                     createdAt: new Date().toISOString()
                 };
 
@@ -147,8 +206,11 @@ async function initApp() {
                 }
 
                 try {
-                    const response = await fetch(`${API_URL}/recipes`, {
-                        method: 'POST',
+                    const url = editingRecipeId ? `${API_URL}/recipes/${editingRecipeId}` : `${API_URL}/recipes`;
+                    const method = editingRecipeId ? 'PUT' : 'POST';
+
+                    const response = await fetch(url, {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
@@ -165,14 +227,21 @@ async function initApp() {
                             return;
                         }
 
-                        showNotification('✅ Recipe added successfully! 🧁', 'success');
+                        showNotification(editingRecipeId ? '✅ Recipe updated successfully! 🧁' : '✅ Recipe added successfully! 🧁', 'success');
                         addRecipeModal.style.display = 'none';
+                        editingRecipeId = null;
                         addRecipeForm.reset();
                         addRecipePreview.style.display = 'none';
                         addUploadPlaceholder.style.display = 'block';
                         addRecipePhoto = null;
+                        if (addRecipeVideoPreview) addRecipeVideoPreview.style.display = 'none';
+                        if (addVideoUploadPlaceholder) addVideoUploadPlaceholder.style.display = 'block';
+                        addRecipeVideo = null;
 
                         await loadRecipes();
+                        if (document.getElementById('home').classList.contains('active')) {
+                            await loadHomeFeed();
+                        }
                     } else {
                         showNotification(data.error || '❌ Failed to save recipe', 'error');
                     }
@@ -234,6 +303,16 @@ async function initApp() {
     checkAuth();
     loadRecipes();
     loadHomeFeed();
+    loadTrendingCarousel();
+
+    // Trending "View All" button → navigate to Store tab
+    const trendingViewAllBtn = document.getElementById('trendingViewAllBtn');
+    if (trendingViewAllBtn) {
+        trendingViewAllBtn.addEventListener('click', () => {
+            const storeTabBtn = document.querySelector('[data-tab="store"]');
+            if (storeTabBtn) storeTabBtn.click();
+        });
+    }
 
     // Initialize Quick Post User Avatar
     const currentUser = getCurrentUser();
@@ -248,17 +327,27 @@ async function initApp() {
     const quickPostText = document.getElementById('quickPostText');
     const quickPostFooter = document.getElementById('quickPostFooter');
     const submitQuickPostBtn = document.getElementById('submitQuickPostBtn');
+
+    // Photo elements
     const addPhotoBtn = document.getElementById('addPhotoBtn');
     const quickPostPhotoInput = document.getElementById('quickPostPhotoInput');
     const quickPostPhotoPreview = document.getElementById('quickPostPhotoPreview');
     const removePostPhotoBtn = document.getElementById('removePostPhotoBtn');
     let quickPostPhoto = null;
 
+    // Video elements
+    const addVideoBtn = document.getElementById('addVideoBtn');
+    const quickPostVideoInput = document.getElementById('quickPostVideoInput');
+    const quickPostVideoPreview = document.getElementById('quickPostVideoPreview');
+    const removePostVideoBtn = document.getElementById('removePostVideoBtn');
+    let quickPostVideo = null;
+
     if (quickPostText && quickPostFooter && submitQuickPostBtn) {
         const updateQuickPostUI = () => {
             const hasText = quickPostText.value.trim().length > 0;
             const hasPhoto = !!quickPostPhoto;
-            quickPostFooter.style.display = (hasText || hasPhoto) ? 'flex' : 'none';
+            const hasVideo = !!quickPostVideo;
+            quickPostFooter.style.display = (hasText || hasPhoto || hasVideo) ? 'flex' : 'none';
         };
 
         quickPostText.addEventListener('input', () => {
@@ -278,9 +367,8 @@ async function initApp() {
             quickPostPhotoInput.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    // Check size limit (max 1MB for base64 safety)
-                    if (file.size > 1024 * 1024) {
-                        showNotification('❌ Photo is too large (Max 1MB)', 'error');
+                    if (file.size > 2 * 1024 * 1024) { // Increased to 2MB as we support video too
+                        showNotification('❌ Photo is too large (Max 2MB)', 'error');
                         quickPostPhotoInput.value = '';
                         return;
                     }
@@ -291,6 +379,53 @@ async function initApp() {
                         const previewImg = quickPostPhotoPreview.querySelector('img');
                         if (previewImg) previewImg.src = quickPostPhoto;
                         quickPostPhotoPreview.style.display = 'block';
+
+                        // Clear video if photo selected
+                        quickPostVideo = null;
+                        if (quickPostVideoPreview) {
+                            quickPostVideoPreview.style.display = 'none';
+                            const videoEl = quickPostVideoPreview.querySelector('video');
+                            if (videoEl) videoEl.src = '';
+                        }
+
+                        updateQuickPostUI();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+        }
+
+        // Video Handling
+        if (addVideoBtn && quickPostVideoInput) {
+            addVideoBtn.onclick = (e) => {
+                e.preventDefault();
+                quickPostVideoInput.click();
+            };
+
+            quickPostVideoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Check size limit (max 5MB for video base64, still a lot but better)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showNotification('❌ Video is too large (Max 5MB)', 'error');
+                        quickPostVideoInput.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        quickPostVideo = event.target.result;
+                        const previewVideo = quickPostVideoPreview.querySelector('video');
+                        if (previewVideo) {
+                            previewVideo.src = quickPostVideo;
+                            previewVideo.load();
+                        }
+                        quickPostVideoPreview.style.display = 'block';
+
+                        // Clear photo if video selected
+                        quickPostPhoto = null;
+                        if (quickPostPhotoPreview) quickPostPhotoPreview.style.display = 'none';
+
                         updateQuickPostUI();
                     };
                     reader.readAsDataURL(file);
@@ -308,20 +443,35 @@ async function initApp() {
             };
         }
 
+        if (removePostVideoBtn) {
+            removePostVideoBtn.onclick = (e) => {
+                e.preventDefault();
+                quickPostVideo = null;
+                quickPostVideoInput.value = '';
+                quickPostVideoPreview.style.display = 'none';
+                const videoEl = quickPostVideoPreview.querySelector('video');
+                if (videoEl) videoEl.src = '';
+                updateQuickPostUI();
+            };
+        }
+
         submitQuickPostBtn.addEventListener('click', async () => {
             const text = quickPostText.value.trim();
-            if (!text && !quickPostPhoto) return;
+            if (!text && !quickPostPhoto && !quickPostVideo) return;
 
             submitQuickPostBtn.disabled = true;
             submitQuickPostBtn.innerHTML = '<span class="loading-spinner"></span>';
 
-            const success = await submitQuickTextPost(text, quickPostPhoto);
+            const success = await submitQuickTextPost(text, quickPostPhoto, quickPostVideo);
 
             if (success) {
                 quickPostText.value = '';
                 quickPostPhoto = null;
+                quickPostVideo = null;
                 quickPostPhotoInput.value = '';
+                quickPostVideoInput.value = '';
                 quickPostPhotoPreview.style.display = 'none';
+                quickPostVideoPreview.style.display = 'none';
                 quickPostFooter.style.display = 'none';
                 quickPostText.style.height = '45px';
                 await loadHomeFeed();
@@ -332,7 +482,7 @@ async function initApp() {
         });
     }
 
-    async function submitQuickTextPost(text, photo = null) {
+    async function submitQuickTextPost(text, photo = null, video = null) {
         const currentUser = getCurrentUser();
         const token = sessionStorage.getItem('authToken');
 
@@ -344,6 +494,7 @@ async function initApp() {
         // Create a truncated name for the recipe
         let name = text.split('\n')[0].substring(0, 40);
         if (!name && photo) name = "Shared a photo";
+        if (!name && video) name = "Shared a video";
         if (text.length > 40) name += '...';
 
         const recipeData = {
@@ -353,9 +504,10 @@ async function initApp() {
             prepTime: 0,
             cookTime: 0,
             ingredients: "N/A",
-            instructions: text || "Shared a photo",
+            instructions: text || (photo ? "Shared a photo" : "Shared a video"),
             notes: "Shared via Quick Post",
             photo: photo,
+            video: video,
             visibility: "public",
             createdAt: new Date().toISOString()
         };
@@ -386,8 +538,32 @@ async function initApp() {
         }
     }
 
+    // Setup Store Marketplace listeners
+    setupStoreListeners();
+
     // Handle initial tab from hash or default to home
     handleHashRouting();
+
+    // Check for open_recipe in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const openRecipeId = urlParams.get('open_recipe');
+    if (openRecipeId) {
+        // Switch to store tab
+        const storeTabBtn = document.querySelector('[data-tab="store"]');
+        if (storeTabBtn) storeTabBtn.click();
+
+        // Open the specific recipe
+        setTimeout(() => typeof viewStoreRecipe === 'function' && viewStoreRecipe(openRecipeId), 500);
+    }
+
+    // Expose social functions to window for social-ui.js
+    window.editPost = editPost;
+    window.deletePost = deleteRecipe;
+    window.toggleLike = toggleLike;
+    window.sharePost = sharePost;
+    window.submitComment = submitComment;
+    window.editComment = editPostComment;
+    window.deleteComment = deletePostComment;
 }
 
 /**
@@ -395,7 +571,7 @@ async function initApp() {
  */
 function handleHashRouting() {
     const hash = window.location.hash.substring(1);
-    const validTabs = ['home', 'chefs', 'my-chefs', 'add-recipe', 'my-recipes'];
+    const validTabs = ['home', 'chefs', 'my-chefs', 'store', 'book', 'add-recipe', 'my-recipes'];
 
     // If we have a hash and it's a valid tab, switch to it
     if (hash && validTabs.includes(hash)) {
@@ -465,6 +641,29 @@ function setupEventListeners() {
         });
     }
 
+    // Recipe Visibility Filter Tabs (All / Public / Private)
+    const filterAllBtn = document.getElementById('filterAllRecipesBtn');
+    const filterPublicBtn = document.getElementById('filterPublicRecipesBtn');
+    const filterPrivateBtn = document.getElementById('filterPrivateRecipesBtn');
+    const filterBtns = [filterAllBtn, filterPublicBtn, filterPrivateBtn].filter(Boolean);
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Update active state
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Set filter
+            if (btn === filterAllBtn) currentVisibilityFilter = 'all';
+            else if (btn === filterPublicBtn) currentVisibilityFilter = 'public';
+            else if (btn === filterPrivateBtn) currentVisibilityFilter = 'private';
+
+            // Re-apply filter with current search term
+            const searchTerm = recipeSearch ? recipeSearch.value.toLowerCase().trim() : '';
+            filterRecipes(searchTerm);
+        });
+    });
+
     // Search Chefs
     const chefsSearch = document.getElementById('chefsSearch');
     if (chefsSearch) {
@@ -479,6 +678,8 @@ function setupEventListeners() {
             loadMyChefs();
         });
     }
+
+
 
     // Tab Navigation
     tabs.forEach(tab => {
@@ -506,9 +707,28 @@ function setupEventListeners() {
                 loadMyChefs();
             } else if (targetTab === 'home') {
                 loadHomeFeed();
+            } else if (targetTab === 'store') {
+                loadStoreRecipes();
             }
 
 
+            // Update hero image based on tab
+            const heroImg = document.getElementById('heroChefImg');
+            if (heroImg) {
+                let newSrc = '/hero-chef.png'; // Default
+                if (targetTab === 'chefs') newSrc = '/chef-group.png';
+                else if (targetTab === 'my-chefs') newSrc = '/my-chefs.png';
+                else if (targetTab === 'store') newSrc = '/chef-store.png';
+                else if (targetTab === 'my-recipes' || targetTab === 'add-recipe') newSrc = '/chef-book.png';
+                else if (targetTab === 'book') newSrc = '/chef-portfolio.png';
+
+                // Simple fade effect
+                heroImg.style.opacity = '0.5';
+                setTimeout(() => {
+                    heroImg.src = newSrc;
+                    heroImg.style.opacity = '1';
+                }, 200);
+            }
         });
     });
 
@@ -1027,25 +1247,31 @@ function checkAuth() {
 
 
 
-// Filter recipes by search term
+// Filter recipes by search term and visibility
 function filterRecipes(searchTerm) {
-    if (!searchTerm) {
-        // Show all recipes if search is empty
-        renderRecipes(currentUserRecipes);
-        return;
+    let filtered = currentUserRecipes;
+
+    // Apply visibility filter
+    if (currentVisibilityFilter === 'public') {
+        filtered = filtered.filter(r => r.visibility !== 'private');
+    } else if (currentVisibilityFilter === 'private') {
+        filtered = filtered.filter(r => r.visibility === 'private');
     }
 
-    const filteredRecipes = currentUserRecipes.filter(recipe => {
-        const name = recipe.name.toLowerCase();
-        const category = recipe.category.toLowerCase();
-        const ingredients = recipe.ingredients.toLowerCase();
+    // Apply search filter
+    if (searchTerm) {
+        filtered = filtered.filter(recipe => {
+            const name = recipe.name.toLowerCase();
+            const category = recipe.category.toLowerCase();
+            const ingredients = recipe.ingredients.toLowerCase();
 
-        return name.includes(searchTerm) ||
-            category.includes(searchTerm) ||
-            ingredients.includes(searchTerm);
-    });
+            return name.includes(searchTerm) ||
+                category.includes(searchTerm) ||
+                ingredients.includes(searchTerm);
+        });
+    }
 
-    renderRecipes(filteredRecipes);
+    renderRecipes(filtered);
 }
 
 // Save Recipe
@@ -1106,41 +1332,44 @@ async function loadHomeFeed() {
     const homeEmpty = document.getElementById('homeEmptyState');
     if (!homeGrid || !homeEmpty) return;
 
-    homeGrid.innerHTML = '<div class="loading">Loading community recipes...</div>';
+    homeGrid.innerHTML = '<div class="loading" style="padding: 20px; text-align: center;">Loading community recipes...</div>';
 
     try {
+        console.log('Fetching public recipes from:', `${API_URL}/recipes/public`);
         const response = await fetch(`${API_URL}/recipes/public`);
-        if (!response.ok) throw new Error('Failed to load home feed');
+
+        if (!response.ok) {
+            console.error('Home feed response error:', response.status);
+            throw new Error('Failed to load home feed');
+        }
 
         const result = await response.json();
-        const publicRecipes = Array.isArray(result) ? result : [];
+        console.log('Public recipes count:', result.length);
+
+        // Show all public recipes in the community feed
+        const publicPosts = Array.isArray(result) ? result : [];
 
         homeGrid.innerHTML = '';
-        if (publicRecipes.length === 0) {
+        if (publicPosts.length === 0) {
+            console.log('No public posts to show.');
             homeEmpty.classList.add('show');
             homeGrid.style.display = 'none';
         } else {
-            // Filter to show only posts (Quick Updates)
-            const posts = publicRecipes.filter(r =>
-                r.notes === "Shared via Quick Post" ||
-                r.category === "Other"
-            );
+            console.log('Rendering', publicPosts.length, 'posts...');
+            homeEmpty.classList.remove('show');
+            homeGrid.style.display = 'grid';
 
-            if (posts.length === 0) {
-                homeEmpty.classList.add('show');
-                homeGrid.style.display = 'none';
-            } else {
-                homeEmpty.classList.remove('show');
-                homeGrid.style.display = 'grid';
-
-                posts.forEach(post => {
-                    const card = createPostCard(post);
-                    homeGrid.appendChild(card);
-                });
-            }
+            publicPosts.forEach(item => {
+                try {
+                    const card = createPostCard(item);
+                    if (card) homeGrid.appendChild(card);
+                } catch (cardErr) {
+                    console.error('Error rendering individual post:', item.id, cardErr);
+                }
+            });
         }
     } catch (error) {
-        console.error('Error loading home feed:', error);
+        console.error('Error in loadHomeFeed:', error);
         homeGrid.innerHTML = '';
         homeEmpty.classList.add('show');
         homeGrid.style.display = 'none';
@@ -1161,7 +1390,10 @@ async function loadRecipes() {
 
         const result = await response.json();
         currentUserRecipes = Array.isArray(result) ? result : [];
-        renderRecipes(currentUserRecipes);
+
+        // Apply current visibility filter
+        const searchTerm = recipeSearch ? recipeSearch.value.toLowerCase().trim() : '';
+        filterRecipes(searchTerm);
 
     } catch (error) {
         console.error('Error loading recipes:', error);
@@ -1184,8 +1416,17 @@ function renderRecipes(recipes) {
         if (searchTerm) {
             emptyState.querySelector('h3').textContent = 'No recipes found';
             emptyState.querySelector('p').textContent = `No recipes match "${searchTerm}"`;
+        } else if (currentVisibilityFilter === 'public') {
+            emptyState.querySelector('.empty-icon').textContent = '🌍';
+            emptyState.querySelector('h3').textContent = 'No public recipes';
+            emptyState.querySelector('p').textContent = 'You haven\'t made any recipes public yet. Use the toggle on a recipe card to share it!';
+        } else if (currentVisibilityFilter === 'private') {
+            emptyState.querySelector('.empty-icon').textContent = '🔒';
+            emptyState.querySelector('h3').textContent = 'No private recipes';
+            emptyState.querySelector('p').textContent = 'All your recipes are currently public!';
         } else {
-            emptyState.querySelector('h3').textContent = 'Your recipe book is empty';
+            emptyState.querySelector('.empty-icon').textContent = '📖';
+            emptyState.querySelector('h3').textContent = 'Your Chef Book is empty';
             emptyState.querySelector('p').textContent = 'Start adding your favorite recipes!';
         }
     } else {
@@ -1299,16 +1540,16 @@ function createChefCard(chef) {
         </div>
     `;
 
-    // Add click event for "View Profile" to show chef's recipes in a modal
+    // Add click event for "View Profile" to redirect to chef profile page
     const viewBtn = card.querySelector('.view-chef-recipes');
     viewBtn.onclick = (e) => {
         e.stopPropagation();
-        showChefRecipesModal(chef);
+        window.location.href = `chef-profile.html?username=${chef.username}`;
     };
 
     // Make whole card clickable too
     card.onclick = () => {
-        showChefRecipesModal(chef);
+        window.location.href = `chef-profile.html?username=${chef.username}`;
     };
 
     // Follow button logic
@@ -1502,7 +1743,7 @@ async function showChefRecipesModal(chef) {
     // Fetch and render recipes
     try {
         const token = sessionStorage.getItem('authToken');
-        const response = await fetch('http://localhost:3001/api/recipes/public', {
+        const response = await fetch('/api/recipes/public', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1552,7 +1793,7 @@ async function showChefRecipesModal(chef) {
                             <span>🍽️ ${recipe.servings}</span>
                             <span>${difficultyIcon}</span>
                         </div>
-                        <button class="btn-view-chef-recipe">View Recipe</button>
+                        <button class="btn-view-chef-recipe">View Post</button>
                     </div>
                 `;
 
@@ -1578,77 +1819,9 @@ async function showChefRecipesModal(chef) {
     }
 }
 
-// Create Post Card (Text-only social post)
-function createPostCard(post) {
-    const card = document.createElement('div');
-    card.className = 'post-card';
+// Create Post Card (Text-only social post) - Moved to social-ui.js
 
-    // Author handling
-    let authorName = post.author?.name || post.authorName || 'Chef';
-    let authorPic = post.author?.pic || 'assets/default-avatar.png';
-    let isPremium = post.author?.isPremium || post.isPremium || false;
-
-    const timeAgo = formatTimeAgo(post.dateAdded || post.createdAt);
-
-    // Image logic for post
-    let photoHtml = '';
-    if (post.photo) {
-        photoHtml = `
-            <div class="post-media" style="margin-top: 15px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <img src="${post.photo}" alt="Post Photo" style="width: 100%; display: block; max-height: 500px; object-fit: cover;">
-            </div>
-        `;
-    }
-
-    card.innerHTML = `
-        <div class="post-header">
-            <div class="post-author-info">
-                <div class="author-avatar-med">
-                    <img src="${authorPic}" alt="${authorName}" onerror="this.src='https://ui-avatars.com/api/?name=${authorName}&background=random'">
-                </div>
-                <div class="author-details">
-                    <div class="author-name-row">
-                        <span class="author-display-name">${authorName}</span>
-                        ${isPremium ? '<span class="premium-star" title="Premium Chef">💎</span>' : ''}
-                    </div>
-                    <span class="post-time">${timeAgo}</span>
-                </div>
-            </div>
-            <div class="post-menu-btn">⋮</div>
-        </div>
-        <div class="post-content">
-            <p>${post.instructions}</p>
-            ${photoHtml}
-        </div>
-        <div class="post-footer">
-            <div class="post-stats">
-                <span class="post-stat">❤️ 0</span>
-                <span class="post-stat">💬 0</span>
-                <span class="post-stat">🔁 0</span>
-            </div>
-            <div class="post-actions">
-                <button class="post-btn-action">Like</button>
-                <button class="post-btn-action">Comment</button>
-                <button class="post-btn-action">Share</button>
-            </div>
-        </div>
-    `;
-
-    return card;
-}
-
-function formatTimeAgo(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-
-    return date.toLocaleDateString();
-}
+// Moved formatTimeAgo to social-ui.js
 
 // Create Recipe Card (User's)
 function createRecipeCard(recipe, isPublicFeed = false) {
@@ -1695,11 +1868,10 @@ function createRecipeCard(recipe, isPublicFeed = false) {
     card.innerHTML = `
         <div class="recipe-card-image">
             ${photoDisplay}
+            ${recipe.video ? `<div class="recipe-video-badge" style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px 8px; border-radius: 20px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px; z-index: 5; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">📽️ Video</div>` : ''}
         </div>
 
         ${toggleHtml}
-
-        <div class="recipe-category-tag" style="left: 15px; right: auto;">${recipe.category}</div>
 
         <div class="public-card-overlay">
             <h3 class="recipe-title">${recipe.name}</h3>
@@ -1711,7 +1883,7 @@ function createRecipeCard(recipe, isPublicFeed = false) {
             </div>
 
             <div class="overlay-actions">
-                <button class="btn-overlay-action" data-action="view" title="View Recipe">👁️</button>
+                <button class="btn-overlay-action" data-action="view" title="View Post">👁️</button>
                 <button class="btn-overlay-action" data-action="menu" title="Add to Menu">📅</button>
                 <button class="btn-overlay-action" data-action="share" title="Share Recipe">🔗</button>
                 <button class="btn-overlay-action" data-action="pdf" title="Save PDF">📄</button>
@@ -1810,35 +1982,14 @@ function createRecipeCard(recipe, isPublicFeed = false) {
 
 
 // Helper Functions
-function getCategoryEmoji(category) {
-    const emojis = {
-        'cakes': '🎂',
-        'cookies': '🍪',
-        'pastries': '🥐',
-        'pies': '🥧',
-        'breads': '🍞',
-        'desserts': '🍰',
-        'chocolates': '🍫',
-        'other': '✨'
-    };
-    return emojis[category] || '🧁';
-}
-
-function getDifficultyText(difficulty) {
-    const levels = {
-        'easy': '🟢 Easy',
-        'medium': '🟡 Medium',
-        'hard': '🔴 Hard'
-    };
-    return levels[difficulty] || '🟡 Medium';
-}
+// getCategoryEmoji and getDifficultyText moved to recipe-utils.js
 
 // Handle Share Recipe
 function handleShareRecipe(recipe) {
     if (navigator.share) {
         navigator.share({
             title: `Check out this recipe: ${recipe.name}`,
-            text: `I found this delicious ${recipe.name} recipe on Pastry Recipe Book!`,
+            text: `I found this delicious ${recipe.name} recipe on Chef Book!`,
             url: window.location.href
         }).then(() => {
             showNotification('✅ Shared successfully!', 'success');
@@ -1857,7 +2008,6 @@ function handleShareRecipe(recipe) {
     }
 }
 
-// View Recipe
 function viewRecipe(idOrRecipe, isPublic = false) {
     let recipe;
 
@@ -1872,6 +2022,19 @@ function viewRecipe(idOrRecipe, isPublic = false) {
     const categoryEmoji = getCategoryEmoji(recipe.category);
     const difficultyText = getDifficultyText(recipe.difficulty);
     const totalTime = recipe.prepTime + recipe.cookTime;
+
+    // Auth info for comments actions
+    let currentUserId = null;
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            currentUserId = payload.userId;
+        } catch (e) { }
+    }
+
+    const commentsList = Array.isArray(recipe.comments) ? recipe.comments : [];
+    const commentsHtml = renderCommentsList(commentsList, recipe.author?.userId, currentUserId);
 
     modalBody.innerHTML = `
         <div class="modal-recipe-image">
@@ -1921,12 +2084,34 @@ function viewRecipe(idOrRecipe, isPublic = false) {
             </ol>
         </div>
         
+        ${recipe.video ? `
+            <div class="modal-section modal-video">
+                <h3>📹 ${t('recipeVideo')}</h3>
+                <video src="${recipe.video}" controls style="width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></video>
+            </div>
+        ` : ''}
+        
         ${recipe.notes ? `
             <div class="modal-section modal-notes">
                 <h3>💡 Chef's Notes</h3>
                 <p>${recipe.notes}</p>
             </div>
         ` : ''}
+
+        <!-- Comments Section -->
+        <div class="modal-section modal-comments-section" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 30px;">
+            <h3>💬 Comments (<span class="modal-comments-count">${commentsList.length}</span>)</h3>
+            <div class="modal-comments-list" style="margin-top: 15px;">
+                ${commentsHtml}
+            </div>
+            
+            ${isPublic ? `
+            <form class="modal-comment-form" style="display: flex; gap: 8px; margin-top: 20px; padding-top: 15px; border-top: 1px dotted rgba(255,255,255,0.1);">
+                <input type="text" class="modal-comment-input" placeholder="Write a comment..." required style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 15px; color: white; font-size: 0.9rem; outline: none;">
+                <button type="submit" class="btn btn-primary" style="padding: 6px 15px; border-radius: 20px; font-size: 0.85rem;">Post</button>
+            </form>
+            ` : ''}
+        </div>
     `;
 
     // Add event listener for the modal PDF button
@@ -1935,12 +2120,143 @@ function viewRecipe(idOrRecipe, isPublic = false) {
         savePdfBtn.addEventListener('click', () => saveRecipeAsPdf(recipe));
     }
 
+    // Comment Submission in modal
+    const modalCommentForm = modalBody.querySelector('.modal-comment-form');
+    if (modalCommentForm) {
+        modalCommentForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const input = modalCommentForm.querySelector('.modal-comment-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const submitBtn = modalCommentForm.querySelector('button');
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/recipes/${recipe.id}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    input.value = '';
+
+                    // Add to UI manually or reload modal? Let's add manually for best UX
+                    const commentsListEl = modalBody.querySelector('.modal-comments-list');
+                    const countSpan = modalBody.querySelector('.modal-comments-count');
+
+                    if (commentsListEl) {
+                        // If it said "No comments yet", clear it
+                        if (commentsListEl.textContent.trim() === 'No comments yet.') {
+                            commentsListEl.innerHTML = '';
+                        }
+
+                        const commentHtml = `
+                            <div class="post-comment" id="comment-${data.comment.id}" style="display: flex; gap: 10px; margin-top: 10px; font-size: 0.85rem;">
+                                <img src="${data.comment.authorPic}" alt="${data.comment.authorName}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${data.comment.authorName}&background=random'">
+                                <div style="background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 12px; flex: 1;">
+                                    <strong style="color: var(--accent-pink);">${data.comment.authorName}</strong>
+                                    <span class="comment-text" style="display: block; margin-top: 2px;">${text}</span>
+                                    <div style="margin-top: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 10px;">
+                                        <a href="#" class="like-comment-btn" data-id="${data.comment.id}" style="color: #aaa; text-decoration: none;">🤍 Like</a>
+                                        <a href="#" class="edit-comment-btn" data-id="${data.comment.id}" style="color: #aaa; text-decoration: none;">Edit</a>
+                                        <a href="#" class="del-comment-btn" data-id="${data.comment.id}" style="color: #ff6b6b; text-decoration: none;">Delete</a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        commentsListEl.innerHTML += commentHtml;
+                    }
+
+                    if (countSpan) {
+                        countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        };
+    }
+
+    // Modal Comment Actions Delegation
+    const modalCommentsList = modalBody.querySelector('.modal-comments-list');
+    if (modalCommentsList) {
+        modalCommentsList.onsubmit = (e) => {
+            const replyForm = e.target.closest('.reply-form');
+            if (replyForm) {
+                e.preventDefault();
+                const parentId = replyForm.dataset.parentId;
+                const input = replyForm.querySelector('.reply-input');
+                const text = input ? input.value.trim() : '';
+                if (text) {
+                    submitComment(recipe.id, text, modalBody, parentId);
+                    input.value = '';
+                    replyForm.style.display = 'none';
+                }
+            }
+        };
+
+        modalCommentsList.onclick = (e) => {
+            const editBtn = e.target.closest('.edit-comment-btn');
+            const delBtn = e.target.closest('.del-comment-btn');
+            const likeBtn = e.target.closest('.like-comment-btn');
+            const replyBtn = e.target.closest('.reply-comment-btn');
+            const countSpan = modalBody.querySelector('.modal-comments-count');
+
+            if (replyBtn) {
+                e.preventDefault();
+                const wrapper = e.target.closest('.post-comment-wrapper');
+                const form = wrapper ? wrapper.querySelector('.reply-form') : null;
+                if (form) {
+                    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                    if (form.style.display === 'block') {
+                        const input = form.querySelector('.reply-input');
+                        if (input) input.focus();
+                    }
+                }
+            }
+
+            if (likeBtn) {
+                e.preventDefault();
+                const commentId = likeBtn.dataset.id;
+                if (commentId && typeof window.toggleCommentLike === 'function') {
+                    window.toggleCommentLike(commentId, likeBtn);
+                }
+            }
+
+            if (editBtn) {
+                e.preventDefault();
+                const commentId = editBtn.dataset.id;
+                const commentEl = editBtn.closest('.post-comment');
+                const textEl = commentEl ? commentEl.querySelector('.comment-text') : null;
+                if (commentId && textEl) editPostComment(commentId, recipe.id, textEl);
+            }
+
+            if (delBtn) {
+                e.preventDefault();
+                const commentId = delBtn.dataset.id;
+                const commentEl = delBtn.closest('.post-comment');
+                if (commentId && commentEl) deletePostComment(commentId, recipe.id, commentEl, countSpan);
+            }
+        };
+    }
+
     modal.classList.add('show');
 }
 
+// Expose to window for social-ui.js
+window.viewRecipe = viewRecipe;
+
 // Delete Recipe
 async function deleteRecipe(id) {
-    if (!confirm('Are you sure you want to delete this recipe?')) return;
+    if (!confirm('Are you sure you want to delete this post?')) return;
 
     try {
         const token = sessionStorage.getItem('authToken');
@@ -1949,14 +2265,345 @@ async function deleteRecipe(id) {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error('Failed to delete recipe');
+        if (!response.ok) throw new Error('Failed to delete');
 
-        showNotification('Recipe deleted!', 'success');
+        showNotification('Post deleted!', 'success');
         await loadRecipes(); // Reload from server
+        if (document.getElementById('home').classList.contains('active')) {
+            await loadHomeFeed();
+        }
 
     } catch (error) {
         console.error('Delete error:', error);
-        showNotification('Failed to delete recipe', 'error');
+        showNotification('Failed to delete post', 'error');
+    }
+}
+
+// Social Logic
+async function toggleLike(id, countSpan, likeBtn) {
+    try {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+            showNotification('❌ Please log in to like posts.', 'error');
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/recipes/${id}/like`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            let count = parseInt(countSpan.textContent);
+            if (likeBtn.classList.contains('liked')) {
+                likeBtn.classList.remove('liked');
+                count--;
+            } else {
+                likeBtn.classList.add('liked');
+                count++;
+            }
+            countSpan.textContent = count;
+        }
+    } catch (err) {
+        console.error('Like error:', err);
+    }
+}
+
+async function submitComment(id, text, card, parentId = null) {
+    try {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+            showNotification('❌ Please log in to comment.', 'error');
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/recipes/${id}/comment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text, parentId })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const commentsList = card.querySelector('.comments-list') || card.querySelector('.modal-comments-list');
+            const countSpan = card.querySelector('.comments-count') || card.querySelector('.modal-comments-count');
+
+            if (commentsList) {
+                // Remove "No comments yet" if present
+                if (commentsList.textContent.trim() === 'No comments yet.') {
+                    commentsList.innerHTML = '';
+                }
+
+                const isReply = !!parentId;
+                const commentHtml = `
+                    <div class="post-comment-wrapper" id="comment-wrapper-${data.comment.id}">
+                        <div class="post-comment" id="comment-${data.comment.id}" style="display: flex; gap: 10px; margin-top: 10px; font-size: 0.85rem;">
+                            <img src="${data.comment.authorPic}" alt="${data.comment.authorName}" style="width: ${isReply ? '20px' : '24px'}; height: ${isReply ? '20px' : '24px'}; border-radius: 50%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${data.comment.authorName}&background=random'">
+                            <div style="background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 12px; flex: 1;">
+                                <strong style="color: var(--accent-pink);">${data.comment.authorName}</strong>
+                                <span class="comment-text" style="display: block; margin-top: 2px;">${text}</span>
+                                <div style="margin-top: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 10px;">
+                                    <a href="#" class="like-comment-btn" data-id="${data.comment.id}" style="color: #aaa; text-decoration: none;">🤍 Like</a>
+                                    <a href="#" class="reply-comment-btn" data-id="${data.comment.id}" style="color: #aaa; text-decoration: none;">Reply</a>
+                                    <a href="#" class="edit-comment-btn" data-id="${data.comment.id}" style="color: #aaa; text-decoration: none;">Edit</a>
+                                    <a href="#" class="del-comment-btn" data-id="${data.comment.id}" style="color: #ff6b6b; text-decoration: none;">Delete</a>
+                                </div>
+                            </div>
+                        </div>
+                        <form class="reply-form" data-parent-id="${data.comment.id}" style="display: none; margin-left: 34px; margin-top: 8px;">
+                            <input type="text" class="reply-input" placeholder="Write a reply..." required style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 4px 12px; color: white; font-size: 0.8rem; outline: none;">
+                        </form>
+                    </div>
+                `;
+
+                if (isReply) {
+                    const parentWrapper = commentsList.querySelector(`#comment-wrapper-${parentId}`);
+                    if (parentWrapper) {
+                        let repliesContainer = parentWrapper.querySelector('.replies-container');
+                        if (!repliesContainer) {
+                            repliesContainer = document.createElement('div');
+                            repliesContainer.className = 'replies-container';
+                            repliesContainer.style.marginLeft = '20px';
+                            repliesContainer.style.borderLeft = '1px solid rgba(255,255,255,0.05)';
+                            repliesContainer.style.paddingLeft = '10px';
+                            parentWrapper.appendChild(repliesContainer);
+                        }
+                        const temp = document.createElement('div');
+                        temp.innerHTML = commentHtml;
+                        repliesContainer.appendChild(temp.firstElementChild);
+                    }
+                } else {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = commentHtml;
+                    commentsList.appendChild(temp.firstElementChild);
+                }
+            }
+
+            if (countSpan) {
+                countSpan.textContent = parseInt(countSpan.textContent) + 1;
+                // Also ensure section is visible
+                const section = card.querySelector('.post-comments-section');
+                if (section) section.style.display = 'block';
+            }
+        }
+    } catch (err) {
+        console.error('Comment error:', err);
+    }
+}
+
+async function sharePost(id) {
+    if (!confirm('Share this post to your feed?')) return;
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+            showNotification('❌ Please log in to share.', 'error');
+            return;
+        }
+
+        const response = await fetch(`${API_URL}/recipes/${id}/share`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            showNotification('✅ Post shared to your feed!', 'success');
+            if (document.getElementById('home').classList.contains('active')) {
+                await loadHomeFeed();
+            }
+        } else {
+            const data = await response.json();
+            showNotification(data.error || '❌ Failed to share post', 'error');
+        }
+    } catch (err) {
+        console.error('Share error:', err);
+    }
+}
+
+async function toggleCommentLike(commentId, likeBtn) {
+    if (!isLoggedIn()) {
+        showNotification('Please login to like comments', 'error');
+        return;
+    }
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/recipes/comments/${commentId}/like`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to toggle like');
+
+        const data = await response.json();
+
+        // Update UI
+        if (data.liked) {
+            likeBtn.innerHTML = `❤️ Liked ${data.count > 0 ? `<span class="comment-likes-count">(${data.count})</span>` : ''}`;
+            likeBtn.style.color = 'var(--accent-pink)';
+            likeBtn.style.fontWeight = '700';
+        } else {
+            likeBtn.innerHTML = `🤍 Like ${data.count > 0 ? `<span class="comment-likes-count">(${data.count})</span>` : ''}`;
+            likeBtn.style.color = '#aaa';
+            likeBtn.style.fontWeight = '400';
+        }
+
+    } catch (error) {
+        console.error('Like comment error:', error);
+    }
+}
+
+// Global exposure
+window.toggleCommentLike = toggleCommentLike;
+
+async function deletePostComment(commentId, recipeId, commentEl, countSpan) {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/recipes/comments/${commentId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            showNotification('Comment deleted!', 'success');
+            if (commentEl) commentEl.remove();
+            if (countSpan) {
+                let count = parseInt(countSpan.textContent) || 0;
+                if (count > 0) countSpan.textContent = count - 1;
+            }
+        } else {
+            throw new Error('Failed to delete comment');
+        }
+    } catch (err) {
+        console.error('Delete comment error:', err);
+        showNotification('❌ Failed to delete comment', 'error');
+    }
+}
+
+async function editPostComment(commentId, recipeId, textEl) {
+    const oldText = textEl.textContent.trim();
+    const newText = prompt('Edit your comment:', oldText);
+
+    if (newText === null || newText === oldText || !newText.trim()) return;
+
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/recipes/comments/${commentId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ text: newText.trim() })
+        });
+
+        if (response.ok) {
+            textEl.textContent = newText.trim();
+            showNotification('Comment updated!', 'success');
+        } else {
+            throw new Error('Failed to update comment');
+        }
+    } catch (err) {
+        console.error('Update comment error:', err);
+        showNotification('❌ Failed to update comment', 'error');
+    }
+}
+
+// Edit Post/Recipe
+async function editPost(id) {
+    try {
+        const token = sessionStorage.getItem('authToken');
+        const response = await fetch(`${API_URL}/recipes/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch details');
+        const recipe = await response.json();
+
+        // Fill form fields
+        const nameInput = document.getElementById('addRecipeName');
+        const categoryInput = document.getElementById('addRecipeCategory');
+        const prepInput = document.getElementById('addPrepTime');
+        const cookInput = document.getElementById('addCookTime');
+        const ingredientsInput = document.getElementById('addRecipeIngredients');
+        const instructionsInput = document.getElementById('addRecipeInstructions');
+        const notesInput = document.getElementById('addRecipeNotes');
+        const isPublicCheckbox = document.getElementById('addRecipeIsPublic');
+
+        if (nameInput) nameInput.value = recipe.name || '';
+        if (categoryInput) categoryInput.value = recipe.category || '';
+        if (prepInput) prepInput.value = recipe.prepTime || 0;
+        if (cookInput) cookInput.value = recipe.cookTime || 0;
+        if (ingredientsInput) ingredientsInput.value = recipe.ingredients || '';
+        if (instructionsInput) instructionsInput.value = recipe.instructions || '';
+        if (notesInput) notesInput.value = recipe.notes || '';
+        if (isPublicCheckbox) isPublicCheckbox.checked = (recipe.visibility === 'public');
+
+        // Photo
+        const addRecipePreview = document.getElementById('addRecipePreview');
+        const addUploadPlaceholder = document.getElementById('addUploadPlaceholder');
+        if (recipe.photo) {
+            addRecipePhoto = recipe.photo;
+            if (addRecipePreview) {
+                addRecipePreview.src = recipe.photo;
+                addRecipePreview.style.display = 'block';
+            }
+            if (addUploadPlaceholder) addUploadPlaceholder.style.display = 'none';
+        } else {
+            addRecipePhoto = null;
+            if (addRecipePreview) addRecipePreview.style.display = 'none';
+            if (addUploadPlaceholder) addUploadPlaceholder.style.display = 'block';
+        }
+
+        // Video
+        const addRecipeVideoPreview = document.getElementById('addRecipeVideoPreview');
+        const addVideoUploadPlaceholder = document.getElementById('addVideoUploadPlaceholder');
+        if (recipe.video) {
+            addRecipeVideo = recipe.video;
+            if (addRecipeVideoPreview) {
+                addRecipeVideoPreview.src = recipe.video;
+                addRecipeVideoPreview.style.display = 'block';
+            }
+            if (addVideoUploadPlaceholder) addVideoUploadPlaceholder.style.display = 'none';
+        } else {
+            addRecipeVideo = null;
+            if (addRecipeVideoPreview) addRecipeVideoPreview.style.display = 'none';
+            if (addVideoUploadPlaceholder) addVideoUploadPlaceholder.style.display = 'block';
+        }
+
+        // Difficulty buttons
+        const diffBtns = document.querySelectorAll('#addRecipeModal .diff-btn');
+        const diffInput = document.getElementById('addRecipeDifficulty');
+        diffBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if (recipe.difficulty && btn.getAttribute('data-value').toLowerCase() === recipe.difficulty.toLowerCase()) {
+                btn.classList.add('active');
+                if (diffInput) diffInput.value = btn.getAttribute('data-value');
+            }
+        });
+
+        // Set global edit state
+        editingRecipeId = id;
+
+        // Change Modal title and button text
+        document.querySelector('#addRecipeModal h2 span').textContent = 'Edit Post';
+        const submitBtn = document.querySelector('#addRecipeForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.querySelector('span:not(.btn-icon)').textContent = 'Update Post';
+        }
+
+        // Show modal
+        const addRecipeModal = document.getElementById('addRecipeModal');
+        if (addRecipeModal) addRecipeModal.style.display = 'flex';
+
+    } catch (err) {
+        console.error('Edit error:', err);
+        showNotification('❌ Error loading post details', 'error');
     }
 }
 
@@ -1999,7 +2646,7 @@ function handleDownloadPdf() {
     doc.setFontSize(36);
     doc.setFont('helvetica', 'bold');
     doc.text('My Pastry', 105, 100, { align: 'center' });
-    doc.text('Recipe Book', 105, 120, { align: 'center' });
+    doc.text('Chef Book', 105, 120, { align: 'center' });
 
     doc.setFontSize(16);
     doc.setFont('helvetica', 'normal');
@@ -2022,7 +2669,7 @@ function handleDownloadPdf() {
 
     // Save PDF
     doc.save('my_pastry_recipe_book.pdf');
-    showNotification('PDF Recipe Book saved to your PC! 📄', 'success');
+    showNotification('PDF Chef Book saved to your PC! 📄', 'success');
 }
 
 // Helper to generate a single recipe page
@@ -2242,7 +2889,7 @@ function showUpgradePrompt(feature) {
             description: 'Upgrade to Premium to export your recipes as beautiful PDF documents!',
             benefits: [
                 'Export individual recipes as PDF',
-                'Download your entire recipe book',
+                'Download your entire Chef Book',
                 'Share recipes with friends and family'
             ]
         },
@@ -2473,3 +3120,595 @@ function renderMyChefs(chefs) {
         });
     }
 }
+
+// ===== TRENDING CAROUSEL (Dynamic from Store) =====
+
+// Category emoji map for trending card fallback backgrounds
+const categoryEmojiMap = {
+    'Cakes': '🎂', 'Cookies': '🍪', 'Pastries': '🥐', 'Pies & Tarts': '🥧',
+    'Breads': '🍞', 'Desserts': '🍰', 'Chocolates': '🍫', 'Other': '✨'
+};
+
+// Gradient color palette for trending cards (keeps it visually diverse)
+const trendingGradients = [
+    'linear-gradient(135deg, #0f0c1b, #FF0076)',
+    'linear-gradient(135deg, #231937, #9D00FF)',
+    'linear-gradient(135deg, #0f0c1b, #590FB7)',
+    'linear-gradient(135deg, #1a1025, #FF6B8A)',
+    'linear-gradient(135deg, #0d1b2a, #1B98E0)',
+    'linear-gradient(135deg, #1a0f2e, #E040FB)',
+    'linear-gradient(135deg, #0f2027, #2C5364)',
+    'linear-gradient(135deg, #141E30, #243B55)',
+];
+
+// Tag labels for variety
+const trendingTags = ['New', 'Store', 'Featured', 'Popular', 'Top Pick', 'Hot', 'Chef Pick', 'Trending'];
+
+/**
+ * Loads store recipes and displays random ones in the trending carousel.
+ * Called on page load and refreshes every time.
+ */
+async function loadTrendingCarousel() {
+    const carousel = document.getElementById('trendingCarousel');
+    const section = document.getElementById('trendingSection');
+    if (!carousel) return;
+
+    try {
+        const response = await fetch(`${API_URL}/store`);
+        if (!response.ok) throw new Error('Failed to fetch store recipes');
+        const recipes = await response.json();
+
+        carousel.innerHTML = '';
+
+        if (!recipes || recipes.length === 0) {
+            // Show a friendly empty state
+            carousel.innerHTML = `
+                <div class="trending-empty-state">
+                    <div class="empty-emoji">🛒</div>
+                    <h4>No store recipes yet</h4>
+                    <p>Be the first to sell a recipe!</p>
+                    <button class="btn btn-primary" onclick="document.querySelector('[data-tab=\\'store\\']')?.click()">
+                        Browse Store
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        // Shuffle recipes randomly using Fisher-Yates algorithm
+        const shuffled = [...recipes];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        // Display up to 6 random recipes
+        const displayCount = Math.min(shuffled.length, 6);
+        for (let i = 0; i < displayCount; i++) {
+            const recipe = shuffled[i];
+            const card = createTrendingCard(recipe, i);
+            carousel.appendChild(card);
+        }
+
+    } catch (error) {
+        console.error('Load trending carousel error:', error);
+        // Keep skeletons or show empty state on error
+        carousel.innerHTML = `
+            <div class="trending-empty-state">
+                <div class="empty-emoji">🛒</div>
+                <h4>No store recipes yet</h4>
+                <p>Be the first to sell a recipe!</p>
+                <button class="btn btn-primary" onclick="document.querySelector('[data-tab=\\'store\\']')?.click()">
+                    Browse Store
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Creates a single trending card element from a store recipe.
+ */
+function createTrendingCard(recipe, index) {
+    const card = document.createElement('div');
+    card.className = 'trending-card';
+    card.style.animationDelay = `${index * 0.1}s`;
+
+    const emoji = categoryEmojiMap[recipe.category] || '🧁';
+    const gradient = trendingGradients[index % trendingGradients.length];
+    const tag = trendingTags[index % trendingTags.length];
+    const sellerAvatar = recipe.seller?.pic || `https://ui-avatars.com/api/?name=${encodeURIComponent(recipe.seller?.name || 'Chef')}&background=random&size=44`;
+    const sellerName = recipe.seller?.name || 'Chef';
+
+    const imageSection = recipe.photo
+        ? `<img class="trending-card-img" src="${recipe.photo}" alt="${recipe.name}">`
+        : `<div class="card-bg-fallback" style="background: ${gradient}; display: flex; align-items:center; justify-content:center; font-size:4rem;">${emoji}</div>`;
+
+    card.innerHTML = `
+        ${imageSection}
+        <div class="trending-overlay">
+            <span class="trending-tag">${tag}</span>
+            <h3>${recipe.name}</h3>
+            <div class="trending-seller-info">
+                <img src="${sellerAvatar}" alt="${sellerName}">
+                <span>${sellerName}</span>
+            </div>
+            <div class="trending-footer">
+                <span>${recipe.category || 'Recipe'}</span>
+                <span class="trending-price">$${recipe.price.toFixed(2)}</span>
+            </div>
+        </div>
+    `;
+
+    // Click to view the recipe in the store
+    card.addEventListener('click', () => {
+        const storeTabBtn = document.querySelector('[data-tab="store"]');
+        if (storeTabBtn) storeTabBtn.click();
+        // Open the recipe after a small delay to let the tab switch
+        setTimeout(() => {
+            if (typeof viewStoreRecipe === 'function') viewStoreRecipe(recipe.id);
+        }, 400);
+    });
+
+    return card;
+}
+
+// ===== STORE MARKETPLACE =====
+let sellRecipePhoto = null;
+
+function setupStoreListeners() {
+    // Sell Recipe button
+    const sellRecipeBtn = document.getElementById('sellRecipeBtn');
+    const sellRecipeModal = document.getElementById('sellRecipeModal');
+    const closeSellModal = document.getElementById('closeSellModal');
+    const sellRecipeForm = document.getElementById('sellRecipeForm');
+
+    if (sellRecipeBtn && sellRecipeModal) {
+        sellRecipeBtn.addEventListener('click', () => {
+            sellRecipeModal.classList.add('show');
+        });
+    }
+
+    if (closeSellModal && sellRecipeModal) {
+        closeSellModal.addEventListener('click', () => sellRecipeModal.classList.remove('show'));
+        sellRecipeModal.addEventListener('click', (e) => {
+            if (e.target === sellRecipeModal) sellRecipeModal.classList.remove('show');
+        });
+    }
+
+    // Photo upload for sell form
+    const sellPhotoUpload = document.getElementById('sellRecipeImageUpload');
+    const sellPhotoInput = document.getElementById('sellRecipePhotoInput');
+    const sellPhotoPreview = document.getElementById('sellRecipePhotoPreview');
+    const sellPlaceholder = document.getElementById('sellUploadPlaceholder');
+
+    if (sellPhotoUpload && sellPhotoInput) {
+        sellPhotoUpload.addEventListener('click', () => sellPhotoInput.click());
+        sellPhotoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    sellRecipePhoto = ev.target.result;
+                    if (sellPhotoPreview) {
+                        sellPhotoPreview.src = ev.target.result;
+                        sellPhotoPreview.style.display = 'block';
+                    }
+                    if (sellPlaceholder) sellPlaceholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Sell form submit
+    if (sellRecipeForm) {
+        sellRecipeForm.addEventListener('submit', handleSellRecipeSubmit);
+    }
+
+    // Purchase modal close
+    const purchaseModal = document.getElementById('storePurchaseModal');
+    const closePurchaseModal = document.getElementById('closePurchaseModal');
+    if (closePurchaseModal && purchaseModal) {
+        closePurchaseModal.addEventListener('click', () => purchaseModal.classList.remove('show'));
+        purchaseModal.addEventListener('click', (e) => {
+            if (e.target === purchaseModal) purchaseModal.classList.remove('show');
+        });
+    }
+
+    // Recipe view modal close
+    const viewModal = document.getElementById('storeRecipeViewModal');
+    const closeView = document.getElementById('closeStoreRecipeView');
+    if (closeView && viewModal) {
+        closeView.addEventListener('click', () => viewModal.classList.remove('show'));
+        viewModal.addEventListener('click', (e) => {
+            if (e.target === viewModal) viewModal.classList.remove('show');
+        });
+    }
+
+    // Store sub-tabs (Browse / My Listings / Purchased)
+    const storeTabBtns = document.querySelectorAll('.store-tab-btn');
+    storeTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            storeTabBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const tab = btn.dataset.storeTab;
+            document.getElementById('storeGrid').style.display = tab === 'browse' ? 'grid' : 'none';
+            document.getElementById('myListingsGrid').style.display = tab === 'my-listings' ? 'grid' : 'none';
+            document.getElementById('purchasedGrid').style.display = tab === 'purchased' ? 'grid' : 'none';
+
+            if (tab === 'browse') loadStoreRecipes();
+            else if (tab === 'my-listings') loadMyListings();
+            else if (tab === 'purchased') loadMyPurchases();
+        });
+    });
+
+    // Store search
+    const storeSearch = document.getElementById('storeSearch');
+    if (storeSearch) {
+        storeSearch.addEventListener('input', () => loadStoreRecipes());
+    }
+}
+
+async function handleSellRecipeSubmit(e) {
+    e.preventDefault();
+
+    const token = sessionStorage.getItem('authToken');
+    if (!token) { showNotification('❌ Please log in.', 'error'); return; }
+
+    const data = {
+        name: document.getElementById('sellRecipeName').value.trim(),
+        description: document.getElementById('sellRecipeDesc').value.trim(),
+        category: document.getElementById('sellRecipeCategory').value,
+        price: parseFloat(document.getElementById('sellRecipePrice').value),
+        photo: sellRecipePhoto,
+        ingredients: document.getElementById('sellRecipeIngredients').value.trim(),
+        instructions: document.getElementById('sellRecipeInstructions').value.trim(),
+        notes: document.getElementById('sellRecipeNotes').value.trim()
+    };
+
+    if (!data.name || !data.price || data.price <= 0) {
+        showNotification('❌ Name and valid price are required.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/store`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+            showNotification('✅ Recipe listed in the store! 🏷️', 'success');
+            document.getElementById('sellRecipeModal').classList.remove('show');
+            document.getElementById('sellRecipeForm').reset();
+            sellRecipePhoto = null;
+            const preview = document.getElementById('sellRecipePhotoPreview');
+            const placeholder = document.getElementById('sellUploadPlaceholder');
+            if (preview) { preview.style.display = 'none'; preview.src = ''; }
+            if (placeholder) placeholder.style.display = 'block';
+            loadStoreRecipes();
+        } else {
+            showNotification(result.error || '❌ Failed to list recipe.', 'error');
+        }
+    } catch (err) {
+        console.error('Sell recipe error:', err);
+        showNotification('❌ Connection error.', 'error');
+    }
+}
+
+async function loadStoreRecipes() {
+    const grid = document.getElementById('storeGrid');
+    const emptyState = document.getElementById('storeEmptyState');
+    if (!grid) return;
+
+    try {
+        const response = await fetch(`${API_URL}/store`);
+        const recipes = await response.json();
+
+        const searchTerm = (document.getElementById('storeSearch')?.value || '').toLowerCase().trim();
+        const filtered = searchTerm
+            ? recipes.filter(r => r.name.toLowerCase().includes(searchTerm) || r.category.toLowerCase().includes(searchTerm))
+            : recipes;
+
+        grid.innerHTML = '';
+
+        if (filtered.length === 0) {
+            grid.style.display = 'none';
+            if (emptyState) emptyState.style.display = 'block';
+        } else {
+            grid.style.display = 'grid';
+            if (emptyState) emptyState.style.display = 'none';
+
+            filtered.forEach(recipe => {
+                const card = createStoreCard(recipe);
+                grid.appendChild(card);
+            });
+        }
+    } catch (err) {
+        console.error('Load store error:', err);
+    }
+}
+
+function createStoreCard(recipe) {
+    const card = document.createElement('div');
+    card.className = 'store-card';
+    card.innerHTML = `
+        <div class="store-card-image">
+            ${recipe.photo
+            ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; height: 180px; object-fit: cover;">`
+            : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,107,138,0.15), rgba(255,154,86,0.15)); font-size: 3rem;">🧁</div>`
+        }
+            <div class="store-price-tag" onclick="event.stopPropagation(); viewStoreRecipe(${recipe.id})" style="cursor: pointer; transition: transform 0.3s ease;">$${recipe.price.toFixed(2)}</div>
+        </div>
+        <div class="store-card-body">
+            <h3 class="store-card-title">${recipe.name}</h3>
+            <div class="store-card-meta">
+                <span class="store-card-category">${recipe.category}</span>
+                <span class="store-card-seller">
+                    <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" alt="" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover;">
+                    ${recipe.seller.name}
+                </span>
+            </div>
+            <button class="btn btn-primary store-view-btn" onclick="viewStoreRecipe(${recipe.id})" style="width: 100%; margin-top: 10px; padding: 8px; border-radius: 10px;">
+                <span>👁️</span> View Recipe
+            </button>
+        </div>
+    `;
+    return card;
+}
+
+async function viewStoreRecipe(id) {
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+        showNotification('❌ Please log in to view recipes.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/store/${id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+
+        if (response.status === 403 && data.preview) {
+            // Show purchase modal
+            showPurchaseModal(data.recipe);
+        } else if (response.ok) {
+            // Show full recipe
+            showFullStoreRecipe(data);
+        } else {
+            showNotification(data.error || '❌ Failed to load recipe.', 'error');
+        }
+    } catch (err) {
+        console.error('View store recipe error:', err);
+        showNotification('❌ Connection error.', 'error');
+    }
+}
+
+function showPurchaseModal(recipe) {
+    const modal = document.getElementById('storePurchaseModal');
+    const body = document.getElementById('purchaseModalBody');
+    if (!modal || !body) return;
+
+    body.innerHTML = `
+        <div style="padding: 20px;">
+            ${recipe.photo
+            ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; margin-bottom: 20px;">`
+            : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,107,138,0.1), rgba(255,154,86,0.1)); border-radius: 16px; font-size: 4rem; margin-bottom: 20px;">🔒</div>`
+        }
+            <h2 style="margin: 0 0 8px; font-size: 1.4rem;">${recipe.name}</h2>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">by ${recipe.seller.name}</span>
+            </div>
+            <div id="priceBoxBtn" style="background: linear-gradient(135deg, rgba(255,107,138,0.1), rgba(255,154,86,0.1)); border: 1px solid rgba(255,107,138,0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px; cursor: pointer; transition: all 0.3s ease; text-align: center;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 20px rgba(255,107,138,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Recipe Price</div>
+                <div style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-pink), var(--accent-orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$${recipe.price.toFixed(2)}</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">🔒 Purchase this recipe to unlock the full ingredients, instructions, and chef's notes.</p>
+            </div>
+            <button class="btn btn-primary" id="confirmPurchaseBtn" data-recipe-id="${recipe.id}" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 14px; font-weight: 700;">
+                💳 Purchase for $${recipe.price.toFixed(2)}
+            </button>
+        </div>
+    `;
+
+    modal.classList.add('show');
+
+    // Attach purchase handlers
+    document.getElementById('confirmPurchaseBtn').addEventListener('click', async () => {
+        await purchaseRecipe(recipe.id);
+    });
+    document.getElementById('priceBoxBtn').addEventListener('click', async () => {
+        await purchaseRecipe(recipe.id);
+    });
+}
+
+async function purchaseRecipe(id) {
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+        showNotification('❌ Please log in to purchase.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('confirmPurchaseBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading-spinner"></span> Redirecting to Payment...';
+    }
+
+    // Redirect to the centralized payment page with the recipe ID
+    window.location.href = `./payment.html?recipeId=${id}`;
+}
+
+
+function showFullStoreRecipe(recipe) {
+    const modal = document.getElementById('storeRecipeViewModal');
+    const body = document.getElementById('storeRecipeViewBody');
+    if (!modal || !body) return;
+
+    body.innerHTML = `
+        <div style="padding: 10px;">
+            ${recipe.photo ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; margin-bottom: 20px;">` : ''}
+            ${recipe.video ? `<video src="${recipe.video}" controls style="width: 100%; max-height: 300px; border-radius: 16px; margin-bottom: 20px; background: #000;"></video>` : ''}
+            <h2 style="margin: 0 0 8px;">${recipe.name}</h2>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
+                <span style="color: var(--accent-pink); font-weight: 600;">${recipe.seller.name}</span>
+                <span class="store-price-tag" style="position: static; margin-left: auto;">$${recipe.price.toFixed(2)}</span>
+            </div>
+            ${recipe.description ? `<p style="color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;">${recipe.description}</p>` : ''}
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <span style="background: rgba(255,107,138,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">📂 ${recipe.category}</span>
+                ${recipe.difficulty ? `<span style="background: rgba(77,182,172,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">⚡ ${recipe.difficulty}</span>` : ''}
+                ${recipe.prepTime ? `<span style="background: rgba(255,154,86,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">⏱️ Prep: ${recipe.prepTime}m</span>` : ''}
+                ${recipe.cookTime ? `<span style="background: rgba(156,136,255,0.1); padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;">🔥 Cook: ${recipe.cookTime}m</span>` : ''}
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                <h3 style="margin: 0 0 10px; font-size: 1rem; color: var(--accent-pink);">🧾 Ingredients</h3>
+                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; line-height: 1.6; color: var(--text-primary);">${recipe.ingredients || 'N/A'}</pre>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                <h3 style="margin: 0 0 10px; font-size: 1rem; color: var(--accent-orange, #ff9a56);">📝 Instructions</h3>
+                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; line-height: 1.6; color: var(--text-primary);">${recipe.instructions || 'N/A'}</pre>
+            </div>
+            ${recipe.notes ? `
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px;">
+                <h3 style="margin: 0 0 10px; font-size: 1rem; color: #fbbf24;">💡 Chef's Notes</h3>
+                <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; line-height: 1.6; color: var(--text-secondary);">${recipe.notes}</pre>
+            </div>` : ''}
+        </div>
+    `;
+
+    modal.classList.add('show');
+}
+
+async function loadMyListings() {
+    const grid = document.getElementById('myListingsGrid');
+    const emptyState = document.getElementById('storeEmptyState');
+    const token = sessionStorage.getItem('authToken');
+    if (!grid || !token) return;
+
+    try {
+        const response = await fetch(`${API_URL}/store/my/listings`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const listings = await response.json();
+
+        grid.innerHTML = '';
+
+        if (listings.length === 0) {
+            if (emptyState) { emptyState.style.display = 'block'; emptyState.querySelector('h3').textContent = 'No listings yet'; emptyState.querySelector('p').textContent = 'Start adding your secret recipes to pay!'; }
+        } else {
+            if (emptyState) emptyState.style.display = 'none';
+            listings.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'store-card';
+                card.innerHTML = `
+                    <div class="store-card-image">
+                        ${recipe.photo
+                        ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; height: 180px; object-fit: cover;">`
+                        : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,107,138,0.15), rgba(255,154,86,0.15)); font-size: 3rem;">🧁</div>`
+                    }
+                        <div class="store-price-tag">$${recipe.price.toFixed(2)}</div>
+                    </div>
+                    <div class="store-card-body">
+                        <h3 class="store-card-title">${recipe.name}</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <span style="font-size: 0.85rem; color: var(--text-secondary);">📊 ${recipe.salesCount} sales</span>
+                            <button class="btn btn-danger btn-sm" onclick="deleteStoreRecipe(${recipe.id})" style="padding: 4px 12px; font-size: 0.8rem; border-radius: 8px;">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    } catch (err) {
+        console.error('Load listings error:', err);
+    }
+}
+
+async function loadMyPurchases() {
+    const grid = document.getElementById('purchasedGrid');
+    const emptyState = document.getElementById('storeEmptyState');
+    const token = sessionStorage.getItem('authToken');
+    if (!grid || !token) return;
+
+    try {
+        const response = await fetch(`${API_URL}/store/my/purchases`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const purchases = await response.json();
+
+        grid.innerHTML = '';
+
+        if (purchases.length === 0) {
+            if (emptyState) { emptyState.style.display = 'block'; emptyState.querySelector('h3').textContent = 'No purchases yet'; emptyState.querySelector('p').textContent = 'Browse the store to find recipes you love!'; }
+        } else {
+            if (emptyState) emptyState.style.display = 'none';
+            purchases.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = 'store-card';
+                card.innerHTML = `
+                    <div class="store-card-image">
+                        ${recipe.photo
+                        ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; height: 180px; object-fit: cover;">`
+                        : `<div style="width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,107,138,0.15), rgba(255,154,86,0.15)); font-size: 3rem;">🧁</div>`
+                    }
+                        <div class="store-price-tag" style="background: linear-gradient(135deg, #10b981, #059669);">✅ Owned</div>
+                    </div>
+                    <div class="store-card-body">
+                        <h3 class="store-card-title">${recipe.name}</h3>
+                        <div class="store-card-meta">
+                            <span class="store-card-category">${recipe.category}</span>
+                            <span class="store-card-seller">
+                                <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" alt="" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover;">
+                                ${recipe.seller.name}
+                            </span>
+                        </div>
+                        <button class="btn btn-primary store-view-btn" onclick="viewStoreRecipe(${recipe.id})" style="width: 100%; margin-top: 10px; padding: 8px; border-radius: 10px;">
+                            <span>📖</span> View Recipe
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    } catch (err) {
+        console.error('Load purchases error:', err);
+    }
+}
+
+async function deleteStoreRecipe(id) {
+    if (!confirm('Are you sure you want to remove this recipe from the store?')) return;
+
+    const token = sessionStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${API_URL}/store/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            showNotification('✅ Recipe removed from store.', 'success');
+            loadMyListings();
+        } else {
+            const data = await response.json();
+            showNotification(data.error || '❌ Failed to delete.', 'error');
+        }
+    } catch (err) {
+        console.error('Delete store recipe error:', err);
+    }
+}
+
+// Expose store functions globally
+window.viewStoreRecipe = viewStoreRecipe;
+window.deleteStoreRecipe = deleteStoreRecipe;

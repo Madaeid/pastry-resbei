@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#1a120b">
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
     <title>🧁 My Recipe Book</title>
     <link
@@ -46,7 +46,7 @@
     <nav class="sidebar" id="userHeader" style="display: none;">
         <!-- Logo / Brand -->
         <div class="sidebar-brand">
-            <span class="sidebar-logo">🧁</span>
+            <span class="sidebar-logo">👨‍🍳</span>
             <span class="sidebar-title">Recipe Book</span>
         </div>
 
@@ -96,6 +96,18 @@
             </button>
 
 
+
+            <button class="sidebar-link nav-btn" id="sidebarStoreBtn" data-tab="store">
+                <span class="sidebar-link-icon">🏪</span>
+                <span class="sidebar-link-text" data-i18n="storeTab">Store</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
+
+            <button class="sidebar-link nav-btn" id="sidebarBookBtn" data-tab="book">
+                <span class="sidebar-link-icon">📚</span>
+                <span class="sidebar-link-text" data-i18n="bookTab">Chef Book</span>
+                <span class="sidebar-link-indicator"></span>
+            </button>
 
             <button class="sidebar-link nav-btn" id="sidebarMyRecipesBtn" data-tab="my-recipes">
                 <span class="sidebar-link-icon">📖</span>
@@ -165,20 +177,18 @@
     <div class="decorative-orb orb-2"></div>
     <div class="decorative-orb orb-3"></div>
 
-    <!-- Header Section -->
-    <div class="page-header">
-        <div class="header-icon">
-            <span>🧁</span>
-        </div>
-        <h1 data-i18n="appTitle">My Recipe Book</h1>
-        <p data-i18n="appSubtitle">Create your personal collection of delicious recipes</p>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1 data-i18n="appTitle">My Recipe Book</h1>
 
-
-
-        <div class="header-decoration">
-            <span></span>
-            <span></span>
-            <span></span>
+            </div>
+            <div class="hero-image-wrapper">
+                <img id="heroChefImg" class="hero-image" src="/hero-chef.png" alt="Chef presenting food" />
+                <div class="hero-image-overlay"></div>
+                <div class="hero-image-decoration"></div>
+            </div>
         </div>
     </div>
 
@@ -210,7 +220,7 @@
 
                     <!-- Extra Actions Bar (Integrated) -->
                     <div class="quick-post-actions" style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button id="addPhotoBtn" class="btn-extra-action" style="background: rgba(255, 107, 138, 0.15); border-color: rgba(255, 107, 138, 0.4); color: white;">
+                        <button id="addPhotoBtn" class="btn-extra-action" style="background: rgba(198, 123, 75, 0.15); border-color: rgba(198, 123, 75, 0.4); color: var(--text-primary);">
                             <span>📷</span> <span class="action-label" data-i18n="photo">Photo</span>
                         </button>
                         <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
@@ -221,7 +231,7 @@
             <div class="quick-post-footer" id="quickPostFooter"
                 style="display: none; justify-content: flex-end; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
                 <button id="submitQuickPostBtn" class="btn btn-primary btn-sm"
-                    style="padding: 6px 20px; border-radius: 20px;">
+                    style="padding: 6px 20px; border-radius: 4px;">
                     <span data-i18n="postBtn">Post</span>
                 </button>
             </div>
@@ -320,6 +330,64 @@
             <div class="empty-icon">📖</div>
             <h3 data-i18n="emptyBookTitle">Your recipe book is empty</h3>
             <p data-i18n="emptyBookSubtitle">Start adding your favorite recipes!</p>
+        </div>
+    </div>
+
+    <!-- Store Tab Content -->
+    <div id="store" class="tab-content">
+        <div class="recipes-header">
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="storeSearch" class="search-input" data-i18n="searchStore" placeholder="Search the marketplace...">
+            </div>
+            <div class="recipes-actions">
+                <button id="sellRecipeBtn" class="btn btn-primary">
+                    <span class="btn-icon">🏷️</span>
+                    <span data-i18n="sellRecipeBtn">Sell Recipe</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="profile-nav-tabs" style="justify-content: center; margin-bottom: 30px;">
+            <button class="nav-tab store-tab-btn active" data-store-tab="browse">Browse Market</button>
+            <button class="nav-tab store-tab-btn" data-store-tab="my-listings">My Listings</button>
+            <button class="nav-tab store-tab-btn" data-store-tab="purchased">Purchased</button>
+        </div>
+
+        <!-- Trending Carousel Header -->
+        <div id="trendingSection" style="margin-bottom: 40px; display: none;">
+            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.8rem; text-align: center; margin-bottom: 20px;">Trending Now</h3>
+            <div id="trendingCarousel" class="trending-carousel"></div>
+        </div>
+
+        <div id="storeGrid" class="recipes-grid">
+            <!-- Market store items -->
+        </div>
+
+        <div id="myListingsGrid" class="recipes-grid" style="display: none;">
+            <!-- My uploaded store items -->
+        </div>
+
+        <div id="purchasedGrid" class="recipes-grid" style="display: none;">
+            <!-- My bought store items -->
+        </div>
+
+        <div id="storeEmptyState" class="empty-state" style="display: none;">
+            <div class="empty-icon">🛒</div>
+            <h3>No recipes found in the Store</h3>
+            <p>Check back later or start selling your own!</p>
+        </div>
+    </div>
+
+    <!-- Book Tab Content -->
+    <div id="book" class="tab-content">
+        <div class="recipes-header">
+            <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">Chef's Portfolio Book</h2>
+        </div>
+        <div class="empty-state show">
+            <div class="empty-icon">📚</div>
+            <h3>Your Portfolio is Ready</h3>
+            <p>Compile your best works into a professional presentation.</p>
         </div>
     </div>
 
@@ -435,7 +503,7 @@
             <p class="day-picker-subtitle" id="dayPickerRecipeName" data-i18n="selectDayForRecipe">Select a day for this
                 recipe</p>
             <div class="day-picker-grid">
-                <button class="day-picker-btn" data-day="Saturday" style="--day-color: #ff6b8a;">
+                <button class="day-picker-btn" data-day="Saturday" style="--day-color: #C67B4B;">
                     <span class="day-emoji">🌟</span>
                     <span class="day-name" data-i18n="saturday">Saturday</span>
                 </button>
@@ -459,7 +527,7 @@
                     <span class="day-emoji">⚡</span>
                     <span class="day-name" data-i18n="thursday">Thursday</span>
                 </button>
-                <button class="day-picker-btn" data-day="Friday" style="--day-color: #ec4899;">
+                <button class="day-picker-btn" data-day="Friday" style="--day-color: #D4A55A;">
                     <span class="day-emoji">🎉</span>
                     <span class="day-name" data-i18n="friday">Friday</span>
                 </button>
@@ -561,6 +629,90 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Sell Recipe Modal -->
+    <div id="sellRecipeModal" class="modal">
+        <div class="modal-content modal-md">
+            <span class="close-modal" id="closeSellModal">&times;</span>
+            <h2><span class="modal-icon">🏷️</span> Sell Your Recipe</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">Share your culinary secrets with the world and earn.</p>
+
+            <form id="sellRecipeForm" class="recipe-form">
+                <div class="form-group recipe-upload-group">
+                    <div class="recipe-image-upload" id="sellRecipeImageUpload">
+                        <img id="sellRecipePhotoPreview" src="" alt="Preview" style="display: none;">
+                        <div class="upload-placeholder" id="sellUploadPlaceholder">
+                            <span class="upload-icon">📷</span>
+                            <p>Click to upload recipe photo</p>
+                        </div>
+                        <input type="file" id="sellRecipePhotoInput" accept="image/*" hidden>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Recipe Name</label>
+                    <input type="text" id="sellRecipeName" required placeholder="Ex: Award-winning Chocolate Tart">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category</label>
+                        <select id="sellRecipeCategory" required>
+                            <option value="Cakes">Cakes</option>
+                            <option value="Pastries">Pastries</option>
+                            <option value="Breads">Breads</option>
+                            <option value="Desserts">Desserts</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Price ($)</label>
+                        <input type="number" id="sellRecipePrice" min="0.50" step="0.50" value="5.00" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Short Description (Public)</label>
+                    <textarea id="sellRecipeDesc" rows="2" placeholder="Why should people buy this recipe?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Ingredients (Hidden until purchased)</label>
+                    <textarea id="sellRecipeIngredients" rows="4" required placeholder="List of ingredients..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Instructions (Hidden until purchased)</label>
+                    <textarea id="sellRecipeInstructions" rows="5" required placeholder="Step-by-step guide..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Chef's Secrets & Notes (Hidden until purchased)</label>
+                    <textarea id="sellRecipeNotes" rows="3" placeholder="Special tricks..."></textarea>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">List in Store</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Store Purchase Modal -->
+    <div id="storePurchaseModal" class="modal">
+        <div class="modal-content modal-sm" style="background: var(--form-bg); border: 1px solid rgba(198,123,75,0.2);">
+            <span class="close-modal" id="closePurchaseModal">&times;</span>
+            <div id="purchaseModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Store Recipe View Modal (For purchased/owned) -->
+    <div id="storeRecipeViewModal" class="modal">
+        <div class="modal-content modal-lg">
+            <span class="close-modal" id="closeStoreRecipeView">&times;</span>
+            <div id="storeRecipeViewBody"></div>
         </div>
     </div>
 

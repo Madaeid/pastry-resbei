@@ -1,9 +1,9 @@
-// Authentication Module for Pastry Recipe Book
+// Authentication Module for Chef Book
 import './style.css';
 import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // API Configuration
-const API_URL = 'http://localhost:3001/api';
+const API_URL = '/api';
 
 // ===== Authentication Functions (available for import) =====
 
@@ -464,7 +464,7 @@ function sendResetCode(username, contactValue, method = 'email') {
         alert(`📧 SIMULATED EMAIL\n\nTo: ${contactValue}\nSubject: Password Reset Code\n\nYour verification code is: ${code}\n\nThis code expires in 10 minutes.`);
     } else {
         console.log(`[SIMULATION] SMS sent to ${contactValue} with code: ${code}`);
-        alert(`📱 SIMULATED SMS\n\nTo: ${contactValue}\n\nYour My Recipe Book verification code is: ${code}\n\nThis code expires in 10 minutes.`);
+        alert(`📱 SIMULATED SMS\n\nTo: ${contactValue}\n\nYour Chef Book verification code is: ${code}\n\nThis code expires in 10 minutes.`);
     }
 
     return { success: true, maskedContact: maskedContact, method: method };

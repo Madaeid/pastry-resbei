@@ -1,4 +1,4 @@
-// Main Express Server for Pastry Recipe Book
+// Main Express Server for Chef Book
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -20,6 +20,7 @@ import subscriptionRoutes from './routes/subscriptions.js';
 import adminRoutes from './routes/admin.js';
 import dailyMenuRoutes from './routes/dailyMenu.js';
 import cvRoutes from './routes/cv.js'; // CV routes
+import storeRoutes from './routes/store.js'; // Store marketplace routes
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -62,12 +63,13 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/daily-menu', dailyMenuRoutes);
 app.use('/api/cv', cvRoutes);
+app.use('/api/store', storeRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
-        message: 'Pastry Recipe Book API is running',
+        message: 'Chef Book API is running',
         timestamp: new Date().toISOString()
     });
 });
@@ -92,16 +94,29 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start Server =====
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`
 ╔════════════════════════════════════════════════════════════╗
-║          🧁 Pastry Recipe Book API Server 🧁                ║
+║          👨‍🍳 Chef Book API Server 👨‍🍳                    ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Server running on: http://localhost:${PORT}                  ║
 ║  Environment: ${process.env.NODE_ENV || 'development'}                           ║
 ║  Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}           ║
 ╚════════════════════════════════════════════════════════════╝
     `);
+});
+
+// Handle server errors (like EADDRINUSE)
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Retrying in 2 seconds...`);
+        setTimeout(() => {
+            server.close();
+            server.listen(PORT);
+        }, 2000);
+    } else {
+        console.error('Server error:', err);
+    }
 });
 
 export default app;

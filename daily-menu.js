@@ -6,7 +6,7 @@ import { isPremium } from './payment.js';
 import { initLanguage, t, getCurrentLanguage } from './language.js';
 
 // API Base URL
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = '/api';
 
 // Days configuration
 const DAYS_CONFIG = {

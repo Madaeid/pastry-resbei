@@ -4,12 +4,16 @@
 const translations = {
     en: {
         // Common
-        appTitle: "My Recipe Book",
+        appTitle: "Chef Book",
         appSubtitle: "Create your personal collection of delicious recipes",
-        footer: "📖 My Recipe Book © 2024",
+        footer: "👨‍🍳 Chef Book © 2024",
 
         // Navigation & Header
         homeTab: "Home",
+        welcomeBadge: "👋 Welcome",
+        heroTitle: "Chef Book",
+        heroSubtitle: "The ultimate space for professional pastry chefs and passionate bakers to create, share, and sell their finest recipes.",
+        browseStore: "Browse Store",
         addRecipeTab: "Add Recipe",
         myRecipesTab: "My Recipes",
         upgrade: "Upgrade (80% OFF)",
@@ -20,11 +24,16 @@ const translations = {
         addCv: "Add CV",
         dashboard: "Dashboard",
         logout: "Logout",
+        store: "Store",
+        book: "Book",
         editProfile: "Edit Profile",
         premiumBadge: "💎 Premium",
         whatsOnYourMind: "What's on your mind?",
         postBtn: "Post",
-        communityFeed: "Community Feed",
+        video: "Video",
+        communityFeed: "Community Updates",
+        noCommunityRecipes: "No community updates yet",
+        beFirstToShare: "Be the first to share an update with the community!",
         chefsTab: "Chefs",
         myChefsTab: "My Chefs",
         searchMyChefs: "Search followed chefs...",
@@ -106,7 +115,9 @@ const translations = {
 
         // Recipe Form
         recipePhoto: "Recipe Photo (Optional)",
+        recipeVideo: "Recipe Video (Optional)",
         clickToUpload: "Click to upload photo",
+        clickToUploadVideo: "Click to upload video",
         recipeName: "Recipe Name",
         recipeNamePlaceholder: "e.g., Chocolate Croissant",
         category: "Category",
@@ -141,7 +152,7 @@ const translations = {
         recipes: "Recipes",
         saveAsPdf: "Save as PDF",
         clearAll: "Clear All",
-        emptyBookTitle: "Your recipe book is empty",
+        emptyBookTitle: "Your Chef Book is empty",
         emptyBookSubtitle: "Start adding your favorite recipes!",
         noRecipesFound: "No recipes found",
         view: "View",
@@ -282,14 +293,14 @@ const translations = {
         actionCannotBeUndone: "This action cannot be undone.",
         editUser: "Edit User",
         newPasswordKeep: "New Password (leave blank to keep)",
-        adminFooter: "👑 Admin Dashboard - My Recipe Book © 2024",
+        adminFooter: "👑 Admin Dashboard - Chef Book © 2024",
 
         // Days Selection & Daily Menu
         backToRecipes: "Back to Recipes",
         backToDays: "Back to Days",
         chooseADay: "Choose a Day",
         selectDayToView: "Select a day to view or add your recipes",
-        dailyMenuFooter: "📅 Daily Menu - My Recipe Book © 2024",
+        dailyMenuFooter: "📅 Daily Menu - Chef Book © 2024",
         clickToAddCover: "Click to add a cover photo for this day",
         removePhoto: "Remove Photo",
         addRecipeBtn: "Add Recipe",
@@ -361,7 +372,7 @@ const translations = {
         thirtyDayGuarantee: "30-Day Guarantee",
         faq: "Frequently Asked Questions",
         startUsingPremium: "Start Using Premium Features",
-        paymentFooter: "📖 My Recipe Book © 2024 | Secure payments by Stripe",
+        paymentFooter: "👨‍🍳 Chef Book © 2024 | Secure payments by Stripe",
 
         // Payment Success Page
         verifyingPayment: "Verifying your payment...",
@@ -374,12 +385,16 @@ const translations = {
 
     ar: {
         // Common
-        appTitle: "كتاب وصفاتي",
+        appTitle: "Chef Book",
         appSubtitle: "أنشئ مجموعتك الشخصية من الوصفات اللذيذة",
-        footer: "📖 كتاب وصفاتي © 2024",
+        footer: "👨‍🍳 Chef Book © 2024",
 
         // Navigation & Header
         homeTab: "الرئيسية",
+        welcomeBadge: "👋 مرحباً بك",
+        heroTitle: "Chef Book",
+        heroSubtitle: "المكان الأمثل لطهاة المعجنات والمخبوزات المحترفين لإنشاء ومشاركة وبيع أفضل وصفاتهم.",
+        browseStore: "تصفح المتجر",
         addRecipeTab: "إضافة وصفة",
         myRecipesTab: "وصفاتي",
         upgrade: "ترقية (خصم 80%)",
@@ -390,11 +405,16 @@ const translations = {
         addCv: "إضافة سيرة ذاتية",
         dashboard: "لوحة التحكم",
         logout: "تسجيل الخروج",
+        store: "المتجر",
+        book: "الكتاب",
         editProfile: "تعديل الملف",
         premiumBadge: "💎 مميز",
         whatsOnYourMind: "بماذا تفكر؟",
         postBtn: "نشر",
-        communityFeed: "خلاصة المجتمع",
+        video: "فيديو",
+        communityFeed: "تحديثات المجتمع",
+        noCommunityRecipes: "لا توجد تحديثات من المجتمع بعد",
+        beFirstToShare: "كن أول من يشارك تحديثاً مع المجتمع!",
 
         // Auth Page
         signIn: "تسجيل الدخول",
@@ -467,7 +487,9 @@ const translations = {
 
         // Recipe Form
         recipePhoto: "صورة الوصفة (اختياري)",
+        recipeVideo: "فيديو الوصفة (اختياري)",
         clickToUpload: "انقر لرفع صورة",
+        clickToUploadVideo: "انقر لرفع فيديو",
         recipeName: "اسم الوصفة",
         recipeNamePlaceholder: "مثال: كرواسون شوكولاتة",
         category: "الفئة",
@@ -652,14 +674,14 @@ const translations = {
         actionCannotBeUndone: "لا يمكن التراجع عن هذا الإجراء.",
         editUser: "تعديل المستخدم",
         newPasswordKeep: "كلمة مرور جديدة (اتركها فارغة للإبقاء على الحالية)",
-        adminFooter: "👑 لوحة تحكم المدير - كتاب وصفاتي © 2024",
+        adminFooter: "👑 Admin Dashboard - Chef Book © 2024",
 
         // Days Selection & Daily Menu
         backToRecipes: "العودة للوصفات",
         backToDays: "العودة للأيام",
         chooseADay: "اختر يوماً",
         selectDayToView: "اختر يوماً لعرض أو إضافة وصفاتك",
-        dailyMenuFooter: "📅 القائمة اليومية - كتاب وصفاتي © 2024",
+        dailyMenuFooter: "📅 Daily Menu - Chef Book © 2024",
         clickToAddCover: "انقر لإضافة صورة غلاف لهذا اليوم",
         removePhoto: "حذف الصورة",
         addRecipeBtn: "إضافة وصفة",
@@ -731,7 +753,7 @@ const translations = {
         thirtyDayGuarantee: "ضمان 30 يوم",
         faq: "الأسئلة الشائعة",
         startUsingPremium: "ابدأ استخدام المميزات المميزة",
-        paymentFooter: "📖 كتاب وصفاتي © 2024 | دفع آمن عبر Stripe",
+        paymentFooter: "👨‍🍳 Chef Book © 2024 | Secure payments by Stripe",
 
         // Payment Success Page
         verifyingPayment: "جارِ التحقق من الدفع...",

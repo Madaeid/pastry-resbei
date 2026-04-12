@@ -1,5 +1,72 @@
 /* My Recipe Card Specific Styles */
 
+/* ===== Recipe Filter Tabs System ===== */
+.profile-nav-tabs {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.nav-tab {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #999);
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 8px 5px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.nav-tab:hover {
+    color: var(--text-primary, #fff);
+}
+
+.nav-tab.active {
+    color: var(--accent-pink, #C67B4B);
+}
+
+.nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -11px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--accent-pink, #C67B4B);
+    border-radius: 3px 3px 0 0;
+}
+
+/* Light mode adjustments */
+[data-theme="light"] .profile-nav-tabs {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .nav-tab {
+    color: #666;
+}
+
+[data-theme="light"] .nav-tab.active {
+    color: var(--accent-pink);
+}
+
+@media (max-width: 600px) {
+    .profile-nav-tabs {
+        gap: 15px;
+        overflow-x: auto;
+        padding-bottom: 5px;
+    }
+    
+    .nav-tab {
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+}
+
 /* Move category tag to left when toggle is present */
 .recipe-category-tag.left-tag {
     left: 15px;

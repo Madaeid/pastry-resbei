@@ -1,0 +1,19 @@
+{
+  "status": "commited",
+  "type": "backend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3001",
+  "backendAuthType": "public",
+  "executionArgs": {
+    "projectName": "my resipe",
+    "projectPath": "e:\\my resipe",
+    "testIds": [],
+    "additionalInstruction": "",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-JvHF9xFkzN79pOEbbRP6gIZ25SvMggGdAL_qDGl5WIgkIjdClilM3oX-fQVU1wspwhPR4B0Yv80nd35ApVnVdZNbHcKAuDHsMMw4OrGen6gDiu729XaEmJR1bUamoby0gkM"
+    }
+  },
+  "serverPort": 64828,
+  "proxy": "http://a4b5bc52-e94d-4afd-b089-bbf8a1c8aa62:wkzuFvxNkywszhd6TMqASbUWrNG31Bkb@tun.testsprite.com:8080"
+}

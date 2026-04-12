@@ -94,7 +94,7 @@ async function createCheckoutSession(userId, userEmail, planId, successUrl, canc
             price_data: {
                 currency: 'usd',
                 product_data: {
-                    name: `Pastry Recipe Book - ${plan.name} Plan`,
+                    name: `Chef Book - ${plan.name} Plan`,
                     description: plan.stripeMode === 'payment'
                         ? 'Lifetime access to all premium features'
                         : `${plan.name} subscription to premium features`
@@ -139,11 +139,56 @@ async function createPortalSession(customerId, returnUrl) {
     return session;
 }
 
+// Create a Stripe Checkout session for a specific recipe
+async function createRecipeCheckoutSession(userId, userEmail, recipe, successUrl, cancelUrl) {
+    // Build success URL with session_id placeholder - use '&' if successUrl already has '?'
+    const separator = successUrl.includes('?') ? '&' : '?';
+    const fullSuccessUrl = `${successUrl}${separator}session_id={CHECKOUT_SESSION_ID}`;
+
+    // Stripe only accepts http/https image URLs, not base64 data URIs
+    const imageUrls = [];
+    if (recipe.photo && recipe.photo.startsWith('http')) {
+        imageUrls.push(recipe.photo);
+    }
+
+    const priceInCents = Math.round(parseFloat(recipe.price) * 100);
+
+    const sessionConfig = {
+        payment_method_types: ['card'],
+        customer_email: userEmail,
+        mode: 'payment', // One-time payment
+        success_url: fullSuccessUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+            userId: userId.toString(),
+            recipeId: recipe.id.toString(),
+            type: 'recipe_purchase'
+        },
+        line_items: [{
+            price_data: {
+                currency: 'usd',
+                product_data: {
+                    name: `Recipe: ${recipe.name}`,
+                    description: `One-time purchase of the complete recipe by ${recipe.seller.name}`,
+                    ...(imageUrls.length > 0 && { images: imageUrls })
+                },
+                unit_amount: priceInCents,
+            },
+            quantity: 1
+        }]
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    return session;
+}
+
 export {
     stripe,
     PLANS,
     createCheckoutSession,
+    createRecipeCheckoutSession,
     verifyCheckoutSession,
     createPortalSession,
     constructWebhookEvent
 };
+

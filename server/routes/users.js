@@ -17,6 +17,7 @@ router.get('/public', async (req, res) => {
         const result = await db.query(`
             SELECT username, display_name, profile_picture, gallery, cv_file, created_at, is_admin, is_public
             FROM users 
+            WHERE is_public IS NOT false
             ORDER BY created_at DESC
         `);
 
@@ -40,6 +41,55 @@ router.get('/public', async (req, res) => {
     }
 });
 
+// ===== Get Specific Public Chef Profile =====
+router.get('/public/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT id, username, display_name, profile_picture, gallery, created_at, is_public
+            FROM users 
+            WHERE username = $1 AND is_public IS NOT false
+            LIMIT 1
+        `, [username]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Chef not found or profile is private' });
+        }
+
+        const user = result.rows[0];
+
+        // Also get some stats (like count, share count for their recipes)
+        const statsResult = await db.query(`
+            SELECT 
+                (SELECT COUNT(id) FROM recipes WHERE user_id = $1 AND visibility = 'public') as post_count,
+                (SELECT COUNT(id) FROM follows WHERE following_id = $1) as followers_count,
+                (SELECT COUNT(id) FROM follows WHERE follower_id = $1) as following_count,
+                (SELECT SUM((SELECT COUNT(*) FROM recipe_likes WHERE recipe_id = recipes.id)) FROM recipes WHERE user_id = $1) as total_likes
+        `, [user.id]);
+
+        const stats = statsResult.rows[0];
+
+        res.json({
+            id: user.id,
+            username: user.username,
+            displayName: user.display_name,
+            profilePicture: user.profile_picture,
+            gallery: user.gallery || [],
+            createdAt: user.created_at,
+            stats: {
+                posts: parseInt(stats.post_count) || 0,
+                likes: parseInt(stats.total_likes) || 0,
+                followers: parseInt(stats.followers_count) || 0,
+                following: parseInt(stats.following_count) || 0
+            }
+        });
+    } catch (error) {
+        console.error('Get specific public profile error:', error);
+        res.status(500).json({ error: 'Failed to get chef profile' });
+    }
+});
+
 // ===== Get User Profile =====
 router.get('/profile', authenticateToken, async (req, res) => {
     try {
@@ -55,6 +105,14 @@ router.get('/profile', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        const statsResult = await db.query(`
+            SELECT 
+                (SELECT COUNT(id) FROM recipes WHERE user_id = $1) as post_count,
+                (SELECT COUNT(id) FROM follows WHERE following_id = $1) as followers_count,
+                (SELECT COUNT(id) FROM follows WHERE follower_id = $1) as following_count
+        `, [user.id]);
+        const stats = statsResult.rows[0];
+
         res.json({
             id: user.id,
             username: user.username,
@@ -67,7 +125,12 @@ router.get('/profile', authenticateToken, async (req, res) => {
             profilePicture: user.profile_picture,
             gallery: user.gallery || [],
             cvFile: user.cv_file,
-            createdAt: user.created_at
+            createdAt: user.created_at,
+            stats: {
+                posts: parseInt(stats.post_count) || 0,
+                followers: parseInt(stats.followers_count) || 0,
+                following: parseInt(stats.following_count) || 0
+            }
         });
 
     } catch (error) {
@@ -238,6 +301,105 @@ router.put('/profile', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Update profile error:', error);
         res.status(500).json({ error: 'Failed to update profile' });
+    }
+});
+
+// Toggle Follow a user
+router.post('/:id/follow', authenticateToken, async (req, res) => {
+    try {
+        const targetUserId = req.params.id;
+        const followerId = req.user.userId;
+
+        if (parseInt(targetUserId) === parseInt(followerId)) {
+            return res.status(400).json({ error: 'You cannot follow yourself' });
+        }
+
+        const db = getDatabase();
+        
+        // Check if already following
+        const checkResult = await db.query(
+            'SELECT id FROM follows WHERE follower_id = $1 AND following_id = $2',
+            [followerId, targetUserId]
+        );
+
+        if (checkResult.rows.length > 0) {
+            // Unfollow
+            await db.query(
+                'DELETE FROM follows WHERE follower_id = $1 AND following_id = $2',
+                [followerId, targetUserId]
+            );
+            return res.json({ success: true, following: false });
+        } else {
+            // Follow
+            await db.query(
+                'INSERT INTO follows (follower_id, following_id) VALUES ($1, $2)',
+                [followerId, targetUserId]
+            );
+            return res.json({ success: true, following: true });
+        }
+    } catch (error) {
+        console.error('Follow error:', error);
+        res.status(500).json({ error: 'Failed to toggle follow' });
+    }
+});
+
+// Check if following
+router.get('/:id/is-following', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(
+            'SELECT id FROM follows WHERE follower_id = $1 AND following_id = $2',
+            [req.user.userId, req.params.id]
+        );
+        res.json({ following: result.rows.length > 0 });
+    } catch (error) {
+        res.status(500).json({ error: 'Error checking follow status' });
+    }
+});
+
+// Get Followers
+router.get('/:id/followers', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT u.id, u.username, u.display_name, u.profile_picture 
+            FROM follows f
+            JOIN users u ON f.follower_id = u.id
+            WHERE f.following_id = $1
+            ORDER BY f.created_at DESC
+        `, [req.params.id]);
+        
+        res.json(result.rows.map(row => ({
+            id: row.id,
+            username: row.username,
+            name: row.display_name,
+            pic: row.profile_picture
+        })));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get followers' });
+    }
+});
+
+// Get Following
+router.get('/:id/following', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT u.id, u.username, u.display_name, u.profile_picture 
+            FROM follows f
+            JOIN users u ON f.following_id = u.id
+            WHERE f.follower_id = $1
+            ORDER BY f.created_at DESC
+        `, [req.params.id]);
+        
+        res.json(result.rows.map(row => ({
+            id: row.id,
+            username: row.username,
+            name: row.display_name,
+            pic: row.profile_picture
+        })));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to get following list' });
     }
 });
 

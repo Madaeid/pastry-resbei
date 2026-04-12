@@ -551,82 +551,117 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         case 'checkout.session.completed': {
             const session = event.data.object;
             const userId = session.metadata.userId;
-            const planId = session.metadata.planId;
+            const type = session.metadata.type;
 
-            if (!userId || !planId) {
+            if (!userId) {
                 console.error('Missing metadata in webhook:', session.id);
                 break;
             }
 
             try {
                 const db = getDatabase();
-                const plan = PLANS[planId];
 
-                const startDate = new Date();
-                const endDate = new Date();
-                endDate.setDate(endDate.getDate() + plan.durationDays);
+                if (type === 'recipe_purchase') {
+                    const recipeId = session.metadata.recipeId;
+                    
+                    // Check if already processed
+                    const existing = await db.query(
+                        'SELECT id FROM store_purchases WHERE stripe_session_id = $1',
+                        [session.id]
+                    );
+                    
+                    if (existing.rows.length === 0) {
+                        const recipeResult = await db.query('SELECT price FROM store_recipes WHERE id = $1', [recipeId]);
+                        const pricePaid = recipeResult.rows[0]?.price || 0;
 
-                // Check for existing subscription
-                const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
-                const existingSub = existingSubResult.rows[0];
+                        await db.query(`
+                            INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid, stripe_session_id)
+                            VALUES ($1, $2, $3, $4)
+                        `, [userId, recipeId, pricePaid, session.id]);
 
-                if (existingSub) {
-                    await db.query(`
-                        UPDATE subscriptions SET
-                            plan = $1,
-                            status = 'active',
-                            start_date = $2,
-                            end_date = $3,
-                            auto_renew = $4,
-                            stripe_session_id = $5,
-                            stripe_customer_id = $6,
-                            granted_by_admin = 0,
-                            cancelled_at = NULL,
-                            updated_at = $7
-                        WHERE user_id = $8
-                    `, [
-                        planId,
-                        startDate.toISOString(),
-                        endDate.toISOString(),
-                        planId !== 'lifetime' ? 1 : 0,
-                        session.id,
-                        session.customer || null,
-                        new Date().toISOString(),
-                        userId
-                    ]);
+                        await db.query(`
+                            INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+                            VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
+                        `, [
+                            userId,
+                            `TXN-RECIPE-${Date.now()}`,
+                            `Recipe #${recipeId}`,
+                            pricePaid,
+                            session.id
+                        ]);
+                        console.log(`Recipe purchase fulfilled via webhook for user ${userId} - Recipe: ${recipeId}`);
+                    }
                 } else {
+                    const planId = session.metadata.planId;
+                    if (!planId) break;
+
+                    const plan = PLANS[planId];
+                    const startDate = new Date();
+                    const endDate = new Date();
+                    endDate.setDate(endDate.getDate() + plan.durationDays);
+
+                    // Check for existing subscription
+                    const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
+                    const existingSub = existingSubResult.rows[0];
+
+                    if (existingSub) {
+                        await db.query(`
+                            UPDATE subscriptions SET
+                                plan = $1,
+                                status = 'active',
+                                start_date = $2,
+                                end_date = $3,
+                                auto_renew = $4,
+                                stripe_session_id = $5,
+                                stripe_customer_id = $6,
+                                granted_by_admin = 0,
+                                cancelled_at = NULL,
+                                updated_at = $7
+                            WHERE user_id = $8
+                        `, [
+                            planId,
+                            startDate.toISOString(),
+                            endDate.toISOString(),
+                            planId !== 'lifetime' ? 1 : 0,
+                            session.id,
+                            session.customer || null,
+                            new Date().toISOString(),
+                            userId
+                        ]);
+                    } else {
+                        await db.query(`
+                            INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
+                            VALUES ($1, $2, 'active', $3, $4, $5, $6, $7)
+                        `, [
+                            userId,
+                            planId,
+                            startDate.toISOString(),
+                            endDate.toISOString(),
+                            planId !== 'lifetime' ? 1 : 0,
+                            session.id,
+                            session.customer || null
+                        ]);
+                    }
+
+                    // Add transaction
                     await db.query(`
-                        INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew, stripe_session_id, stripe_customer_id)
-                        VALUES ($1, $2, 'active', $3, $4, $5, $6, $7)
+                        INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+                        VALUES ($1, $2, 'subscription', $3, $4, 'completed', $5)
                     `, [
                         userId,
+                        `TXN-${Date.now()}`,
                         planId,
-                        startDate.toISOString(),
-                        endDate.toISOString(),
-                        planId !== 'lifetime' ? 1 : 0,
-                        session.id,
-                        session.customer || null
+                        plan.price,
+                        session.id
                     ]);
+                    console.log(`Subscription created/updated via webhook for user ${userId} - Plan: ${planId}`);
                 }
-
-                // Add transaction
-                await db.query(`
-                    INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
-                    VALUES ($1, $2, 'subscription', $3, $4, 'completed', $5)
-                `, [
-                    userId,
-                    `TXN-${Date.now()}`,
-                    planId,
-                    plan.price,
-                    session.id
-                ]);
-
-                console.log(`Subscription created for user ${userId} - Plan: ${planId}`);
             } catch (dbError) {
                 console.error('Database error in webhook:', dbError);
             }
             break;
         }
+
 
         case 'customer.subscription.deleted': {
             // Handle subscription cancellation from Stripe
