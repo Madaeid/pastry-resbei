@@ -19,30 +19,22 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 3.00,
-        originalPrice: 5.00,
-        discount: 40,
+        price: 2.00,
+        originalPrice: 4.00,
+        discount: 50,
         period: 'month',
         durationDays: 30,
-        displayPrice: '$3.00/month'
+        displayPrice: '$2.00/month'
     },
     yearly: {
         id: 'yearly',
         name: 'Yearly',
-        price: 39.99,
+        price: 20.00,
+        originalPrice: 40.00,
+        discount: 50,
         period: 'year',
         durationDays: 365,
-        displayPrice: '$39.99/year'
-    },
-    lifetime: {
-        id: 'lifetime',
-        name: 'Lifetime',
-        price: 20.00,
-        originalPrice: 100.00,
-        discount: 80,
-        period: 'lifetime',
-        durationDays: 36500, // ~100 years
-        displayPrice: '$20.00 one-time'
+        displayPrice: '$20.00/year'
     }
 };
 
@@ -416,8 +408,21 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
             return res.status(403).json({ error: 'Session does not belong to this user' });
         }
 
-        const planId = session.metadata.planId;
+        const planId = session.metadata?.planId;
+        
+        if (!planId) {
+            console.error('Missing planId in session metadata for sessionId:', sessionId);
+            return res.status(400).json({ 
+                error: 'Invalid session metadata: planId missing. If you were purchasing a recipe, please use the correct verification endpoint.' 
+            });
+        }
+
         const plan = PLANS[planId];
+        
+        if (!plan) {
+            console.error('Invalid planId in session metadata:', planId);
+            return res.status(400).json({ error: 'Invalid plan configuration' });
+        }
 
         // Check if subscription already created via webhook
         const existingSubResult = await db.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.user.userId]);

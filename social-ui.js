@@ -120,8 +120,8 @@ export function createPostCard(post) {
     let photoHtml = '';
     if (post.photo) {
         photoHtml = `
-            <div class="post-media" style="margin-top: 15px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
-                <img src="${post.photo}" alt="Post Photo" style="width: 100%; display: block; max-height: 500px; object-fit: cover;">
+            <div class="post-media" style="margin-top: 15px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
+                <img src="${post.photo}" alt="Post Photo" style="max-width: 100%; border-radius: 20px; margin: auto; display: block; max-height: 500px; object-fit: cover;">
             </div>
         `;
     }
@@ -143,7 +143,7 @@ export function createPostCard(post) {
         const sAuthorName = s.author?.name || 'Chef';
         const sAuthorPic = s.author?.pic || `https://ui-avatars.com/api/?name=${encodeURIComponent(sAuthorName)}&background=random&color=fff`;
         const sPhotoHtml = s.photo ? `
-            <div class="shared-media" style="margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+            <div class="shared-media" style="margin-top: 10px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
                 <img src="${s.photo}" alt="Shared Photo" style="width: 100%; display: block; max-height: 400px; object-fit: cover;">
             </div>
         ` : '';
@@ -154,15 +154,20 @@ export function createPostCard(post) {
         ` : '';
 
         sharedHtml = `
-            <div class="shared-post-wrapper" style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; transition: background 0.2s ease;">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <img src="${sAuthorPic}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${sAuthorName}&background=random'">
-                    <span style="font-weight: 700; font-size: 0.8rem; color: var(--accent-pink);">${sAuthorName}'s Post</span>
+            <div class="shared-post-wrapper" style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.03); border: 1px solid ${s.isStore ? 'var(--accent-pink)' : 'rgba(255,255,255,0.1)'}; border-radius: 12px; transition: background 0.2s ease;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="${sAuthorPic}" style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=${sAuthorName}&background=random'">
+                        <span style="font-weight: 700; font-size: 0.8rem; color: var(--accent-pink);">${sAuthorName}'s ${s.isStore ? 'Store Item' : 'Post'}</span>
+                    </div>
+                    ${s.isStore ? `<span style="font-size: 0.7rem; background: var(--accent-pink); color: white; padding: 2px 8px; border-radius: 10px; font-weight: bold;">🛒 STORE</span>` : ''}
                 </div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                    <p style="margin: 0; white-space: pre-wrap;">${s.instructions}</p>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; cursor: pointer;" onclick="event.stopPropagation(); ${s.isStore ? `if(typeof viewStoreRecipe === 'function'){viewStoreRecipe(${s.id})}else{alert('Open the Store tab to view this recipe!')}` : `window.viewRecipe(${JSON.stringify(s).replace(/"/g, '&quot;')}, true)`}">
+                    ${s.name ? `<h4 style="margin: 0 0 5px 0; color: white;">${s.name}</h4>` : ''}
+                    <p style="margin: 0; white-space: pre-wrap; ${s.isStore ? 'color: var(--accent-pink); font-style: italic;' : ''}">${s.instructions}</p>
                     ${sPhotoHtml}
                     ${sVideoHtml}
+                    ${s.isStore ? `<button style="width: 100%; margin-top: 10px; padding: 8px; border-radius: 10px; background: rgba(255,107,138,0.1); border: 1px solid var(--accent-pink); color: white; font-weight: 600; cursor: pointer;">View in Store</button>` : ''}
                 </div>
             </div>
         `;

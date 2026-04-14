@@ -2,7 +2,7 @@
     position: relative;
     overflow: hidden;
     height: 200px;
-    border-radius: 4px; /* More elegant, sharp corners */
+    border-radius: 24px; /* More elegant, premium rounded corners */
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     cursor: pointer;
     background: var(--dark-bg, #000);

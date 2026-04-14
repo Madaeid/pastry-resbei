@@ -1,15 +1,14 @@
-// Admin Dashboard Module for Chef Book
-import './style.css';
-import { isLoggedIn, logout, getCurrentUser, isAdmin, getAllUsers, deleteUser, toggleAdminStatus, updateUser } from './auth.js';
-import { isUserPremium, grantPremiumToUser, revokePremiumFromUser } from './payment.js';
-import { initLanguage, t, getCurrentLanguage } from './language.js';
+// Admin Dashboard Module for Chef Book - Premium Edition
+import { isLoggedIn, logout, getCurrentUser, isAdmin, getAuthToken } from './auth.js';
+import { initLanguage, t } from './language.js';
+
+// API Configuration
+const API_URL = '/api';
 
 // ===== Access Control =====
-// Check if user is logged in and is admin
 if (!isLoggedIn()) {
     window.location.href = './auth.html';
 } else if (!isAdmin()) {
-    // Regular users cannot access admin page
     window.location.href = './index.html';
 }
 
@@ -42,306 +41,318 @@ const infoModal = document.getElementById('infoModal');
 const closeInfoModal = document.getElementById('closeInfoModal');
 const infoModalBody = document.getElementById('infoModalBody');
 
+const editUserModal = document.getElementById('editUserModal');
+const closeEditUserModal = document.getElementById('closeEditUserModal');
+const cancelEditUser = document.getElementById('cancelEditUser');
+const editUserForm = document.getElementById('editUserForm');
+
 // ===== State =====
+let currentUsers = [];
 let pendingAction = null;
 
 // ===== Initialize Dashboard =====
-function initDashboard() {
-    // Initialize language system
+async function initDashboard() {
     initLanguage();
-
-    updateStats();
-    loadUsers();
-    setupEventListeners();
-
+    
     // Set current date
     const today = new Date();
     currentDateEl.textContent = today.toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric'
     });
+
+    await updateDashboardData();
+    setupEventListeners();
+}
+
+async function updateDashboardData() {
+    try {
+        await Promise.all([
+            loadStats(),
+            loadUsers()
+        ]);
+    } catch (err) {
+        console.error('Failed to update dashboard:', err);
+        showNotification('Failed to sync with server. showing cached data.', 'error');
+    }
+}
+
+// ===== API Integration =====
+async function adminFetch(endpoint, options = {}) {
+    const token = getAuthToken();
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    const response = await fetch(`${API_URL}/admin${endpoint}`, {
+        ...options,
+        headers
+    });
+
+    if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `Error ${response.status}`);
+    }
+
+    return response.json();
 }
 
 // ===== Stats Functions =====
-function updateStats() {
-    const users = getAllUsers();
-    const recipes = getStoredRecipes();
-
-    totalUsersEl.textContent = users.length;
-    totalAdminsEl.textContent = users.filter(u => u.isAdmin).length;
-    totalRecipesEl.textContent = recipes.length;
-}
-
-function getStoredRecipes() {
-    // Get all recipes from all users (user-specific storage)
-    const users = getAllUsers();
-    let allRecipes = [];
-
-    users.forEach(user => {
-        const userKey = `pastryRecipes_${user.username.toLowerCase()}`;
-        const userRecipes = localStorage.getItem(userKey);
-        if (userRecipes) {
-            const recipes = JSON.parse(userRecipes);
-            // Add owner info to each recipe
-            recipes.forEach(recipe => {
-                recipe.owner = user.displayName;
-                recipe.ownerUsername = user.username;
-            });
-            allRecipes = allRecipes.concat(recipes);
-        }
-    });
-
-    return allRecipes;
+async function loadStats() {
+    try {
+        const stats = await adminFetch('/stats');
+        totalUsersEl.textContent = stats.totalUsers;
+        totalAdminsEl.textContent = stats.totalAdmins;
+        totalRecipesEl.textContent = stats.totalRecipes;
+    } catch (err) {
+        console.warn('Backend stats failed, falling back to local');
+    }
 }
 
 // ===== Users Management =====
-function loadUsers() {
-    const users = getAllUsers();
+async function loadUsers() {
+    try {
+        currentUsers = await adminFetch('/users');
+        
+        if (currentUsers.length === 0) {
+            usersTableBody.innerHTML = '';
+            noUsersEl.style.display = 'block';
+            return;
+        }
 
-    if (users.length === 0) {
-        usersTableBody.innerHTML = '';
-        noUsersEl.style.display = 'block';
-        return;
+        noUsersEl.style.display = 'none';
+
+        usersTableBody.innerHTML = currentUsers.map(user => {
+            const joinDate = user.createdAt
+                ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                })
+                : 'Unknown';
+
+            const isSelf = user.username === sessionStorage.getItem('currentUser');
+            const hasPremium = user.isPremium;
+
+            return `
+                <tr class="${user.isAdmin ? 'admin-row' : ''}">
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="user-badge ${user.isAdmin ? 'admin-badge' : 'user-badge-normal'}">
+                                ${user.isAdmin ? '👑' : '👤'}
+                            </span>
+                            <strong>${user.username}</strong>
+                        </div>
+                    </td>
+                    <td>${user.displayName}</td>
+                    <td>${user.email}</td>
+                    <td>${user.phone || 'N/A'}</td>
+                    <td>
+                        <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
+                            ${user.isAdmin ? 'Admin' : 'User'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="premium-status ${hasPremium ? 'premium-active' : 'premium-inactive'}">
+                            <span class="premium-icon">${hasPremium ? '💎' : '🆓'}</span>
+                            <span class="premium-text" style="font-weight: 500;">${hasPremium ? 'Premium' : 'Free'}</span>
+                            ${!user.isAdmin ? `
+                                <button class="action-btn toggle-premium" data-id="${user.id}" data-premium="${hasPremium}" title="${hasPremium ? 'Revoke Premium' : 'Grant Premium'}">
+                                    ${hasPremium ? '❌' : '✅'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td>${user.recipeCount || 0} recipes</td>
+                    <td>${joinDate}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${user.username !== 'admin' && !isSelf ? `
+                                <button class="action-btn toggle-admin" data-id="${user.id}" data-is-admin="${user.isAdmin}" title="${user.isAdmin ? 'Remove Admin' : 'Make Admin'}">
+                                    ${user.isAdmin ? '⬇️' : '⬆️'}
+                                </button>
+                                <button class="action-btn edit-user" data-id="${user.id}" title="Edit User">
+                                    ✏️
+                                </button>
+                                <button class="action-btn delete-user" data-id="${user.id}" title="Delete User">
+                                    🗑️
+                                </button>
+                            ` : `
+                                <span class="protected-label" style="font-size: 0.8rem; opacity: 0.6;">${user.username === 'admin' ? 'System' : 'You'}</span>
+                            `}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        setupUserActionButtons();
+    } catch (err) {
+        console.error('Failed to load users:', err);
+        showNotification('Error loading users', 'error');
     }
-
-    noUsersEl.style.display = 'none';
-
-    // Sort users: admins first, then by username
-    users.sort((a, b) => {
-        if (a.isAdmin && !b.isAdmin) return -1;
-        if (!a.isAdmin && b.isAdmin) return 1;
-        return a.username.localeCompare(b.username);
-    });
-
-    usersTableBody.innerHTML = users.map(user => {
-        const joinDate = user.createdAt
-            ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            })
-            : 'Unknown';
-
-        const birthdayFormatted = user.birthday && user.birthday !== 'N/A'
-            ? new Date(user.birthday).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            })
-            : 'N/A';
-
-        const isMainAdmin = user.username.toLowerCase() === 'admin';
-        const currentUserName = getCurrentUser();
-        const isSelf = user.displayName === currentUserName;
-        const hasPremium = isUserPremium(user.username);
-
-        return `
-            <tr class="${user.isAdmin ? 'admin-row' : ''}">
-                <td>
-                    <span class="user-badge ${user.isAdmin ? 'admin-badge' : 'user-badge-normal'}">
-                        ${user.isAdmin ? '👑' : '👤'}
-                    </span>
-                    ${user.username}
-                </td>
-                <td>${user.displayName}</td>
-                <td>${user.email}</td>
-                <td>${user.phone}</td>
-                <td>${birthdayFormatted}</td>
-                <td>
-                    <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
-                        ${user.isAdmin ? 'Admin' : 'User'}
-                    </span>
-                </td>
-                <td>
-                    <div class="premium-status ${hasPremium ? 'premium-active' : 'premium-inactive'}">
-                        <span class="premium-icon">${hasPremium ? '💎' : '🆓'}</span>
-                        <span class="premium-text">${hasPremium ? 'Premium' : 'Free'}</span>
-                        ${!user.isAdmin ? `
-                            <button class="action-btn toggle-premium" data-username="${user.username}" data-premium="${hasPremium}" title="${hasPremium ? 'Revoke Premium' : 'Grant Premium'}">
-                                ${hasPremium ? '❌' : '✅'}
-                            </button>
-                        ` : '<span class="admin-premium-label">(Admin)</span>'}
-                    </div>
-                </td>
-                <td>
-                    <span class="visibility-tag ${user.isPublic !== false ? 'visibility-public' : 'visibility-private'}">
-                        ${user.isPublic !== false ? '🌍 Public' : '🔒 Private'}
-                    </span>
-                </td>
-                <td>${joinDate}</td>
-                <td>
-                    <div class="action-buttons">
-                        ${!isMainAdmin && !isSelf ? `
-                            <button class="action-btn toggle-admin" data-username="${user.username}" title="${user.isAdmin ? 'Remove Admin' : 'Make Admin'}">
-                                ${user.isAdmin ? '⬇️' : '⬆️'}
-                            </button>
-                            <button class="action-btn edit-user" data-username="${user.username}" title="Edit User">
-                                ✏️
-                            </button>
-                            <button class="action-btn delete-user" data-username="${user.username}" title="Delete User">
-                                🗑️
-                            </button>
-                        ` : `
-                            <span class="protected-label">${isMainAdmin ? 'Protected' : 'You'}</span>
-                        `}
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    // Add event listeners to action buttons
-    setupUserActionButtons();
 }
 
 function setupUserActionButtons() {
-    // Toggle admin buttons
+    // Toggle admin
     document.querySelectorAll('.toggle-admin').forEach(btn => {
         btn.addEventListener('click', () => {
-            const username = btn.dataset.username;
-            const user = getAllUsers().find(u => u.username === username);
+            const userId = btn.dataset.id;
+            const isAdminStatus = btn.dataset.isAdmin === 'true';
+            
             showConfirmModal(
-                user.isAdmin ? '⬇️' : '⬆️',
-                user.isAdmin ? 'Remove Admin Rights' : 'Grant Admin Rights',
-                `Are you sure you want to ${user.isAdmin ? 'remove admin rights from' : 'make'} "${username}" ${user.isAdmin ? '' : 'an admin'}?`,
-                () => {
-                    const result = toggleAdminStatus(username);
-                    if (result.success) {
-                        loadUsers();
-                        updateStats();
-                    } else {
-                        alert(result.error);
+                isAdminStatus ? '⬇️' : '⬆️',
+                isAdminStatus ? 'Remove Admin' : 'Make Admin',
+                `Change privileges for user ID ${userId}?`,
+                async () => {
+                    try {
+                        const res = await adminFetch(`/users/${userId}/toggle-admin`, { method: 'PATCH' });
+                        showNotification(res.message);
+                        updateDashboardData();
+                    } catch (err) {
+                        showNotification(err.message, 'error');
                     }
                 }
             );
         });
     });
 
-    // Delete user buttons
+    // Delete user
     document.querySelectorAll('.delete-user').forEach(btn => {
         btn.addEventListener('click', () => {
-            const username = btn.dataset.username;
+            const userId = btn.dataset.id;
             showConfirmModal(
                 '🗑️',
                 'Delete User',
-                `Are you sure you want to delete the user "${username}"? This action cannot be undone.`,
-                () => {
-                    const result = deleteUser(username);
-                    if (result.success) {
-                        loadUsers();
-                        updateStats();
-                    } else {
-                        alert(result.error);
+                'Permanently delete this user and all their recipes?',
+                async () => {
+                    try {
+                        await adminFetch(`/users/${userId}`, { method: 'DELETE' });
+                        showNotification('User deleted successfully');
+                        updateDashboardData();
+                    } catch (err) {
+                        showNotification(err.message, 'error');
                     }
                 }
             );
         });
     });
 
-    // Edit user buttons
-    document.querySelectorAll('.edit-user').forEach(btn => {
-        btn.addEventListener('click', () => {
-            handleEditUser(btn.dataset.username);
-        });
-    });
-
-    // Toggle premium buttons
+    // Grant/Revoke Premium
     document.querySelectorAll('.toggle-premium').forEach(btn => {
         btn.addEventListener('click', () => {
-            const username = btn.dataset.username;
+            const userId = btn.dataset.id;
             const hasPremium = btn.dataset.premium === 'true';
-
+            
             showConfirmModal(
                 hasPremium ? '❌' : '💎',
                 hasPremium ? 'Revoke Premium' : 'Grant Premium',
-                `Are you sure you want to ${hasPremium ? 'revoke premium from' : 'grant lifetime premium to'} "${username}"?`,
-                () => {
-                    let result;
-                    if (hasPremium) {
-                        result = revokePremiumFromUser(username);
-                    } else {
-                        result = grantPremiumToUser(username, 'lifetime');
-                    }
-
-                    if (result.success) {
-                        loadUsers();
-                        updateStats();
-                        showNotification(result.message, 'success');
-                    } else {
-                        showNotification(result.error, 'error');
+                `${hasPremium ? 'Revoke' : 'Grant'} lifetime premium access?`,
+                async () => {
+                    try {
+                        const endpoint = hasPremium ? 'revoke-premium' : 'grant-premium';
+                        const res = await adminFetch(`/users/${userId}/${endpoint}`, { 
+                            method: 'POST',
+                            body: hasPremium ? null : JSON.stringify({ plan: 'lifetime' })
+                        });
+                        showNotification(res.message);
+                        updateDashboardData();
+                    } catch (err) {
+                        showNotification(err.message, 'error');
                     }
                 }
             );
+        });
+    });
+
+    // Edit user
+    document.querySelectorAll('.edit-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const userId = btn.dataset.id;
+            const user = currentUsers.find(u => u.id == userId);
+            if (user) openEditModal(user);
         });
     });
 }
 
 // ===== Edit User Logic =====
-const editUserModal = document.getElementById('editUserModal');
-const closeEditUserModal = document.getElementById('closeEditUserModal');
-const cancelEditUser = document.getElementById('cancelEditUser');
-const editUserForm = document.getElementById('editUserForm');
-
-function handleEditUser(username) {
-    const user = getAllUsers().find(u => u.username === username);
-    if (!user) return;
-
-    // Populate form
-    document.getElementById('editUsername').value = user.username;
+function openEditModal(user) {
+    document.getElementById('editUsername').value = user.id;
     document.getElementById('displayUsername').value = user.username;
     document.getElementById('editDisplayName').value = user.displayName;
-    document.getElementById('editEmail').value = user.email !== 'N/A' ? user.email : '';
+    document.getElementById('editEmail').value = user.email || '';
     document.getElementById('editPassword').value = '';
-    document.getElementById('editIsPublic').checked = user.isPublic !== false;
-
     editUserModal.classList.add('active');
 }
 
-function hideEditUserModal() {
-    editUserModal.classList.remove('active');
-    editUserForm.reset();
-}
-
-async function saveEditedUser(e) {
+editUserForm.onsubmit = async (e) => {
     e.preventDefault();
-
-    const username = document.getElementById('editUsername').value;
-    const displayName = document.getElementById('editDisplayName').value.trim();
-    const email = document.getElementById('editEmail').value.trim();
-    const password = document.getElementById('editPassword').value;
-
-    if (!displayName || !email) {
-        alert('Display Name and Email are required');
-        return;
-    }
-
-    if (password && password.length < 4) {
-        alert('Password must be at least 4 characters');
-        return;
-    }
-
-    const updateData = {
-        displayName,
-        email,
-        password: password || undefined,
-        isPublic: document.getElementById('editIsPublic').checked
+    const userId = document.getElementById('editUsername').value;
+    const data = {
+        displayName: document.getElementById('editDisplayName').value,
+        email: document.getElementById('editEmail').value,
+        password: document.getElementById('editPassword').value || undefined
     };
 
-    const result = await updateUser(username, updateData);
+    try {
+        await adminFetch(`/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+        showNotification('User updated successfully');
+        editUserModal.classList.remove('active');
+        updateDashboardData();
+    } catch (err) {
+        showNotification(err.message, 'error');
+    }
+};
 
-    if (result.success) {
-        hideEditUserModal();
-        loadUsers();
-        // If current user updated their own name, reload to update header
-        if (username === getCurrentUser()) {
-            location.reload();
+// ===== Quick Actions =====
+async function handleViewAllRecipes() {
+    try {
+        const recipes = await adminFetch('/recipes');
+        if (recipes.length === 0) {
+            showInfoModal('<h2>No recipes found in the database.</h2>');
+            return;
         }
-    } else {
-        alert(result.error);
+
+        const html = recipes.map(r => `
+            <div class="recipe-preview-item" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <strong>${r.name}</strong> (${r.category})<br>
+                <small>By: ${r.userDisplayName} (@${r.username})</small>
+            </div>
+        `).join('');
+
+        showInfoModal(`
+            <div class="info-content">
+                <h2>📖 System Recipes (${recipes.length})</h2>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    ${html}
+                </div>
+            </div>
+        `);
+    } catch (err) {
+        showNotification(err.message, 'error');
     }
 }
 
-// ===== Modal Functions =====
+async function handleExportData() {
+    try {
+        const data = await adminFetch('/export');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chef-book-system-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    } catch (err) {
+        showNotification(err.message, 'error');
+    }
+}
+
+// ===== Modals =====
 function showConfirmModal(icon, title, message, action) {
     confirmIcon.textContent = icon;
     confirmTitle.textContent = title;
@@ -350,328 +361,55 @@ function showConfirmModal(icon, title, message, action) {
     confirmModal.classList.add('active');
 }
 
-function hideConfirmModal() {
+confirmAction.onclick = () => {
+    if (pendingAction) pendingAction();
     confirmModal.classList.remove('active');
-    pendingAction = null;
-}
+};
 
 function showInfoModal(content) {
     infoModalBody.innerHTML = content;
     infoModal.classList.add('active');
 }
 
-function hideInfoModal() {
-    infoModal.classList.remove('active');
-}
+// ===== Messaging =====
+function showNotification(message, type = 'success') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
 
-// ===== Quick Actions =====
-function handleViewAllRecipes() {
-    const recipes = getStoredRecipes();
-
-    if (recipes.length === 0) {
-        showInfoModal(`
-            <div class="info-content">
-                <div class="info-icon">📖</div>
-                <h2>No Recipes</h2>
-                <p>There are no recipes stored in the system yet.</p>
-            </div>
-        `);
-        return;
-    }
-
-    const recipesHtml = recipes.map((recipe, index) => `
-        <div class="recipe-preview">
-            <div class="recipe-preview-header">
-                <span class="recipe-number">#${index + 1}</span>
-                <span class="recipe-category">${getCategoryEmoji(recipe.category)} ${recipe.category}</span>
-            </div>
-            <h4>${recipe.name}</h4>
-            <div class="recipe-meta">
-                <span>⏱️ ${recipe.prepTime + recipe.cookTime} min</span>
-                <span>🍽️ ${recipe.servings} servings</span>
-                <span>👤 ${recipe.owner || 'Unknown'}</span>
-            </div>
-            <button class="btn-view-details view-recipe-btn" data-id="${recipe.id}" data-owner="${recipe.ownerUsername}">
-                View Details 👁️
-            </button>
-        </div>
-    `).join('');
-
-    showInfoModal(`
-        <div class="info-content">
-            <h2>📖 All Recipes (${recipes.length})</h2>
-            <div class="recipes-preview-list">
-                ${recipesHtml}
-            </div>
-        </div>
-    `);
-
-    // Add event listeners for view buttons
-    document.querySelectorAll('.view-recipe-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            viewFullRecipe(parseInt(btn.dataset.id), btn.dataset.owner);
-        });
-    });
-}
-
-function viewFullRecipe(id, ownerUsername) {
-    const recipes = getStoredRecipes();
-    // Find recipe by ID and owner
-    const recipe = recipes.find(r => r.id === id && r.ownerUsername === ownerUsername);
-
-    if (!recipe) return;
-
-    const categoryEmoji = getCategoryEmoji(recipe.category);
-    const difficultyText = getDifficultyText(recipe.difficulty);
-    const totalTime = recipe.prepTime + recipe.cookTime;
-
-    showInfoModal(`
-        <div class="info-content" style="text-align: left;">
-            <button id="backToRecipesBtn" class="btn-back-list">
-                ⬅️ Back to List
-            </button>
-            
-            <div class="modal-recipe-image">
-                ${recipe.photo
-            ? `<img src="${recipe.photo}" alt="${recipe.name}">`
-            : `<span class="placeholder-icon">${categoryEmoji}</span>`}
-            </div>
-            
-            <h2 class="modal-recipe-title">${recipe.name}</h2>
-            <div class="modal-recipe-meta">
-                <div class="meta-item">
-                    <span class="meta-icon">👤</span>
-                    Owner: ${recipe.owner || 'Unknown'}
-                </div>
-                <div class="meta-item">
-                    <span class="meta-icon">📁</span>
-                    ${recipe.category}
-                </div>
-                <div class="meta-item">
-                    <span class="meta-icon">⏱️</span>
-                    Total: ${totalTime} min
-                </div>
-                <div class="meta-item">
-                    <span class="meta-icon">👥</span>
-                    ${recipe.servings} servings
-                </div>
-                <div class="meta-item">
-                    ${difficultyText}
-                </div>
-            </div>
-            
-            <div class="modal-section">
-                <h3>🥄 Ingredients</h3>
-                <ul>
-                    ${recipe.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
-                </ul>
-            </div>
-            
-            <div class="modal-section">
-                <h3>📝 Instructions</h3>
-                <ol>
-                    ${recipe.instructions.split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
-                </ol>
-            </div>
-            
-            ${recipe.notes ? `
-                <div class="modal-section modal-notes">
-                    <h3>💡 Chef's Notes</h3>
-                    <p>${recipe.notes}</p>
-                </div>
-            ` : ''}
-        </div>
-    `);
-
-    // Back button listener
-    document.getElementById('backToRecipesBtn').addEventListener('click', handleViewAllRecipes);
-}
-
-function getCategoryEmoji(category) {
-    const emojis = {
-        cakes: '🎂',
-        cookies: '🍪',
-        pastries: '🥐',
-        pies: '🥧',
-        breads: '🍞',
-        desserts: '🍰',
-        chocolates: '🍫',
-        other: '✨'
-    };
-    return emojis[category] || '🍴';
-}
-
-function getDifficultyText(difficulty) {
-    const levels = {
-        'easy': '🟢 Easy',
-        'medium': '🟡 Medium',
-        'hard': '🔴 Hard'
-    };
-    return levels[difficulty] || '🟡 Medium';
-}
-
-function handleExportData() {
-    const data = {
-        exportDate: new Date().toISOString(),
-        users: getAllUsers(),
-        recipes: getStoredRecipes()
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pastry-recipe-book-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function handleClearAllRecipes() {
-    showConfirmModal(
-        '🗑️',
-        'Clear All Recipes',
-        'Are you sure you want to delete ALL recipes from ALL users? This action cannot be undone!',
-        () => {
-            // Clear recipes for all users
-            const users = getAllUsers();
-            users.forEach(user => {
-                const userKey = `pastryRecipes_${user.username.toLowerCase()}`;
-                localStorage.removeItem(userKey);
-            });
-            updateStats();
-            alert('All recipes from all users have been deleted.');
-        }
-    );
-}
-
-function handleSystemInfo() {
-    const users = getAllUsers();
-    const recipes = getStoredRecipes();
-    const storageUsed = JSON.stringify(localStorage).length;
-
-    showInfoModal(`
-        <div class="info-content">
-            <h2>ℹ️ System Information</h2>
-            <div class="system-info-grid">
-                <div class="info-item">
-                    <span class="info-label">App Name</span>
-                    <span class="info-value">Chef Book</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Version</span>
-                    <span class="info-value">1.0.0</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Total Users</span>
-                    <span class="info-value">${users.length}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Admin Users</span>
-                    <span class="info-value">${users.filter(u => u.isAdmin).length}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Total Recipes</span>
-                    <span class="info-value">${recipes.length}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Storage Used</span>
-                    <span class="info-value">${(storageUsed / 1024).toFixed(2)} KB</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Current User</span>
-                    <span class="info-value">${getCurrentUser()}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Browser</span>
-                    <span class="info-value">${navigator.userAgent.split(' ').pop()}</span>
-                </div>
-            </div>
-        </div>
-    `);
+    const el = document.createElement('div');
+    el.className = `notification notification-${type} show`;
+    el.innerHTML = `
+        <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
+        <span class="notification-message">${message}</span>
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => {
+        el.classList.remove('show');
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
 }
 
 // ===== Event Listeners =====
 function setupEventListeners() {
-    // Logout
     logoutBtn.addEventListener('click', logout);
-
-    // Refresh users
-    refreshUsersBtn.addEventListener('click', () => {
-        loadUsers();
-        updateStats();
-    });
-
-    // Quick actions
+    refreshUsersBtn.addEventListener('click', updateDashboardData);
     viewAllRecipesBtn.addEventListener('click', handleViewAllRecipes);
     exportDataBtn.addEventListener('click', handleExportData);
-    clearAllRecipesBtn.addEventListener('click', handleClearAllRecipes);
-    systemInfoBtn.addEventListener('click', handleSystemInfo);
+    
+    closeConfirmModal.onclick = () => confirmModal.classList.remove('active');
+    confirmCancel.onclick = () => confirmModal.classList.remove('active');
+    closeInfoModal.onclick = () => infoModal.classList.remove('active');
+    closeEditUserModal.onclick = () => editUserModal.classList.remove('active');
+    cancelEditUser.onclick = () => editUserModal.classList.remove('active');
 
-    // Confirm modal
-    closeConfirmModal.addEventListener('click', hideConfirmModal);
-    confirmCancel.addEventListener('click', hideConfirmModal);
-    confirmAction.addEventListener('click', () => {
-        if (pendingAction) {
-            pendingAction();
-        }
-        hideConfirmModal();
-    });
-
-    // Info modal
-    closeInfoModal.addEventListener('click', hideInfoModal);
-
-    // Close modals on outside click
-    confirmModal.addEventListener('click', (e) => {
-        if (e.target === confirmModal) hideConfirmModal();
-    });
-    infoModal.addEventListener('click', (e) => {
-        if (e.target === infoModal) hideInfoModal();
-    });
-
-    // Close modals on ESC
+    // Close on ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            hideConfirmModal();
-            hideInfoModal();
-            hideEditUserModal();
+            confirmModal.classList.remove('active');
+            infoModal.classList.remove('active');
+            editUserModal.classList.remove('active');
         }
     });
-
-    // Edit User Modal
-    closeEditUserModal.addEventListener('click', hideEditUserModal);
-    cancelEditUser.addEventListener('click', hideEditUserModal);
-    editUserModal.addEventListener('click', (e) => {
-        if (e.target === editUserModal) hideEditUserModal();
-    });
-    editUserForm.addEventListener('submit', saveEditedUser);
 }
 
-// ===== Notification Function =====
-function showNotification(message, type = 'success') {
-    // Remove existing notification
-    const existing = document.querySelector('.notification');
-    if (existing) existing.remove();
-
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
-        <span class="notification-message">${message}</span>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Animate in
-    setTimeout(() => notification.classList.add('show'), 10);
-
-    // Remove after 3 seconds
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// ===== Initialize =====
 initDashboard();

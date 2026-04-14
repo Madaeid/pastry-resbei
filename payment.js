@@ -11,32 +11,24 @@ const PLANS = {
     monthly: {
         id: 'monthly',
         name: 'Monthly',
-        price: 3.00,
-        originalPrice: 5.00,
-        discount: 40, // 40% off
+        price: 2.00,
+        originalPrice: 4.00,
+        discount: 50, // 50% off
         period: 'month',
         durationDays: 30,
-        displayPrice: '$3.00/month',
-        originalDisplayPrice: '$5.00/month'
+        displayPrice: '$2.00/month',
+        originalDisplayPrice: '$4.00/month'
     },
     yearly: {
         id: 'yearly',
         name: 'Yearly',
-        price: 39.99,
+        price: 20.00,
+        originalPrice: 40.00,
+        discount: 50,
         period: 'year',
         durationDays: 365,
-        displayPrice: '$39.99/year'
-    },
-    lifetime: {
-        id: 'lifetime',
-        name: 'Lifetime',
-        price: 20.00,
-        originalPrice: 100.00,
-        discount: 80, // 80% off
-        period: 'lifetime',
-        durationDays: 36500, // ~100 years
-        displayPrice: '$20.00 one-time',
-        originalDisplayPrice: '$100.00'
+        displayPrice: '$20.00/year',
+        originalDisplayPrice: '$40.00/year'
     }
 };
 
@@ -677,7 +669,7 @@ async function handleStripeCheckout(e) {
             endpoint = '/store/create-checkout-session';
             body = {
                 recipeId: pendingRecipeId,
-                successUrl: `${baseUrl}/payment-success.html?recipe_id=${pendingRecipeId}`,
+                successUrl: `${baseUrl}/payment-success.html?type=recipe&recipe_id=${pendingRecipeId}`,
                 cancelUrl: `${baseUrl}/payment.html?recipeId=${pendingRecipeId}`
             };
         }

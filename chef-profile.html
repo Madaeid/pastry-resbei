@@ -270,23 +270,62 @@
             border-radius: 12px;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
+
+        /* User requested photo styles */
+        .photo-small {
+            width: 100px !important;
+            height: 100px !important;
+            border-width: 3px !important;
+        }
+
+        .margin-top-5 {
+            margin-top: 5% !important;
+        }
+
+        .w-100 {
+            width: 100% !important;
+        }
+
+        .banner-mode {
+            flex-direction: column !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+
+        .banner-mode .hero-avatar {
+            width: 100% !important;
+            height: 300px !important;
+            border-radius: 0 !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .banner-mode .hero-avatar img {
+            border-radius: 0 !important;
+        }
+
+        .banner-mode .hero-info {
+            padding: 30px !important;
+            width: 100% !important;
+            text-align: center !important;
+        }
     </style>
 </head>
 
 <body>
-    <div class="profile-container">
+    <div class="profile-container margin-top-5">
         <a href="index.html" class="back-btn">
-            <span>â†</span> Back to Feed
+            <span>←</span> Back to Feed
         </a>
 
-        <div id="chefProfileHero" class="profile-hero">
+        <div id="chefProfileHero" class="profile-hero banner-mode">
             <div class="hero-avatar">
                 <img id="chefPic" src="assets/default-avatar.png" alt="Chef">
             </div>
             <div class="hero-info">
                 <div class="hero-name-row">
                     <h1 id="chefName" class="hero-name">Loading...</h1>
-                    <div id="chefPremiumBadge" class="premium-badge">Premium Chef</div>
+                    <div id="chefPremiumBadge" class="premium-badge">UPGRADE Chef</div>
                 </div>
                 <span id="chefUsername" class="hero-username">@loading</span>
                 <p id="chefBio" class="hero-bio">Loading bio...</p>
@@ -317,93 +356,95 @@
                             <span>🔗</span> Share
                         </button>
                     </div>
-         </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Quick Post Section (Only for own profile) -->
-        <div id="ownProfilePostBox"
-            style="display: none; margin-bottom: 40px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; padding: 25px;">
-            <div style="display: flex; gap: 15px;">
-                <img id="postUserAvatar" src="assets/default-avatar.png" alt="ðŸ‘¤"
-                    style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink);">
-                <div style="flex: 1;">
-                    <textarea id="quickPostText" placeholder="What are you baking today?"
-                        style="width: 100%; min-height: 100px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; color: white; resize: none; outline: none; font-family: inherit; font-size: 1rem;"></textarea>
+    <!-- Quick Post Section (Only for own profile) -->
+    <div id="ownProfilePostBox"
+        style="display: none; margin-bottom: 40px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 25px;">
+        <div style="display: flex; gap: 15px;">
+            <img id="postUserAvatar" src="assets/default-avatar.png" alt="👤"
+                style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink);">
+            <div style="flex: 1;">
+                <textarea id="quickPostText" placeholder="What are you baking today?"
+                    style="width: 100%; min-height: 100px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; color: white; resize: none; outline: none; font-family: inherit; font-size: 1rem;"></textarea>
 
-                    <div id="quickPostPhotoPreview" style="display: none; position: relative; margin-top: 15px;">
-                        <img src="" alt="Preview"
-                            style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                        <button id="removePostPhotoBtn"
-                            style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
-                    </div>
+                <div id="quickPostPhotoPreview" style="display: none; position: relative; margin-top: 15px;">
+                    <img src="" alt="Preview"
+                        style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <button id="removePostPhotoBtn"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
 
-                    <div id="quickPostVideoPreview" style="display: none; position: relative; margin-top: 15px;">
-                        <video controls style="width: 100%; border-radius: 12px; max-height: 350px;"></video>
-                        <button id="removePostVideoBtn"
-                            style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
-                    </div>
+                <div id="quickPostVideoPreview" style="display: none; position: relative; margin-top: 15px;">
+                    <video controls style="width: 100%; border-radius: 12px; max-height: 350px;"></video>
+                    <button id="removePostVideoBtn"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
 
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                        <div style="display: flex; gap: 12px;">
-                            <button id="addPhotoBtn"
-                                style="background: rgba(198, 123, 75, 0.15); border: 1px solid rgba(198, 123, 75, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                <span>ðŸ“·</span> Photo
-                            </button>
-                            <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
-
-                            <button id="addVideoBtn"
-                                style="background: rgba(77, 182, 172, 0.15); border: 1px solid rgba(77, 182, 172, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
-                                <span>ðŸ“½ï¸</span> Video
-                            </button>
-                            <input type="file" id="quickPostVideoInput" accept="video/*" hidden>
-                        </div>
-                        <button id="submitQuickPostBtn"
-                            style="padding: 10px 30px; border-radius: 25px; background: var(--accent-pink); border: none; color: white; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
-                            Post
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <div style="display: flex; gap: 12px;">
+                        <button id="addPhotoBtn"
+                            style="background: rgba(198, 123, 75, 0.15); border: 1px solid rgba(198, 123, 75, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                            <span>📷</span> Photo
                         </button>
+                        <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
+
+                        <button id="addVideoBtn"
+                            style="background: rgba(77, 182, 172, 0.15); border: 1px solid rgba(77, 182, 172, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                            <span>📹</span> Video
+                        </button>
+                        <input type="file" id="quickPostVideoInput" accept="video/*" hidden>
                     </div>
+                    <button id="submitQuickPostBtn"
+                        style="padding: 10px 30px; border-radius: 25px; background: var(--accent-pink); border: none; color: white; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+                        Share
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="profile-nav-tabs">
-            <button class="nav-tab active" data-tab="feed">ðŸ‘¨â€ðŸ³ Culinary Feed</button>
-            <button class="nav-tab" data-tab="recipes">ðŸ“– Public Recipes</button>
-            <button class="nav-tab" data-tab="gallery">ðŸ–¼ï¸ Photo Gallery</button>
-        </div>
+    <div class="profile-nav-tabs">
+        <button class="nav-tab active" data-tab="feed">👨‍🍳 Culinary Feed</button>
+        <button class="nav-tab" data-tab="recipes">📖 Public Recipes</button>
+        <button class="nav-tab" data-tab="gallery">🖼️ Photo Gallery</button>
+    </div>
 
-        <!-- Recipe View Modal -->
-        <div id="recipeModal" class="modal">
-            <div class="modal-content">
-                <button class="modal-close" id="closeModal">&times;</button>
-                <div id="modalBody">
-                    <!-- Recipe details will be inserted here -->
-                </div>
+    <!-- Recipe View Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div id="modalBody">
+                <!-- Recipe details will be inserted here -->
             </div>
         </div>
+    </div>
 
-        <!-- Tab Panels -->
-        <div id="feedPanel" class="tab-panel active">
-            <div id="chefRecipesGrid" class="chef-recipes-grid">
-                <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
-                    culinary creations...</div>
-            </div>
+    <!-- Tab Panels -->
+    <div id="feedPanel" class="tab-panel active">
+        <div id="chefRecipesGrid" class="chef-recipes-grid">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
+                culinary creations...</div>
         </div>
+    </div>
 
-        <div id="recipesPanel" class="tab-panel">
-            <div id="publicRecipesListGrid" class="chef-recipes-grid" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
-                <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading public recipes...</div>
-            </div>
+    <div id="recipesPanel" class="tab-panel">
+        <div id="publicRecipesListGrid" class="chef-recipes-grid"
+            style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading public
+                recipes...</div>
         </div>
+    </div>
 
-        <div id="galleryPanel" class="tab-panel">
-            <div id="chefGalleryGrid" class="gallery-grid">
-                <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
-                    gallery photos...</div>
-            </div>
+    <div id="galleryPanel" class="tab-panel">
+        <div id="chefGalleryGrid" class="gallery-grid">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
+                gallery photos...</div>
         </div>
+    </div>
     </div>
 
     <!-- Lightbox Overlay -->
@@ -436,49 +477,76 @@
         });
 
         // Global viewRecipe for social-ui.js
-        window.viewRecipe = function(recipe, isPublic = true) {
+        window.viewRecipe = function (recipe, isPublic = true) {
             const modal = document.getElementById('recipeModal');
             const modalBody = document.getElementById('modalBody');
             if (!modal || !modalBody) return;
 
-            const categoryEmoji = getCategoryEmoji(recipe.category);
-            const difficultyText = getDifficultyText(recipe.difficulty);
-            const totalTime = (recipe.prepTime || 0) + (recipe.cookTime || 0);
+            const isReshare = !!recipe.sharedFrom;
+            const source = isReshare ? recipe.sharedFrom : recipe;
+
+            const categoryEmoji = getCategoryEmoji(source.category || recipe.category);
+            const difficultyText = getDifficultyText(source.difficulty || recipe.difficulty);
+            const totalTime = (source.prepTime || 0) + (source.cookTime || 0);
 
             modalBody.innerHTML = `
                 <div class="modal-recipe-image" style="width: 100%; height: 300px; border-radius: 15px; overflow: hidden; margin-bottom: 20px; background: rgba(0,0,0,0.2);">
-                    ${recipe.photo
-                        ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; height: 100%; object-fit: cover;">`
-                        : `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:5rem;">${categoryEmoji}</div>`}
+                    ${source.photo
+                    ? `<img src="${source.photo}" alt="${source.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:5rem;">${categoryEmoji}</div>`}
                 </div>
                 
-                <h2 class="modal-recipe-title" style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 15px; color: var(--text-primary);">${recipe.name}</h2>
+                <h2 class="modal-recipe-title" style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 5px; color: var(--text-primary); text-align: center;">${source.name || recipe.name}</h2>
                 
-                <div class="modal-recipe-meta" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; color: var(--text-secondary); font-size: 0.9rem;">
-                    <div class="meta-item">ðŸ“ ${recipe.category}</div>
-                    <div class="meta-item">â±ï¸ ${totalTime} min</div>
-                    <div class="meta-item">ðŸ‘¥ ${recipe.servings || 0} servings</div>
+                ${isReshare ? `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="background: rgba(255,107,138,0.1); color: var(--accent-pink); padding: 4px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔁 Shared from ${source.author?.name || 'another chef'}</span>
+                    </div>
+                ` : ''}
+
+                ${isReshare && recipe.instructions && recipe.instructions !== 'Shared this post!' ? `
+                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,107,138,0.05); border-left: 4px solid var(--accent-pink); border-radius: 12px;">
+                        <strong style="color: var(--accent-pink); font-size: 0.8rem; text-transform: uppercase;">Chef's Notes:</strong>
+                        <p style="margin: 5px 0 0 0; font-style: italic;">${recipe.instructions}</p>
+                    </div>
+                ` : ''}
+
+                <div class="modal-recipe-meta" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; color: var(--text-secondary); font-size: 0.9rem; justify-content: center; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px;">
+                    <div class="meta-item">📁 ${source.category || recipe.category}</div>
+                    <div class="meta-item">⏱️ ${totalTime} min</div>
+                    <div class="meta-item">👥 ${source.servings || 0} servings</div>
                     <div class="meta-item">${difficultyText}</div>
                 </div>
                 
-                <div class="modal-section" style="margin-bottom: 25px;">
-                    <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">ðŸ¥„ Ingredients</h3>
-                    <ul style="padding-left: 20px; line-height: 1.6;">
-                        ${(recipe.ingredients || '').split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
-                    </ul>
-                </div>
+                ${(source.ingredients && source.ingredients !== 'N/A') ? `
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">🥬 Ingredients</h3>
+                        <ul style="padding-left: 20px; line-height: 1.6;">
+                            ${source.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
                 
-                <div class="modal-section" style="margin-bottom: 25px;">
-                    <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">ðŸ“ Instructions</h3>
-                    <ol style="padding-left: 20px; line-height: 1.6;">
-                        ${(recipe.instructions || '').split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
-                    </ol>
-                </div>
+                ${(source.instructions && source.instructions !== 'Shared this post!') ? `
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">📍 Instructions</h3>
+                        <ol style="padding-left: 20px; line-height: 1.6;">
+                            ${source.instructions.split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
+                        </ol>
+                    </div>
+                ` : ''}
                 
-                ${recipe.notes ? `
-                    <div class="modal-section" style="padding: 15px; background: rgba(255,107,138,0.05); border-radius: 12px; border-left: 4px solid var(--accent-pink);">
-                        <h4 style="margin-bottom: 5px; font-size: 0.9rem;">ðŸ’¡ Chef's Notes</h4>
-                        <p style="font-size: 0.9rem; margin: 0; line-height: 1.4;">${recipe.notes}</p>
+                ${source.notes ? `
+                    <div class="modal-section" style="padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="margin-bottom: 5px; font-size: 0.9rem; color: var(--text-secondary);">💡 Original Chef's Notes</h4>
+                        <p style="font-size: 0.9rem; margin: 0; line-height: 1.4;">${source.notes}</p>
+                    </div>
+                ` : ''}
+
+                ${source.video ? `
+                    <div class="modal-section" style="margin-top: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">📹 Video</h3>
+                        <video src="${source.video}" controls style="width: 100%; border-radius: 15px;"></video>
                     </div>
                 ` : ''}
             `;
@@ -587,7 +655,7 @@
                             navigator.share(shareData).catch(err => console.error('Error sharing profile:', err));
                         } else {
                             navigator.clipboard.writeText(shareData.url).then(() => {
-                                showNotification('ðŸ“‹ Profile link copied to clipboard!', 'success');
+                                showNotification('📋 Profile link copied to clipboard!', 'success');
                             });
                         }
                     };
@@ -631,7 +699,7 @@
             grid.innerHTML = '';
 
             if (!Array.isArray(recipes) || recipes.length === 0) {
-                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border-radius: 20px; color: rgba(255,255,255,0.4);">No posts shared yet.</div>';
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No posts shared yet.</div>';
                 return;
             }
 
@@ -664,7 +732,7 @@
             );
 
             if (pureRecipes.length === 0) {
-                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255,255,255,0.02); border-radius: 20px; color: rgba(255,255,255,0.4);">No public recipes shared yet.</div>';
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No public recipes shared yet.</div>';
                 return;
             }
 
@@ -688,7 +756,7 @@
             grid.innerHTML = '';
 
             if (!photos || photos.length === 0) {
-                grid.innerHTML = '<div style="text-align: center; grid-column: 1/-1; padding: 40px; color: rgba(255,255,255,0.4);">No photos in the gallery yet.</div>';
+                grid.innerHTML = '<div style="text-align: center; grid-column: 1/-1; padding: 40px; color: rgba(255, 255, 255, 0.4);">No photos in the gallery yet.</div>';
                 return;
             }
 
@@ -710,7 +778,7 @@
                 <div style="text-align: center; padding: 100px 20px; color: white;">
                     <h1 style="font-family: 'Playfair Display', serif;">Chef Profile Not Available</h1>
                     <p style="color: #ff6b6b; margin: 20px 0;">${msg}</p>
-                    <a href="index.html" style="color: var(--accent-pink); text-decoration: none; font-weight: 600;">â† Return to Community Feed</a>
+                    <a href="index.html" style="color: var(--accent-pink); text-decoration: none; font-weight: 600;">← Return to Community Feed</a>
                 </div>
             `;
         }
@@ -726,8 +794,8 @@
                 if (data.following) {
                     btn.textContent = 'Unfollow';
                     btn.classList.add('active');
-                    btn.style.background = 'rgba(255,255,255,0.1)';
-                    btn.style.border = '1px solid rgba(255,255,255,0.2)';
+                    btn.style.background = 'rgba(255, 255, 255, 0.1)';
+                    btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
                 }
             } catch (err) { console.error(err); }
         }
@@ -747,8 +815,8 @@
                     if (data.following) {
                         btn.textContent = 'Unfollow';
                         btn.classList.add('active');
-                        btn.style.background = 'rgba(255,255,255,0.1)';
-                        btn.style.border = '1px solid rgba(255,255,255,0.2)';
+                        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+                        btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
                         showNotification('Chef followed!');
                         document.getElementById('followersCount').textContent = parseInt(document.getElementById('followersCount').textContent) + 1;
                     } else {
@@ -820,6 +888,7 @@
                     const recipeData = {
                         name: text.split('\n')[0].substring(0, 40) || 'Quick Update',
                         category: 'Social',
+                        ingredients: 'N/A', // Required by backend
                         instructions: text || (photoFile ? 'Shared a photo' : 'Shared a video'),
                         visibility: 'public',
                         notes: 'Shared via Quick Post'
@@ -845,15 +914,16 @@
                         photoInput.value = '';
                         videoInput.value = '';
                         loadChefProfile();
+                        showNotification('✅ Shared successfully!', 'success');
                     } else {
                         const data = await resp.json();
-                        showNotification(data.error || 'Failed to post', 'error');
+                        showNotification(data.error || 'Failed to share', 'error');
                     }
                 } catch (err) {
                     console.error(err);
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Post';
+                    submitBtn.textContent = 'Share';
                 }
             };
         }
@@ -892,7 +962,7 @@
                         if (list.textContent.includes('No comments')) list.innerHTML = '';
                         list.innerHTML += `<div class="post-comment" style="display: flex; gap: 10px; margin-top: 10px; font-size: 0.85rem;">
                             <img src="${data.comment.authorPic}" style="width: 24px; height: 24px; border-radius: 50%;">
-                            <div style="background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 12px; flex: 1;">
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 5px 10px; border-radius: 12px; flex: 1;">
                                 <strong style="color: var(--accent-pink);">${data.comment.authorName}</strong>
                                 <span style="display: block;">${text}</span>
                             </div>
@@ -913,12 +983,21 @@
             } catch (e) { console.error(e); }
         };
 
-        window.sharePost = async (id) => {
-            if (!confirm('Share to your feed?')) return;
+        window.sharePost = async (id, initialNotes = '') => {
+            const notes = prompt('Add a note to your share? (Optional)', initialNotes);
+            if (notes === null) return; 
+
             const token = sessionStorage.getItem('authToken');
             try {
-                const resp = await fetch(`${API_URL}/recipes/${id}/share`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-                if (resp.ok) showNotification('Post shared!');
+                const resp = await fetch(`${API_URL}/recipes/${id}/share`, { 
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ notes })
+                });
+                if (resp.ok) showNotification('Post shared to your feed!');
                 else { const d = await resp.json(); showNotification(d.error, 'error'); }
             } catch (e) { console.error(e); }
         };

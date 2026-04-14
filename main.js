@@ -25,6 +25,8 @@ let currentUserRecipes = []; // Store recipes in memory
 let addRecipePhoto = null; // Store currently selected/uploaded photo
 let addRecipeVideo = null; // Store currently selected/uploaded video
 let currentVisibilityFilter = 'all'; // 'all', 'public', or 'private'
+let quickPostInput, quickPostBtn, quickPostPhotoInput, quickPostVideoInput;
+let quickPostMediaPreview, qpPhotoPreview, qpVideoPreview, qpRemoveMedia;
 
 
 
@@ -54,7 +56,6 @@ async function initApp() {
     editUserBtn = document.getElementById('editUserBtn');
     editUserModal = document.getElementById('editUserModal');
     closeEditUserModal = document.getElementById('closeEditUserModal');
-    editUserForm = document.getElementById('editUserForm');
     editUserForm = document.getElementById('editUserForm');
     modalLogoutBtn = document.getElementById('modalLogoutBtn');
     profileLogoutBtn = document.getElementById('profileLogoutBtn');
@@ -314,229 +315,8 @@ async function initApp() {
         });
     }
 
-    // Initialize Quick Post User Avatar
-    const currentUser = getCurrentUser();
-    const users = getAllUsers();
-    const user = users.find(u => u.username === currentUser);
-    const postUserAvatar = document.getElementById('postUserAvatar');
-    if (postUserAvatar && user && user.profilePicture) {
-        postUserAvatar.src = user.profilePicture;
-    }
-
     // Quick Post Logic
-    const quickPostText = document.getElementById('quickPostText');
-    const quickPostFooter = document.getElementById('quickPostFooter');
-    const submitQuickPostBtn = document.getElementById('submitQuickPostBtn');
-
-    // Photo elements
-    const addPhotoBtn = document.getElementById('addPhotoBtn');
-    const quickPostPhotoInput = document.getElementById('quickPostPhotoInput');
-    const quickPostPhotoPreview = document.getElementById('quickPostPhotoPreview');
-    const removePostPhotoBtn = document.getElementById('removePostPhotoBtn');
-    let quickPostPhoto = null;
-
-    // Video elements
-    const addVideoBtn = document.getElementById('addVideoBtn');
-    const quickPostVideoInput = document.getElementById('quickPostVideoInput');
-    const quickPostVideoPreview = document.getElementById('quickPostVideoPreview');
-    const removePostVideoBtn = document.getElementById('removePostVideoBtn');
-    let quickPostVideo = null;
-
-    if (quickPostText && quickPostFooter && submitQuickPostBtn) {
-        const updateQuickPostUI = () => {
-            const hasText = quickPostText.value.trim().length > 0;
-            const hasPhoto = !!quickPostPhoto;
-            const hasVideo = !!quickPostVideo;
-            quickPostFooter.style.display = (hasText || hasPhoto || hasVideo) ? 'flex' : 'none';
-        };
-
-        quickPostText.addEventListener('input', () => {
-            updateQuickPostUI();
-            // Auto expand
-            quickPostText.style.height = 'auto';
-            quickPostText.style.height = (quickPostText.scrollHeight) + 'px';
-        });
-
-        // Photo Handling
-        if (addPhotoBtn && quickPostPhotoInput) {
-            addPhotoBtn.onclick = (e) => {
-                e.preventDefault();
-                quickPostPhotoInput.click();
-            };
-
-            quickPostPhotoInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    if (file.size > 2 * 1024 * 1024) { // Increased to 2MB as we support video too
-                        showNotification('❌ Photo is too large (Max 2MB)', 'error');
-                        quickPostPhotoInput.value = '';
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        quickPostPhoto = event.target.result;
-                        const previewImg = quickPostPhotoPreview.querySelector('img');
-                        if (previewImg) previewImg.src = quickPostPhoto;
-                        quickPostPhotoPreview.style.display = 'block';
-
-                        // Clear video if photo selected
-                        quickPostVideo = null;
-                        if (quickPostVideoPreview) {
-                            quickPostVideoPreview.style.display = 'none';
-                            const videoEl = quickPostVideoPreview.querySelector('video');
-                            if (videoEl) videoEl.src = '';
-                        }
-
-                        updateQuickPostUI();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-        }
-
-        // Video Handling
-        if (addVideoBtn && quickPostVideoInput) {
-            addVideoBtn.onclick = (e) => {
-                e.preventDefault();
-                quickPostVideoInput.click();
-            };
-
-            quickPostVideoInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    // Check size limit (max 5MB for video base64, still a lot but better)
-                    if (file.size > 5 * 1024 * 1024) {
-                        showNotification('❌ Video is too large (Max 5MB)', 'error');
-                        quickPostVideoInput.value = '';
-                        return;
-                    }
-
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        quickPostVideo = event.target.result;
-                        const previewVideo = quickPostVideoPreview.querySelector('video');
-                        if (previewVideo) {
-                            previewVideo.src = quickPostVideo;
-                            previewVideo.load();
-                        }
-                        quickPostVideoPreview.style.display = 'block';
-
-                        // Clear photo if video selected
-                        quickPostPhoto = null;
-                        if (quickPostPhotoPreview) quickPostPhotoPreview.style.display = 'none';
-
-                        updateQuickPostUI();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-        }
-
-        if (removePostPhotoBtn) {
-            removePostPhotoBtn.onclick = (e) => {
-                e.preventDefault();
-                quickPostPhoto = null;
-                quickPostPhotoInput.value = '';
-                quickPostPhotoPreview.style.display = 'none';
-                updateQuickPostUI();
-            };
-        }
-
-        if (removePostVideoBtn) {
-            removePostVideoBtn.onclick = (e) => {
-                e.preventDefault();
-                quickPostVideo = null;
-                quickPostVideoInput.value = '';
-                quickPostVideoPreview.style.display = 'none';
-                const videoEl = quickPostVideoPreview.querySelector('video');
-                if (videoEl) videoEl.src = '';
-                updateQuickPostUI();
-            };
-        }
-
-        submitQuickPostBtn.addEventListener('click', async () => {
-            const text = quickPostText.value.trim();
-            if (!text && !quickPostPhoto && !quickPostVideo) return;
-
-            submitQuickPostBtn.disabled = true;
-            submitQuickPostBtn.innerHTML = '<span class="loading-spinner"></span>';
-
-            const success = await submitQuickTextPost(text, quickPostPhoto, quickPostVideo);
-
-            if (success) {
-                quickPostText.value = '';
-                quickPostPhoto = null;
-                quickPostVideo = null;
-                quickPostPhotoInput.value = '';
-                quickPostVideoInput.value = '';
-                quickPostPhotoPreview.style.display = 'none';
-                quickPostVideoPreview.style.display = 'none';
-                quickPostFooter.style.display = 'none';
-                quickPostText.style.height = '45px';
-                await loadHomeFeed();
-            }
-
-            submitQuickPostBtn.disabled = false;
-            submitQuickPostBtn.innerHTML = `<span data-i18n="postBtn">${t('postBtn')}</span>`;
-        });
-    }
-
-    async function submitQuickTextPost(text, photo = null, video = null) {
-        const currentUser = getCurrentUser();
-        const token = sessionStorage.getItem('authToken');
-
-        if (!token) {
-            showNotification('❌ Please log in to post.', 'error');
-            return false;
-        }
-
-        // Create a truncated name for the recipe
-        let name = text.split('\n')[0].substring(0, 40);
-        if (!name && photo) name = "Shared a photo";
-        if (!name && video) name = "Shared a video";
-        if (text.length > 40) name += '...';
-
-        const recipeData = {
-            name: name || "Quick Update",
-            category: "Other",
-            difficulty: "Medium",
-            prepTime: 0,
-            cookTime: 0,
-            ingredients: "N/A",
-            instructions: text || (photo ? "Shared a photo" : "Shared a video"),
-            notes: "Shared via Quick Post",
-            photo: photo,
-            video: video,
-            visibility: "public",
-            createdAt: new Date().toISOString()
-        };
-
-        try {
-            const response = await fetch(`${API_URL}/recipes`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(recipeData)
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                showNotification('✅ Post shared to community! 🧁', 'success');
-                return true;
-            } else {
-                showNotification(data.error || '❌ Failed to share post', 'error');
-                return false;
-            }
-        } catch (error) {
-            console.error('Error posting:', error);
-            showNotification('❌ Connection error.', 'error');
-            return false;
-        }
-    }
+    initQuickPost();
 
     // Setup Store Marketplace listeners
     setupStoreListeners();
@@ -844,6 +624,15 @@ function setupEventListeners() {
 
 
     // Note: These now navigate to profile-photo.html via href
+
+    // Handle URL Hash for deep linking (e.g. from chef-profile.html)
+    if (window.location.hash === '#edit-profile') {
+        openEditUserModal();
+        // Clean up hash for better UX
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.pathname);
+        }
+    }
 }
 
 // ===== Theme Functions =====
@@ -1208,6 +997,32 @@ function checkAuth() {
             userProfilePic.src = picSrc;
             userProfilePic.style.display = 'block';
             userDefaultAvatar.style.display = 'none';
+
+            // Make avatar clickable
+            userProfilePic.style.cursor = 'pointer';
+            userProfilePic.onclick = () => {
+                window.location.href = `./chef-profile.html?username=${currentUsername}`;
+            };
+        }
+
+        // Make user name clickable to show "my page" (premium profile card)
+        if (userNameElement) {
+            userNameElement.style.cursor = 'pointer';
+            userNameElement.title = "View my public profile";
+            userNameElement.onclick = () => {
+                window.location.href = `./chef-profile.html?username=${currentUsername}`;
+            };
+        }
+
+        // Also make the whole sidebar user container clickable for better UX
+        const sidebarUserDisplay = document.getElementById('sidebarUserDisplay');
+        if (sidebarUserDisplay) {
+            sidebarUserDisplay.style.cursor = 'pointer';
+            sidebarUserDisplay.onclick = (e) => {
+                // Don't trigger if clicking logout button specifically
+                if (e.target.id === 'profileLogoutBtn' || e.target.closest('#profileLogoutBtn')) return;
+                window.location.href = `./chef-profile.html?username=${currentUsername}`;
+            };
         }
 
         // Show dashboard button if admin
@@ -2017,11 +1832,12 @@ function viewRecipe(idOrRecipe, isPublic = false) {
         recipe = currentUserRecipes.find(r => r.id === idOrRecipe);
     }
 
-    if (!recipe) return;
-
-    const categoryEmoji = getCategoryEmoji(recipe.category);
-    const difficultyText = getDifficultyText(recipe.difficulty);
-    const totalTime = recipe.prepTime + recipe.cookTime;
+    const isReshare = !!recipe.sharedFrom;
+    const source = isReshare ? recipe.sharedFrom : recipe;
+    
+    const categoryEmoji = getCategoryEmoji(source.category || recipe.category);
+    const difficultyText = getDifficultyText(source.difficulty || recipe.difficulty);
+    const totalTime = (source.prepTime || 0) + (source.cookTime || 0);
 
     // Auth info for comments actions
     let currentUserId = null;
@@ -2038,63 +1854,77 @@ function viewRecipe(idOrRecipe, isPublic = false) {
 
     modalBody.innerHTML = `
         <div class="modal-recipe-image">
-            ${recipe.photo
-            ? `<img src="${recipe.photo}" alt="${recipe.name}">`
+            ${source.photo
+            ? `<img src="${source.photo}" alt="${source.name}">`
             : `<span class="placeholder-icon">${categoryEmoji}</span>`}
         </div>
-        <div class="modal-header-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+        <div class="modal-header-actions" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+           <div class="reshare-badge-container">
+               ${isReshare ? `<span style="background: rgba(255,107,138,0.1); color: var(--accent-pink); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔁 Shared from ${source.author?.name || source.authorUsername || 'another chef'}</span>` : ''}
+           </div>
            ${!isPublic ? `<button class="btn btn-primary" id="modalSavePdf" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
                 <span class="btn-icon">📄</span> Save as PDF
            </button>` : ''}
         </div>
-        <h2 class="modal-recipe-title">${recipe.name}</h2>
+        <h2 class="modal-recipe-title">${source.name || recipe.name}</h2>
+        ${isReshare && recipe.instructions && recipe.instructions !== 'Shared this post!' ? `
+            <div class="reshare-notes" style="margin-bottom: 20px; padding: 12px 15px; background: rgba(255,255,255,0.03); border-left: 3px solid var(--accent-pink); border-radius: 8px;">
+                <strong style="display: block; font-size: 0.8rem; color: var(--accent-pink); margin-bottom: 5px;">${recipe.author?.name || 'Chef'}'s Notes:</strong>
+                <p style="margin: 0; font-size: 0.95rem; font-style: italic;">${recipe.instructions}</p>
+            </div>
+        ` : ''}
+        
         <div class="modal-recipe-meta">
             <div class="meta-item">
                 <span class="meta-icon">📁</span>
-                ${recipe.category}
+                ${source.category || recipe.category}
             </div>
             <div class="meta-item">
                 <span class="meta-icon">⏱️</span>
-                Prep: ${recipe.prepTime} min
+                Prep: ${source.prepTime || 0} min
             </div>
             <div class="meta-item">
                 <span class="meta-icon">🔥</span>
-                Cook: ${recipe.cookTime} min
+                Cook: ${source.cookTime || 0} min
             </div>
             <div class="meta-item">
                 <span class="meta-icon">👥</span>
-                ${recipe.servings} servings
+                ${source.servings || 0} servings
             </div>
             <div class="meta-item">
                 ${difficultyText}
             </div>
         </div>
         
+        ${(source.ingredients && source.ingredients !== 'N/A') ? `
         <div class="modal-section">
             <h3>🥄 Ingredients</h3>
             <ul>
-                ${recipe.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
+                ${source.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
             </ul>
         </div>
+        ` : ''}
         
+        ${(source.instructions && source.instructions !== 'Shared this post!') ? `
         <div class="modal-section">
             <h3>📝 Instructions</h3>
             <ol>
-                ${recipe.instructions.split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
+                ${source.instructions.split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
             </ol>
         </div>
+        ` : ''}
         
-        ${recipe.video ? `
+        ${source.video ? `
             <div class="modal-section modal-video">
                 <h3>📹 ${t('recipeVideo')}</h3>
-                <video src="${recipe.video}" controls style="width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></video>
+                <video src="${source.video}" controls style="width: 100%; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></video>
             </div>
         ` : ''}
         
-        ${recipe.notes ? `
+        ${source.notes ? `
             <div class="modal-section modal-notes">
-                <h3>💡 Chef's Notes</h3>
-                <p>${recipe.notes}</p>
+                <h3>💡 Original Chef's Notes</h3>
+                <p>${source.notes}</p>
             </div>
         ` : ''}
 
@@ -2394,8 +2224,10 @@ async function submitComment(id, text, card, parentId = null) {
     }
 }
 
-async function sharePost(id) {
-    if (!confirm('Share this post to your feed?')) return;
+async function sharePost(id, initialNotes = '') {
+    // Premium feel: ask for notes
+    const notes = prompt('Add a note to your share? (Optional)', initialNotes);
+    if (notes === null) return; // Cancelled
 
     try {
         const token = sessionStorage.getItem('authToken');
@@ -2406,11 +2238,16 @@ async function sharePost(id) {
 
         const response = await fetch(`${API_URL}/recipes/${id}/share`, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ notes })
         });
 
         if (response.ok) {
             showNotification('✅ Post shared to your feed!', 'success');
+            // Immediate UI feedback: if on home feed, reload it
             if (document.getElementById('home').classList.contains('active')) {
                 await loadHomeFeed();
             }
@@ -2420,6 +2257,7 @@ async function sharePost(id) {
         }
     } catch (err) {
         console.error('Share error:', err);
+        showNotification('❌ Connection error. Please try again.', 'error');
     }
 }
 
@@ -2976,29 +2814,39 @@ function showPremiumProfileModal() {
     modal.id = 'premiumProfileModal';
     modal.className = 'modal show';
     modal.innerHTML = `
-        <div class="modal-content modal-sm premium-profile-modal">
-            <button class="modal-close" id="closePremiumProfileModal">&times;</button>
-            <div class="premium-header">
-                <div class="premium-avatar">${user.profilePicture ? `<img src="${user.profilePicture}">` : '👑'}</div>
-                <h2>${user.displayName}</h2>
-                <div class="premium-tag">💎 PREMIUM MEMBER</div>
+        <div class="modal-content premium-profile-modal">
+            <button class="modal-close" id="closePremiumProfileModal" style="z-index: 10; background: rgba(0,0,0,0.5); color: white; border-radius: 50%; width: 32px; height: 32px;">&times;</button>
+            
+            <div class="premium-card-banner" id="premiumCardPhotoTrigger">
+                <img id="premiumCardPhoto" src="${user.profilePicture || 'https://images.unsplash.com/photo-1574359411659-15573a27f812?q=80&w=800'}" alt="Chef">
+                <div class="change-overlay">📷</div>
             </div>
-            <div class="premium-details">
-                <div class="detail-item">
-                    <span class="label">📧 Email</span>
-                    <span class="value">${user.email || 'N/A'}</span>
+
+            <input type="file" id="premiumPhotoInput" accept="image/*" style="display: none;">
+
+            <div class="premium-card-info">
+                <h1 class="premium-card-name">${user.displayName}</h1>
+                
+                <div class="premium-details-list">
+                    <div class="premium-detail-row">
+                        <span class="premium-detail-icon">💎</span>
+                        <span>UPGRADE MEMBER</span>
+                    </div>
+                    <div class="premium-detail-row">
+                        <span class="premium-detail-icon">📧</span>
+                        <span>Email ${user.email || 'N/A'}</span>
+                    </div>
+                    <div class="premium-detail-row">
+                        <span class="premium-detail-icon">📅</span>
+                        <span>Plan ${subStatus.plan ? subStatus.plan.toUpperCase() : 'PREMIUM'}</span>
+                    </div>
+                    <div class="premium-detail-row">
+                        <span class="premium-detail-icon">⏳</span>
+                        <span>Expires ${expiryText}</span>
+                    </div>
                 </div>
-                <div class="detail-item">
-                    <span class="label">📅 Plan</span>
-                    <span class="value">${subStatus.plan ? subStatus.plan.toUpperCase() : 'PREMIUM'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="label">⏳ Expires</span>
-                    <span class="value">${expiryText}</span>
-                </div>
-            </div>
-            <div class="modal-actions" style="justify-content: center;">
-                <button class="btn btn-primary" onclick="window.location.href='./payment.html'">
+
+                <button class="btn-manage-sub" onclick="window.location.href='./payment.html'">
                     ⚙️ Manage Subscription
                 </button>
             </div>
@@ -3006,10 +2854,60 @@ function showPremiumProfileModal() {
     `;
     document.body.appendChild(modal);
 
+    // Event listeners
     document.getElementById('closePremiumProfileModal').addEventListener('click', () => modal.remove());
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
+
+    // Photo Change Handling
+    const photoTrigger = document.getElementById('premiumCardPhotoTrigger');
+    const photoInput = document.getElementById('premiumPhotoInput');
+    const photoImg = document.getElementById('premiumCardPhoto');
+
+    if (photoTrigger && photoInput) {
+        photoTrigger.onclick = () => photoInput.click();
+
+        photoInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const imageData = event.target.result;
+                    photoImg.src = imageData;
+
+                    // Update user profile photo
+                    try {
+                        const token = sessionStorage.getItem('authToken');
+                        const response = await fetch(`${API_URL}/users/profile`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ profilePicture: imageData })
+                        });
+
+                        if (response.ok) {
+                            showNotification('✅ Profile photo updated! 🧁', 'success');
+                            // Update sidebar too
+                            const sidebarPic = document.getElementById('userProfilePic');
+                            if (sidebarPic) sidebarPic.src = imageData;
+
+                            // Refresh users in local cache
+                            if (typeof loadUsers === 'function') loadUsers();
+                        } else {
+                            throw new Error('Failed to update photo');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showNotification('❌ Error updating photo.', 'error');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
 }
 
 // ===== Followed Chefs Storage =====
@@ -3557,7 +3455,14 @@ function showFullStoreRecipe(recipe) {
         <div style="padding: 10px;">
             ${recipe.photo ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; margin-bottom: 20px;">` : ''}
             ${recipe.video ? `<video src="${recipe.video}" controls style="width: 100%; max-height: 300px; border-radius: 16px; margin-bottom: 20px; background: #000;"></video>` : ''}
-            <h2 style="margin: 0 0 8px;">${recipe.name}</h2>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <h2 style="margin: 0 0 8px; flex: 1;">${recipe.name}</h2>
+                <button id="shareStoreRecipeBtn" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                    <span>🔁</span> Share to Feed
+                </button>
+            </div>
+
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
                 <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover;">
                 <span style="color: var(--accent-pink); font-weight: 600;">${recipe.seller.name}</span>
@@ -3585,6 +3490,14 @@ function showFullStoreRecipe(recipe) {
             </div>` : ''}
         </div>
     `;
+
+    // Attach share handler
+    const shareBtn = document.getElementById('shareStoreRecipeBtn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', () => {
+            sharePost(recipe.id, `I just bought this amazing ${recipe.name} recipe! 🧁`);
+        });
+    }
 
     modal.classList.add('show');
 }
@@ -3712,3 +3625,136 @@ async function deleteStoreRecipe(id) {
 // Expose store functions globally
 window.viewStoreRecipe = viewStoreRecipe;
 window.deleteStoreRecipe = deleteStoreRecipe;
+
+
+// Quick Post Logic
+function initQuickPost() {
+    quickPostInput = document.getElementById('quickPostInput');
+    quickPostBtn = document.getElementById('qpPostBtn');
+    quickPostPhotoInput = document.getElementById('qpPhotoInput');
+    quickPostVideoInput = document.getElementById('qpVideoInput');
+    quickPostMediaPreview = document.getElementById('quickPostMediaPreview');
+    qpPhotoPreview = document.getElementById('qpPhotoPreview');
+    qpVideoPreview = document.getElementById('qpVideoPreview');
+    qpRemoveMedia = document.getElementById('qpRemoveMedia');
+    
+    const qpPhotoBtn = document.getElementById('qpPhotoBtn');
+    const qpVideoBtn = document.getElementById('qpVideoBtn');
+    const quickPostCard = document.getElementById('quickPostCard');
+    const quickPostUserPic = document.getElementById('quickPostUserPic');
+    const quickPostDefaultAvatar = document.getElementById('quickPostDefaultAvatar');
+
+    if (!quickPostInput || !quickPostBtn) return;
+
+    // Show/hide card based on login
+    if (isLoggedIn()) {
+        if (quickPostCard) quickPostCard.style.display = 'block';
+        
+        // Use the same avatar as the sidebar
+        const sidebarPic = document.getElementById('userProfilePic');
+        if (sidebarPic && sidebarPic.src) {
+            quickPostUserPic.src = sidebarPic.src;
+            quickPostUserPic.style.display = 'block';
+            quickPostDefaultAvatar.style.display = 'none';
+        }
+    }
+
+    if (qpPhotoBtn) qpPhotoBtn.onclick = () => quickPostPhotoInput.click();
+    if (qpVideoBtn) qpVideoBtn.onclick = () => quickPostVideoInput.click();
+
+    if (quickPostPhotoInput) {
+        quickPostPhotoInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    qpPhotoPreview.src = re.target.result;
+                    qpPhotoPreview.style.display = 'block';
+                    qpVideoPreview.style.display = 'none';
+                    quickPostMediaPreview.style.display = 'block';
+                    quickPostVideoInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
+
+    if (quickPostVideoInput) {
+        quickPostVideoInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (qpVideoPreview.src) URL.revokeObjectURL(qpVideoPreview.src);
+                qpVideoPreview.src = URL.createObjectURL(file);
+                qpVideoPreview.style.display = 'block';
+                qpPhotoPreview.style.display = 'none';
+                quickPostMediaPreview.style.display = 'block';
+                quickPostPhotoInput.value = '';
+            }
+        };
+    }
+
+    if (qpRemoveMedia) {
+        qpRemoveMedia.onclick = () => {
+            quickPostPhotoInput.value = '';
+            quickPostVideoInput.value = '';
+            quickPostMediaPreview.style.display = 'none';
+            qpPhotoPreview.style.display = 'none';
+            qpVideoPreview.style.display = 'none';
+        };
+    }
+
+    quickPostBtn.onclick = async () => {
+        const text = quickPostInput.value.trim();
+        const photoFile = quickPostPhotoInput.files[0];
+        const videoFile = quickPostVideoInput.files[0];
+        
+        if (!text && !photoFile && !videoFile) return;
+
+        quickPostBtn.disabled = true;
+        const originalText = quickPostBtn.textContent;
+        quickPostBtn.textContent = 'Posting...';
+
+        try {
+            const token = sessionStorage.getItem('authToken');
+            const postData = {
+                name: text.split('\n')[0].substring(0, 40) || 'Quick Update',
+                category: 'Social',
+                ingredients: 'N/A', // Required by backend
+                instructions: text || (photoFile ? 'Shared a photo' : 'Shared a video'),
+                visibility: 'public',
+                notes: 'Shared via Quick Post'
+            };
+
+            const toBase64 = file => new Promise((res, rej) => {
+                const r = new FileReader(); r.readAsDataURL(file); r.onload = () => res(r.result); r.onerror = e => rej(e);
+            });
+
+            if (photoFile) postData.photo = await toBase64(photoFile);
+            if (videoFile) postData.video = await toBase64(videoFile);
+
+            const resp = await fetch(`${API_URL}/recipes`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            });
+
+            if (resp.ok) {
+                quickPostInput.value = '';
+                quickPostMediaPreview.style.display = 'none';
+                quickPostPhotoInput.value = '';
+                quickPostVideoInput.value = '';
+                loadHomeFeed();
+                showNotification('✅ Shared successfully!', 'success');
+            } else {
+                const data = await resp.json();
+                showNotification(data.error || '❌ Failed to share', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showNotification('❌ Error sharing', 'error');
+        } finally {
+            quickPostBtn.disabled = false;
+            quickPostBtn.textContent = originalText;
+        }
+    };
+}

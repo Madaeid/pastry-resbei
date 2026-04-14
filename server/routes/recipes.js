@@ -88,14 +88,26 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
         const db = getDatabase();
         const currentUserId = req.user ? req.user.userId : null;
 
-        // Join with users table to get author info
+        // Join with users table to get author info, original recipe, and original store recipe
         const result = await db.query(`
             SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
-                orig_r.id as orig_id, orig_r.instructions as orig_instructions, orig_r.photo as orig_photo, orig_r.video as orig_video,
-                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username
+                -- Info from original standard recipe
+                orig_r.id as orig_id, orig_r.name as orig_name, orig_r.category as orig_category, 
+                orig_r.prep_time as orig_prep_time, orig_r.cook_time as orig_cook_time, orig_r.servings as orig_servings, 
+                orig_r.difficulty as orig_difficulty, orig_r.ingredients as orig_ingredients,
+                orig_r.instructions as orig_instructions, orig_r.photo as orig_photo, orig_r.video as orig_video,
+                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username,
+                -- Info from original store recipe
+                sr.id as store_id, sr.name as store_name, sr.category as store_category,
+                sr.prep_time as store_prep_time, sr.cook_time as store_cook_time, 
+                sr.difficulty as store_difficulty, sr.ingredients as store_ingredients, 
+                sr.instructions as store_instructions, sr.photo as store_photo, sr.video as store_video,
+                su.profile_picture as store_author_pic, su.display_name as store_author_name, su.username as store_author_username
             FROM recipes r
             LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
             LEFT JOIN users orig_u ON orig_r.user_id = orig_u.id
+            LEFT JOIN store_recipes sr ON r.shared_from_store_id = sr.id
+            LEFT JOIN users su ON sr.seller_id = su.id
             JOIN users u ON r.user_id = u.id
             WHERE r.visibility = 'public'
             ORDER BY r.created_at DESC
@@ -176,6 +188,13 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
                 comments: comments,
                 sharedFrom: recipe.orig_id ? {
                     id: recipe.orig_id,
+                    name: recipe.orig_name,
+                    category: recipe.orig_category,
+                    prepTime: recipe.orig_prep_time,
+                    cookTime: recipe.orig_cook_time,
+                    servings: recipe.orig_servings,
+                    difficulty: recipe.orig_difficulty,
+                    ingredients: recipe.orig_ingredients,
                     instructions: recipe.orig_instructions,
                     photo: recipe.orig_photo,
                     video: recipe.orig_video,
@@ -184,7 +203,25 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
                         username: recipe.orig_author_username,
                         pic: recipe.orig_author_pic || null
                     }
-                } : null
+                } : (recipe.store_id ? {
+                    id: recipe.store_id,
+                    name: recipe.store_name,
+                    category: recipe.store_category,
+                    prepTime: recipe.store_prep_time,
+                    cookTime: recipe.store_cook_time,
+                    servings: 1,
+                    difficulty: recipe.store_difficulty,
+                    ingredients: '🔒 Purchase to view ingredients',
+                    instructions: '🔒 Purchase to view instructions',
+                    photo: recipe.store_photo,
+                    video: recipe.store_video,
+                    isStore: true,
+                    author: {
+                        name: recipe.store_author_name,
+                        username: recipe.store_author_username,
+                        pic: recipe.store_author_pic || null
+                    }
+                } : null)
             });
         }
 
@@ -643,18 +680,53 @@ router.get('/:id/likes', async (req, res) => {
 router.post('/:id/share', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
+        const { id } = req.params;
         const { notes } = req.body;
-        const origResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);
-        if (origResult.rows.length === 0) return res.status(404).json({ error: 'Original post not found' });
+        
+        // 1. Try to find in standard recipes
+        let origResult = await db.query('SELECT * FROM recipes WHERE id = $1', [id]);
+        let isStoreRecipe = false;
+        
+        // 2. If not found, try to find in store_recipes
+        if (origResult.rows.length === 0) {
+            origResult = await db.query('SELECT * FROM store_recipes WHERE id = $1', [id]);
+            isStoreRecipe = true;
+        }
+        
+        if (origResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Original post not found' });
+        }
+        
         const orig = origResult.rows[0];
 
-        await db.query(`
-            INSERT INTO recipes (user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, video, visibility, shared_from_id, shared_notes)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        `, [req.user.userId, 'Reshare of ' + orig.name, orig.category, 0, 0, 1, orig.difficulty, 'N/A', notes || 'Shared this post!', notes || null, null, null, 'public', orig.id, notes || null]);
+        // Create the new reshare post
+        // IMPORTANT: We copy the photo and video from the original to the reshare 
+        // to ensure it shows up in the feed, even if it's a reshare of a reshare.
+        const reshareResult = await db.query(`
+            INSERT INTO recipes (
+                user_id, name, category, ingredients, instructions, photo, video, visibility, shared_from_id, shared_from_store_id, shared_notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id
+        `, [
+            req.user.userId,
+            orig.name,
+            orig.category || 'Other',
+            orig.ingredients || 'N/A',
+            notes || 'Shared this post!',
+            orig.photo || null,
+            orig.video || null,
+            'public',
+            isStoreRecipe ? null : orig.id,
+            isStoreRecipe ? orig.id : null,
+            notes || null
+        ]);
 
-        await db.query('INSERT INTO recipe_shares (recipe_id, user_id) VALUES ($1, $2)', [req.params.id, req.user.userId]);
-        res.json({ success: true });
+        // Record the share action
+        if (!isStoreRecipe) {
+            await db.query('INSERT INTO recipe_shares (recipe_id, user_id) VALUES ($1, $2)', [id, req.user.userId]);
+        }
+        
+        res.json({ success: true, newPostId: reshareResult.rows[0].id });
     } catch (error) {
         console.error('Share error:', error);
         res.status(500).json({ error: 'Failed to record share' });

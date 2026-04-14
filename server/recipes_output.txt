@@ -1,6 +1,0 @@
-﻿Recipes table columns:
-id, user_id, name, category, prep_time, cook_time, servings, difficulty, ingredients, instructions, notes, photo, created_at, updated_at
-
-========================================
-RECIPES: 0 total
-========================================

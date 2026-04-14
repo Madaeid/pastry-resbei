@@ -32,3 +32,6 @@ android/app/build/
 android/.gradle/
 android/app/src/main/assets/public
 ios/App/App/public
+
+# Temporary scratch files
+scratch/

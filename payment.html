@@ -8,7 +8,7 @@
     <meta name="description"
         content="Upgrade to Premium - Unlock unlimited recipes, PDF exports, and exclusive features">
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
-    <title>💎 Upgrade to Premium - My Recipe Book</title>
+    <title>💎 Upgrade to Premium - Chef Book</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -35,8 +35,10 @@
     <!-- User Header -->
     <div class="user-header" id="userHeader">
         <div class="user-display">
-            <span class="user-avatar">👤</span>
-            <span class="user-name" id="userName"></span>
+            <span class="sidebar-logo">👨‍🍳</span>
+            <span class="sidebar-title" style="margin-left: 10px;">Chef <span>Book</span></span>
+            <span class="user-name" id="userName" style="margin-left: 15px; font-weight: 500; font-size: 1rem; color: var(--text-secondary); opacity: 0.8;"></span>
+        </div>
             <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
                 Premium</span>
         </div>
@@ -97,22 +99,22 @@
     <!-- Pricing Cards Section -->
     <div class="pricing-section">
         <div class="pricing-container">
-            <!-- Monthly Plan (SPECIAL OFFER!) -->
+            <!-- Monthly Plan (Special Offer) -->
             <div class="pricing-card monthly-offer" data-plan="monthly">
-                <div class="monthly-offer-badge">💰 40% OFF</div>
+                <div class="monthly-offer-badge">💰 50% OFF</div>
                 <div class="pricing-card-header">
                     <span class="plan-emoji">📅</span>
                     <h3 data-i18n="monthlyPlan">Monthly</h3>
                     <p class="plan-subtitle" data-i18n="greatForTrying">Great for trying out</p>
                 </div>
                 <div class="pricing-card-price">
-                    <span class="original-price">$5</span>
+                    <span class="original-price">$4</span>
                     <span class="currency">$</span>
-                    <span class="amount">3</span>
+                    <span class="amount">2</span>
                     <span class="cents">.00</span>
                     <span class="period">/month</span>
                 </div>
-                <div class="savings-badge monthly-save">40% OFF! 💰</div>
+                <div class="savings-badge monthly-save">50% OFF! 💰</div>
                 <ul class="pricing-features">
                     <li><span class="feature-icon">✅</span> <span data-i18n="unlimitedRecipes">Unlimited Recipes</span>
                     </li>
@@ -130,7 +132,7 @@
                 </button>
             </div>
 
-            <!-- Yearly Plan (Popular) -->
+            <!-- Yearly Plan (Best Value) -->
             <div class="pricing-card popular" data-plan="yearly">
                 <div class="popular-badge">🔥 <span data-i18n="mostPopular">Most Popular</span></div>
                 <div class="pricing-card-header">
@@ -139,12 +141,13 @@
                     <p class="plan-subtitle" data-i18n="bestValueBakers">Best value for bakers</p>
                 </div>
                 <div class="pricing-card-price">
+                    <span class="original-price">$40</span>
                     <span class="currency">$</span>
-                    <span class="amount">39</span>
-                    <span class="cents">.99</span>
+                    <span class="amount">20</span>
+                    <span class="cents">.00</span>
                     <span class="period">/year</span>
                 </div>
-                <div class="savings-badge"><span data-i18n="save33">Save 33%</span> 💰</div>
+                <div class="savings-badge"><span>Save 50%</span> 💰</div>
                 <ul class="pricing-features">
                     <li><span class="feature-icon">✅</span> <span data-i18n="unlimitedRecipes">Unlimited Recipes</span>
                     </li>
@@ -163,39 +166,6 @@
                 </button>
             </div>
 
-            <!-- Lifetime Plan (SPECIAL OFFER!) -->
-            <div class="pricing-card lifetime" data-plan="lifetime">
-                <div class="lifetime-badge">🔥 <span data-i18n="limitedOffer">LIMITED OFFER</span></div>
-                <div class="pricing-card-header">
-                    <span class="plan-emoji">👑</span>
-                    <h3 data-i18n="lifetimePlan">Lifetime</h3>
-                    <p class="plan-subtitle" data-i18n="oneTimePayment">One-time payment</p>
-                </div>
-                <div class="pricing-card-price">
-                    <span class="original-price">$100</span>
-                    <span class="currency">$</span>
-                    <span class="amount">20</span>
-                    <span class="cents">.00</span>
-                    <span class="period">once</span>
-                </div>
-                <div class="savings-badge lifetime-save">80% OFF! 🔥</div>
-                <ul class="pricing-features">
-                    <li><span class="feature-icon">✅</span> <strong data-i18n="allPremiumFeatures">All Premium
-                            Features</strong></li>
-                    <li><span class="feature-icon">✅</span> <strong data-i18n="foreverAccess">Forever Access</strong>
-                    </li>
-                    <li><span class="feature-icon">✅</span> <strong data-i18n="allFutureUpdates">All Future
-                            Updates</strong></li>
-                    <li><span class="feature-icon">✅</span> <span data-i18n="prioritySupport">Priority Support</span>
-                    </li>
-                    <li><span class="feature-icon">👑</span> <strong data-i18n="founderBadge">Founder Badge</strong>
-                    </li>
-                </ul>
-                <button class="btn btn-subscribe btn-lifetime" id="subscribeLifetime">
-                    <span class="btn-icon">👑</span>
-                    <span data-i18n="getLifetimeAccess">Get Lifetime Access - Only $20!</span>
-                </button>
-            </div>
         </div>
     </div>
 
@@ -431,7 +401,7 @@
     </div>
 
     <footer>
-        <p data-i18n="paymentFooter">📖 My Recipe Book © 2024 | Secure payments by Stripe</p>
+        <p data-i18n="paymentFooter">👨‍🍳 Chef Book © 2024 | Secure payments by Stripe</p>
     </footer>
 
     <script type="module" src="./payment.js"></script>

@@ -5,10 +5,10 @@
   "localEndpoint": "http://localhost:3001",
   "backendAuthType": "public",
   "executionArgs": {
-    "projectName": "my resipe",
+    "projectName": "chef-book",
     "projectPath": "e:\\my resipe",
     "testIds": [],
-    "additionalInstruction": "",
+    "additionalInstruction": "Generate and run backend integration/unit tests for the API endpoints.",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-JvHF9xFkzN79pOEbbRP6gIZ25SvMggGdAL_qDGl5WIgkIjdClilM3oX-fQVU1wspwhPR4B0Yv80nd35ApVnVdZNbHcKAuDHsMMw4OrGen6gDiu729XaEmJR1bUamoby0gkM"

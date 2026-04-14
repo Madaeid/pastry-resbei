@@ -387,7 +387,7 @@ router.post('/create-checkout-session', authenticateToken, async (req, res) => {
             req.user.userId,
             user.email,
             recipe,
-            successUrl || `${process.env.FRONTEND_URL}/payment-success.html`,
+            successUrl || `${process.env.FRONTEND_URL}/payment-success.html?type=recipe`,
             cancelUrl || `${process.env.FRONTEND_URL}/payment.html`
         );
 
@@ -425,7 +425,12 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
             return res.status(403).json({ error: 'Session does not belong to this user' });
         }
 
-        const recipeId = session.metadata.recipeId;
+        const recipeId = session.metadata?.recipeId;
+        
+        if (!recipeId) {
+            console.error('Missing recipeId in session metadata for sessionId:', sessionId);
+            return res.status(400).json({ error: 'Invalid session metadata: recipeId missing' });
+        }
 
         // Check if purchase already recorded
         const existingPurchase = await db.query(

@@ -25,8 +25,14 @@ router.get('/stats', async (req, res) => {
         const totalRecipesResult = await db.query('SELECT COUNT(*) as count FROM recipes');
         const totalRecipes = parseInt(totalRecipesResult.rows[0].count);
 
-        const totalSubsResult = await db.query(`SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active' AND end_date > NOW()`);
-        const totalSubscriptions = parseInt(totalSubsResult.rows[0].count);
+        // Fixed: Use sub-try-catch for subscriptions in case the table doesn't exist or has issues
+        let totalSubscriptions = 0;
+        try {
+            const totalSubsResult = await db.query(`SELECT COUNT(*) as count FROM subscriptions WHERE status = 'active' AND end_date > NOW()`);
+            totalSubscriptions = parseInt(totalSubsResult.rows[0].count || 0);
+        } catch (err) {
+            console.warn('Subscriptions table query failed, defaulting to 0:', err.message);
+        }
 
         res.json({
             totalUsers,
@@ -36,8 +42,9 @@ router.get('/stats', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get stats error:', error);
-        res.status(500).json({ error: 'Failed to get stats' });
+        console.error('SERVER ERROR [GET /api/admin/stats]:', error.message);
+        console.error(error.stack);
+        res.status(500).json({ error: 'Failed to get stats', details: error.message });
     }
 });
 

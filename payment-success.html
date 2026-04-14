@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#ffffff">
-    <title>🎉 Payment Successful - My Recipe Book</title>
+    <title>🎉 Payment Successful - Chef Book</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -257,6 +257,13 @@
         // Get session_id from URL
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
+        let type = urlParams.get('type');
+        const recipeId = urlParams.get('recipe_id');
+
+        // Fallback: If recipe_id exists but type is not set, it's a recipe purchase
+        if (!type && recipeId) {
+            type = 'recipe';
+        }
 
         const loadingState = document.getElementById('loadingState');
         const readyState = document.getElementById('readyState');
@@ -298,7 +305,12 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/subscriptions/verify-session/${sessionId}`, {
+                // Determine endpoint based on type
+                const endpoint = type === 'recipe' 
+                    ? `${API_URL}/store/verify-session/${sessionId}`
+                    : `${API_URL}/subscriptions/verify-session/${sessionId}`;
+
+                const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -312,9 +324,13 @@
                 }
 
                 if (data.success) {
-                    // Save subscription to localStorage so frontend isPremium() works
-                    saveSubscriptionToLocalStorage(data.subscription);
-                    showSuccess(data.subscription);
+                    if (type === 'recipe') {
+                        showRecipeSuccess(data);
+                    } else {
+                        // Save subscription to localStorage so frontend isPremium() works
+                        saveSubscriptionToLocalStorage(data.subscription);
+                        showSuccess(data.subscription);
+                    }
                 } else {
                     throw new Error('Payment verification failed');
                 }
@@ -323,6 +339,39 @@
                 console.error('Verification error:', error);
                 showError(error.message || 'Failed to verify payment. Please contact support.');
             }
+        }
+
+        function showRecipeSuccess(data) {
+            loadingState.classList.remove('active');
+            readyState.classList.remove('hidden');
+
+            const userName = getCurrentUser();
+            document.getElementById('userName').textContent = userName || 'User';
+            
+            // UI adjustments for recipe
+            document.querySelector('h1').textContent = 'Recipe Purchased!';
+            const welcomeText = document.querySelector('.ready-state p');
+            if (welcomeText) welcomeText.innerHTML = `You now have full access to your new recipe, <strong>${userName}</strong>!`;
+
+            const planInfo = document.querySelector('.plan-info');
+            planInfo.innerHTML = `
+                <div class="plan-name">Recipe Added to your collection</div>
+                <div class="plan-expiry">ID: ${data.recipeId}</div>
+            `;
+
+            const features = document.querySelector('.success-features');
+            features.innerHTML = `
+                <h3 data-i18n="youNowHaveAccess">What's next?</h3>
+                <ul>
+                    <li>View full ingredients and steps</li>
+                    <li>Access your purchased recipes in "My Purchases"</li>
+                    <li>Download or print the recipe</li>
+                </ul>
+            `;
+
+            const btn = document.querySelector('.btn-continue');
+            btn.innerHTML = `<span>📖</span> <span>Go to My Purchases</span>`;
+            btn.onclick = () => window.location.href = './index.html?tab=store&subtab=purchases';
         }
 
         function showSuccess(subscription) {

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a120b">
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
-    <title>🧁 My Recipe Book</title>
+    <title>🧁 Chef Book</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -34,6 +34,12 @@
 </head>
 
 <body>
+    <!-- Mobile Top Bar -->
+    <div class="mobile-top-bar">
+        <span class="mobile-logo">👨‍🍳</span>
+        <span class="mobile-title">Chef <span>Book</span></span>
+    </div>
+
     <!-- Sidebar Toggle Button (Mobile) -->
     <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
         <span class="hamburger-line"></span>
@@ -47,7 +53,7 @@
         <!-- Logo / Brand -->
         <div class="sidebar-brand">
             <span class="sidebar-logo">👨‍🍳</span>
-            <span class="sidebar-title">Recipe Book</span>
+            <span class="sidebar-title">Chef <span>Book</span></span>
         </div>
 
         <!-- User Profile Section -->
@@ -63,7 +69,7 @@
             <div class="user-badges-container"
                 style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px;">
                 <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
-                    Premium</span>
+                    UPGRADE</span>
                 <button class="profile-logout-btn" id="profileLogoutBtn" title="Logout">
                     <span style="font-size: 0.9em;">🚪</span> <span data-i18n="logout">Logout</span>
                 </button>
@@ -148,7 +154,7 @@
         <!-- Upgrade -->
         <a href="./payment.html" id="upgradeBtn" class="sidebar-upgrade">
             <span class="sidebar-upgrade-icon">💎</span>
-            <span class="sidebar-upgrade-text" data-i18n="upgrade">Upgrade (80% OFF)</span>
+            <span class="sidebar-upgrade-text" data-i18n="upgrade">Subscribe</span>
             <span class="sidebar-upgrade-glow"></span>
         </a>
 
@@ -180,13 +186,10 @@
     <!-- Hero Section -->
     <div class="hero-section">
         <div class="hero-content">
-            <div class="hero-text">
-                <h1 data-i18n="appTitle">My Recipe Book</h1>
-
-            </div>
             <div class="hero-image-wrapper">
                 <img id="heroChefImg" class="hero-image" src="/hero-chef.png" alt="Chef presenting food" />
                 <div class="hero-image-overlay"></div>
+                <h1 data-i18n="appTitle" class="hero-title-overlay">Chef <span>Book</span></h1>
                 <div class="hero-image-decoration"></div>
             </div>
         </div>
@@ -198,43 +201,37 @@
 
     <!-- Home Tab Content -->
     <div id="home" class="tab-content active">
-        <div class="recipes-header">
-            <h2 style="margin: 0; font-size: 1.5rem;" data-i18n="communityFeed">Community Feed</h2>
-        </div>
-
-        <!-- Quick Post Section (Facebook style) -->
-        <div class="quick-post-card">
-            <div class="quick-post-header" style="align-items: flex-start;">
-                <div class="user-avatar-small" style="margin-top: 5px;">
-                    <img id="postUserAvatar" src="" alt="👤">
-                </div>
-                <div class="quick-post-input-wrapper" style="flex: 1;">
-                    <textarea id="quickPostText" class="quick-post-textarea" placeholder="What are you baking today?"
-                        data-i18n="whatsOnYourMind"></textarea>
-                    
-                    <!-- Photo Preview Area -->
-                    <div id="quickPostPhotoPreview" class="quick-post-photo-preview" style="display: none; position: relative; margin-top: 10px;">
-                        <img src="" alt="Preview">
-                        <button id="removePostPhotoBtn" class="remove-photo-btn" title="Remove Photo">&times;</button>
+        <!-- Quick Post Card -->
+        <div id="quickPostCard" class="quick-post-card" style="display: none;">
+            <div class="quick-post-container">
+                <div class="quick-post-header">
+                    <div class="quick-post-avatar">
+                        <img id="quickPostUserPic" src="" alt="Profile" style="display: none;">
+                        <span id="quickPostDefaultAvatar">👤</span>
                     </div>
+                    <textarea id="quickPostInput" data-i18n-placeholder="whatsOnYourMind" placeholder="What's on your mind?"></textarea>
+                </div>
+                
+                <div id="quickPostMediaPreview" class="qp-media-preview" style="display: none;">
+                    <button type="button" class="qp-remove-media" id="qpRemoveMedia">&times;</button>
+                    <img id="qpPhotoPreview" src="" style="display: none;">
+                    <video id="qpVideoPreview" src="" controls style="display: none;"></video>
+                </div>
 
-                    <!-- Extra Actions Bar (Integrated) -->
-                    <div class="quick-post-actions" style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button id="addPhotoBtn" class="btn-extra-action" style="background: rgba(198, 123, 75, 0.15); border-color: rgba(198, 123, 75, 0.4); color: var(--text-primary);">
-                            <span>📷</span> <span class="action-label" data-i18n="photo">Photo</span>
+                <div class="quick-post-actions">
+                    <div class="quick-post-media-btns">
+                        <button type="button" class="qp-media-btn" id="qpPhotoBtn">
+                             <span class="qp-btn-icon">📸</span> <span data-i18n="photo">photo</span>
                         </button>
-                        <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
+                        <button type="button" class="qp-media-btn" id="qpVideoBtn">
+                            <span class="qp-btn-icon">🎬</span> <span data-i18n="video">Video</span>
+                        </button>
                     </div>
+                    <button id="qpPostBtn" class="qp-post-submit-btn" data-i18n="share">Share</button>
                 </div>
             </div>
-
-            <div class="quick-post-footer" id="quickPostFooter"
-                style="display: none; justify-content: flex-end; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
-                <button id="submitQuickPostBtn" class="btn btn-primary btn-sm"
-                    style="padding: 6px 20px; border-radius: 4px;">
-                    <span data-i18n="postBtn">Post</span>
-                </button>
-            </div>
+            <input type="file" id="qpPhotoInput" accept="image/*" hidden>
+            <input type="file" id="qpVideoInput" accept="video/*" hidden>
         </div>
 
         <div id="homeGrid" class="recipes-grid communities-grid">
@@ -338,7 +335,8 @@
         <div class="recipes-header">
             <div class="search-container">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="storeSearch" class="search-input" data-i18n="searchStore" placeholder="Search the marketplace...">
+                <input type="text" id="storeSearch" class="search-input" data-i18n="searchStore"
+                    placeholder="Search the marketplace...">
             </div>
             <div class="recipes-actions">
                 <button id="sellRecipeBtn" class="btn btn-primary">
@@ -356,7 +354,9 @@
 
         <!-- Trending Carousel Header -->
         <div id="trendingSection" style="margin-bottom: 40px; display: none;">
-            <h3 style="font-family: 'Playfair Display', serif; font-size: 1.8rem; text-align: center; margin-bottom: 20px;">Trending Now</h3>
+            <h3
+                style="font-family: 'Playfair Display', serif; font-size: 1.8rem; text-align: center; margin-bottom: 20px;">
+                Trending Now</h3>
             <div id="trendingCarousel" class="trending-carousel"></div>
         </div>
 
@@ -448,9 +448,11 @@
                     <!-- CV Upload -->
                     <div class="form-group cv-upload-group"
                         style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color);">
-                        <label data-i18n="uploadCv">Resume / CV (PDF)</label>
+                        <label
+                            style="text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 12px; display: block;">UPLOADCV</label>
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <button type="button" class="btn btn-secondary" id="editCvUploadBtn" style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" id="editCvUploadBtn"
+                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px;">
                                 <span class="btn-icon">📄</span> Upload CV
                             </button>
                             <a id="viewUserCvBtn" href="#" target="_blank" class="btn btn-outline"
@@ -458,7 +460,7 @@
                                 👁️ View
                             </a>
                         </div>
-                        <input type="file" id="editCvFile" accept="application/pdf" hidden>
+                        <input type="file" id="editCvFile" accept=".pdf" hidden>
                         <p id="cvUploadStatus"
                             style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;"></p>
                     </div>
@@ -547,7 +549,8 @@
                     <!-- Recipe Photo Upload -->
                     <div class="form-group recipe-upload-group">
                         <div class="recipe-image-upload" id="recipeImageUpload">
-                            <img id="addRecipePreview" src="" alt="Recipe preview" style="display: none;">
+                            <img id="addRecipePreview" src="" alt="Recipe preview"
+                                style="display: none; max-width: 100%; border-radius: 16px; margin: 0 auto;">
                             <div class="upload-placeholder" id="addUploadPlaceholder">
                                 <span class="upload-icon">📷</span>
                                 <p data-i18n="clickToUpload">Click to upload recipe photo</p>
@@ -637,7 +640,8 @@
         <div class="modal-content modal-md">
             <span class="close-modal" id="closeSellModal">&times;</span>
             <h2><span class="modal-icon">🏷️</span> Sell Your Recipe</h2>
-            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">Share your culinary secrets with the world and earn.</p>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 20px;">Share your culinary
+                secrets with the world and earn.</p>
 
             <form id="sellRecipeForm" class="recipe-form">
                 <div class="form-group recipe-upload-group">
@@ -680,14 +684,16 @@
 
                 <div class="form-group">
                     <label>Full Ingredients (Hidden until purchased)</label>
-                    <textarea id="sellRecipeIngredients" rows="4" required placeholder="List of ingredients..."></textarea>
+                    <textarea id="sellRecipeIngredients" rows="4" required
+                        placeholder="List of ingredients..."></textarea>
                 </div>
 
                 <div class="form-group">
                     <label>Full Instructions (Hidden until purchased)</label>
-                    <textarea id="sellRecipeInstructions" rows="5" required placeholder="Step-by-step guide..."></textarea>
+                    <textarea id="sellRecipeInstructions" rows="5" required
+                        placeholder="Step-by-step guide..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Chef's Secrets & Notes (Hidden until purchased)</label>
                     <textarea id="sellRecipeNotes" rows="3" placeholder="Special tricks..."></textarea>
@@ -717,7 +723,7 @@
     </div>
 
     <footer>
-        <p data-i18n="footer">📖 My Recipe Book &copy; 2024</p>
+        <p data-i18n="footer">👨‍🍳 Chef Book &copy; 2024</p>
     </footer>
 
     <script type="module" src="./main.js"></script>
