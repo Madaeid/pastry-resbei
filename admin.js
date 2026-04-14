@@ -149,6 +149,7 @@ async function loadUsers() {
                     <td>${user.displayName}</td>
                     <td>${user.email}</td>
                     <td>${user.phone || 'N/A'}</td>
+                    <td>${user.birthday || 'N/A'}</td>
                     <td>
                         <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
                             ${user.isAdmin ? 'Admin' : 'User'}
@@ -159,13 +160,23 @@ async function loadUsers() {
                             <span class="premium-icon">${hasPremium ? '💎' : '🆓'}</span>
                             <span class="premium-text" style="font-weight: 500;">${hasPremium ? 'Premium' : 'Free'}</span>
                             ${!user.isAdmin ? `
-                                <button class="action-btn toggle-premium" data-id="${user.id}" data-premium="${hasPremium}" title="${hasPremium ? 'Revoke Premium' : 'Grant Premium'}">
+                                <button class="action-btn toggle-premium" data-id="${user.id}" data-premium="${hasPremium}" title="${hasPremium ? 'Revoke' : 'Grant'}">
                                     ${hasPremium ? '❌' : '✅'}
                                 </button>
                             ` : ''}
                         </div>
                     </td>
-                    <td>${user.recipeCount || 0} recipes</td>
+                    <td>
+                        <span class="visibility-badge ${user.isPublic ? 'vid-public' : 'vid-private'}">
+                            ${user.isPublic ? '🌐 Public' : '🔒 Private'}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; flex-direction: column;">
+                            <strong>${user.recipeCount || 0}</strong>
+                            <span style="font-size: 0.7rem; opacity: 0.6;">recipes</span>
+                        </div>
+                    </td>
                     <td>${joinDate}</td>
                     <td>
                         <div class="action-buttons">
@@ -249,13 +260,13 @@ function setupUserActionButtons() {
             showConfirmModal(
                 hasPremium ? '❌' : '💎',
                 hasPremium ? 'Revoke Premium' : 'Grant Premium',
-                `${hasPremium ? 'Revoke' : 'Grant'} lifetime premium access?`,
+                `${hasPremium ? 'Revoke' : 'Grant'} premium access (1 year)?`,
                 async () => {
                     try {
                         const endpoint = hasPremium ? 'revoke-premium' : 'grant-premium';
                         const res = await adminFetch(`/users/${userId}/${endpoint}`, { 
                             method: 'POST',
-                            body: hasPremium ? null : JSON.stringify({ plan: 'lifetime' })
+                            body: hasPremium ? null : JSON.stringify({ plan: 'yearly' })
                         });
                         showNotification(res.message);
                         updateDashboardData();
@@ -352,6 +363,48 @@ async function handleExportData() {
     }
 }
 
+async function handleClearAllRecipes() {
+    showConfirmModal(
+        '🗑️',
+        'Clear All Recipes',
+        'Are you absolutely sure? This will delete EVERY recipe from EVERY user in the database. This cannot be undone!',
+        async () => {
+            try {
+                const res = await adminFetch('/recipes/clear-all', { method: 'POST' });
+                showNotification(res.message);
+                updateDashboardData();
+            } catch (err) {
+                showNotification(err.message, 'error');
+            }
+        }
+    );
+}
+
+function handleSystemInfo() {
+    const info = {
+        platform: navigator.platform,
+        userAgent: navigator.userAgent.split(') ')[0] + ')',
+        screen: `${window.screen.width}x${window.screen.height}`,
+        language: navigator.language,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        dashboardVersion: '2.5.0-premium'
+    };
+
+    showInfoModal(`
+        <div class="info-content">
+            <h2>ℹ️ System Information</h2>
+            <div class="info-grid" style="display: grid; gap: 15px; margin-top: 20px;">
+                <div class="info-item"><strong>Platform:</strong> ${info.platform}</div>
+                <div class="info-item"><strong>Browser:</strong> ${info.userAgent}</div>
+                <div class="info-item"><strong>Resolution:</strong> ${info.screen}</div>
+                <div class="info-item"><strong>Language:</strong> ${info.language}</div>
+                <div class="info-item"><strong>Timezone:</strong> ${info.timeZone}</div>
+                <div class="info-item"><strong>Version:</strong> ${info.dashboardVersion}</div>
+            </div>
+        </div>
+    `);
+}
+
 // ===== Modals =====
 function showConfirmModal(icon, title, message, action) {
     confirmIcon.textContent = icon;
@@ -393,8 +446,12 @@ function showNotification(message, type = 'success') {
 function setupEventListeners() {
     logoutBtn.addEventListener('click', logout);
     refreshUsersBtn.addEventListener('click', updateDashboardData);
+    
+    // Quick actions
     viewAllRecipesBtn.addEventListener('click', handleViewAllRecipes);
     exportDataBtn.addEventListener('click', handleExportData);
+    clearAllRecipesBtn.addEventListener('click', handleClearAllRecipes);
+    systemInfoBtn.addEventListener('click', handleSystemInfo);
     
     closeConfirmModal.onclick = () => confirmModal.classList.remove('active');
     confirmCancel.onclick = () => confirmModal.classList.remove('active');

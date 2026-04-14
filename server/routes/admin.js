@@ -82,6 +82,7 @@ router.get('/users', async (req, res) => {
                 birthday: user.birthday,
                 isAdmin: user.is_admin === 1,
                 isPremium,
+                isPublic: user.is_public === true,
                 subscriptionPlan: user.subscription_plan,
                 subscriptionStatus: user.subscription_status,
                 subscriptionEndDate: user.subscription_end_date,
@@ -397,6 +398,18 @@ router.get('/export', async (req, res) => {
     } catch (error) {
         console.error('Export error:', error);
         res.status(500).json({ error: 'Failed to export data' });
+    }
+});
+
+// ===== Clear All Recipes =====
+router.post('/recipes/clear-all', async (req, res) => {
+    try {
+        const db = getDatabase();
+        await db.query('DELETE FROM recipes');
+        res.json({ success: true, message: 'All recipes cleared successfully' });
+    } catch (error) {
+        console.error('Clear recipes error:', error);
+        res.status(500).json({ error: 'Failed to clear recipes' });
     }
 });
 
