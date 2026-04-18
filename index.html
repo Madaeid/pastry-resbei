@@ -66,12 +66,16 @@
             </div>
             <span class="user-name" id="userName"></span>
 
-            <div class="user-badges-container"
-                style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 6px;">
-                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
-                    UPGRADE</span>
+            <div class="user-balance-container" id="sidebarBalanceContainer">
+                <span class="balance-emoji">💰</span>
+                <span id="sidebarBalance" class="balance-amount">0.00</span>
+                <span class="balance-currency">$</span>
+            </div>
+
+            <div class="user-badges-container">
+                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎 PREMIUM</span>
                 <button class="profile-logout-btn" id="profileLogoutBtn" title="Logout">
-                    <span style="font-size: 0.9em;">🚪</span> <span data-i18n="logout">Logout</span>
+                    <span>🚪</span> <span data-i18n="logout">Logout</span>
                 </button>
             </div>
         </div>
@@ -147,6 +151,11 @@
                 <span class="sidebar-link-icon">📄</span>
                 <span class="sidebar-link-text" data-i18n="myCv">My CV</span>
             </a>
+
+            <a href="./wallet.html" id="walletBtn" class="sidebar-link">
+                <span class="sidebar-link-icon">💰</span>
+                <span class="sidebar-link-text">Wallet</span>
+            </a>
         </div>
 
         <div class="sidebar-divider"></div>
@@ -187,7 +196,7 @@
     <div class="hero-section">
         <div class="hero-content">
             <div class="hero-image-wrapper">
-                <img id="heroChefImg" class="hero-image" src="/hero-chef.png" alt="Chef presenting food" />
+                <img id="heroChefImg" class="hero-image" src="/new-premium-hero.png" alt="Premium Chef" />
                 <div class="hero-image-overlay"></div>
                 <h1 data-i18n="appTitle" class="hero-title-overlay">Chef <span>Book</span></h1>
                 <div class="hero-image-decoration"></div>

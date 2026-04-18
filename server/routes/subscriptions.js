@@ -409,16 +409,16 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         }
 
         const planId = session.metadata?.planId;
-        
+
         if (!planId) {
             console.error('Missing planId in session metadata for sessionId:', sessionId);
-            return res.status(400).json({ 
-                error: 'Invalid session metadata: planId missing. If you were purchasing a recipe, please use the correct verification endpoint.' 
+            return res.status(400).json({
+                error: 'Invalid session metadata: planId missing. If you were purchasing a recipe, please use the correct verification endpoint.'
             });
         }
 
         const plan = PLANS[planId];
-        
+
         if (!plan) {
             console.error('Invalid planId in session metadata:', planId);
             return res.status(400).json({ error: 'Invalid plan configuration' });
@@ -568,13 +568,13 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
                 if (type === 'recipe_purchase') {
                     const recipeId = session.metadata.recipeId;
-                    
+
                     // Check if already processed
                     const existing = await db.query(
                         'SELECT id FROM store_purchases WHERE stripe_session_id = $1',
                         [session.id]
                     );
-                    
+
                     if (existing.rows.length === 0) {
                         const recipeResult = await db.query('SELECT price FROM store_recipes WHERE id = $1', [recipeId]);
                         const pricePaid = recipeResult.rows[0]?.price || 0;

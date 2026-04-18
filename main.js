@@ -341,6 +341,7 @@ async function initApp() {
     window.deletePost = deleteRecipe;
     window.toggleLike = toggleLike;
     window.sharePost = sharePost;
+    window.handleShareRecipe = handleShareRecipe;
     window.submitComment = submitComment;
     window.editComment = editPostComment;
     window.deleteComment = deletePostComment;
@@ -1016,11 +1017,21 @@ function checkAuth() {
 
         // Also make the whole sidebar user container clickable for better UX
         const sidebarUserDisplay = document.getElementById('sidebarUserDisplay');
+        const sidebarBalanceContainer = document.getElementById('sidebarBalanceContainer');
+
+        if (sidebarBalanceContainer) {
+            sidebarBalanceContainer.onclick = (e) => {
+                e.stopPropagation();
+                window.location.href = './wallet.html';
+            };
+        }
+
         if (sidebarUserDisplay) {
             sidebarUserDisplay.style.cursor = 'pointer';
             sidebarUserDisplay.onclick = (e) => {
-                // Don't trigger if clicking logout button specifically
+                // Don't trigger if clicking logout button or balance specifically
                 if (e.target.id === 'profileLogoutBtn' || e.target.closest('#profileLogoutBtn')) return;
+                if (e.target.id === 'sidebarBalanceContainer' || e.target.closest('#sidebarBalanceContainer')) return;
                 window.location.href = `./chef-profile.html?username=${currentUsername}`;
             };
         }
@@ -1053,6 +1064,8 @@ function checkAuth() {
         // Always show Daily Menu button if logged in
         if (dailyMenuBtn) dailyMenuBtn.style.display = 'inline-flex';
 
+        // Update sidebar balance
+        updateSidebarBalance();
     }
 
     if (logoutBtn) {
@@ -1087,6 +1100,27 @@ function filterRecipes(searchTerm) {
     }
 
     renderRecipes(filtered);
+}
+
+async function updateSidebarBalance() {
+    const sidebarBalance = document.getElementById('sidebarBalance');
+    if (!sidebarBalance) return;
+
+    const token = sessionStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${API_URL}/wallet/balance`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            sidebarBalance.textContent = parseFloat(data.balance).toFixed(2);
+        }
+    } catch (err) {
+        console.error('Error fetching sidebar balance:', err);
+    }
 }
 
 // Save Recipe
@@ -1800,26 +1834,46 @@ function createRecipeCard(recipe, isPublicFeed = false) {
 // getCategoryEmoji and getDifficultyText moved to recipe-utils.js
 
 // Handle Share Recipe
-function handleShareRecipe(recipe) {
+async function handleShareRecipe(recipe) {
+    if (!recipe) return;
+    
+    // Construct the direct link to this recipe
+    const username = recipe.author?.username || recipe.authorUsername || getCurrentUser();
+    const url = `${window.location.origin}/chef-profile.html?username=${username}&post=${recipe.id}`;
+    const token = sessionStorage.getItem('authToken');
+
+    // Choice for logged in users
+    if (token) {
+        const choice = confirm(`How would you like to share "${recipe.name}"?\n\nOK: Reshare to your Feed\nCancel: Copy Link / External Share`);
+        if (choice) {
+            if (typeof sharePost === 'function') {
+                return sharePost(recipe.id);
+            }
+        }
+    }
+
+    // External Share / Copy Link
     if (navigator.share) {
         navigator.share({
-            title: `Check out this recipe: ${recipe.name}`,
-            text: `I found this delicious ${recipe.name} recipe on Chef Book!`,
-            url: window.location.href
-        }).then(() => {
-            showNotification('✅ Shared successfully!', 'success');
+            title: `Chef Book: ${recipe.name}`,
+            text: `Check out this amazing ${recipe.name} recipe on Chef Book!`,
+            url: url
         }).catch((error) => {
             console.error('Error sharing:', error);
         });
     } else {
-        // Fallback: Copy to clipboard
-        const dummy = document.createElement('input');
-        document.body.appendChild(dummy);
-        dummy.value = window.location.href;
-        dummy.select();
-        document.execCommand('copy');
-        document.body.removeChild(dummy);
-        showNotification('📋 Link copied to clipboard!', 'success');
+        try {
+            await navigator.clipboard.writeText(url);
+            showNotification('📋 Recipe link copied to clipboard!', 'success');
+        } catch (err) {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = url;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            showNotification('📋 Recipe link copied to clipboard!', 'success');
+        }
     }
 }
 
@@ -1834,7 +1888,7 @@ function viewRecipe(idOrRecipe, isPublic = false) {
 
     const isReshare = !!recipe.sharedFrom;
     const source = isReshare ? recipe.sharedFrom : recipe;
-    
+
     const categoryEmoji = getCategoryEmoji(source.category || recipe.category);
     const difficultyText = getDifficultyText(source.difficulty || recipe.difficulty);
     const totalTime = (source.prepTime || 0) + (source.cookTime || 0);
@@ -1858,13 +1912,18 @@ function viewRecipe(idOrRecipe, isPublic = false) {
             ? `<img src="${source.photo}" alt="${source.name}">`
             : `<span class="placeholder-icon">${categoryEmoji}</span>`}
         </div>
-        <div class="modal-header-actions" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="modal-header-actions" style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
            <div class="reshare-badge-container">
                ${isReshare ? `<span style="background: rgba(255,107,138,0.1); color: var(--accent-pink); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔁 Shared from ${source.author?.name || source.authorUsername || 'another chef'}</span>` : ''}
            </div>
-           ${!isPublic ? `<button class="btn btn-primary" id="modalSavePdf" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
-                <span class="btn-icon">📄</span> Save as PDF
-           </button>` : ''}
+           <div style="display: flex; gap: 8px;">
+               <button class="btn btn-secondary" id="modalShareRecipe" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 12px; display: flex; align-items: center; gap: 5px;">
+                    <span>🔗</span> Share
+               </button>
+               ${!isPublic ? `<button class="btn btn-primary" id="modalSavePdf" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+                    <span class="btn-icon">📄</span> Save as PDF
+               </button>` : ''}
+           </div>
         </div>
         <h2 class="modal-recipe-title">${source.name || recipe.name}</h2>
         ${isReshare && recipe.instructions && recipe.instructions !== 'Shared this post!' ? `
@@ -1948,6 +2007,12 @@ function viewRecipe(idOrRecipe, isPublic = false) {
     const savePdfBtn = document.getElementById('modalSavePdf');
     if (savePdfBtn) {
         savePdfBtn.addEventListener('click', () => saveRecipeAsPdf(recipe));
+    }
+
+    // Add event listener for modal share button
+    const modalShareBtn = document.getElementById('modalShareRecipe');
+    if (modalShareBtn) {
+        modalShareBtn.addEventListener('click', () => handleShareRecipe(recipe));
     }
 
     // Comment Submission in modal
@@ -2238,9 +2303,9 @@ async function sharePost(id, initialNotes = '') {
 
         const response = await fetch(`${API_URL}/recipes/${id}/share`, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ notes })
         });
@@ -3456,10 +3521,10 @@ function showFullStoreRecipe(recipe) {
             ${recipe.photo ? `<img src="${recipe.photo}" alt="${recipe.name}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; margin-bottom: 20px;">` : ''}
             ${recipe.video ? `<video src="${recipe.video}" controls style="width: 100%; max-height: 300px; border-radius: 16px; margin-bottom: 20px; background: #000;"></video>` : ''}
             
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                 <h2 style="margin: 0 0 8px; flex: 1;">${recipe.name}</h2>
-                <button id="shareStoreRecipeBtn" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                    <span>🔁</span> Share to Feed
+                <button id="shareStoreRecipeBtn" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span>🔗</span> Share
                 </button>
             </div>
 
@@ -3495,7 +3560,7 @@ function showFullStoreRecipe(recipe) {
     const shareBtn = document.getElementById('shareStoreRecipeBtn');
     if (shareBtn) {
         shareBtn.addEventListener('click', () => {
-            sharePost(recipe.id, `I just bought this amazing ${recipe.name} recipe! 🧁`);
+            handleShareRecipe(recipe);
         });
     }
 
@@ -3637,7 +3702,7 @@ function initQuickPost() {
     qpPhotoPreview = document.getElementById('qpPhotoPreview');
     qpVideoPreview = document.getElementById('qpVideoPreview');
     qpRemoveMedia = document.getElementById('qpRemoveMedia');
-    
+
     const qpPhotoBtn = document.getElementById('qpPhotoBtn');
     const qpVideoBtn = document.getElementById('qpVideoBtn');
     const quickPostCard = document.getElementById('quickPostCard');
@@ -3649,7 +3714,7 @@ function initQuickPost() {
     // Show/hide card based on login
     if (isLoggedIn()) {
         if (quickPostCard) quickPostCard.style.display = 'block';
-        
+
         // Use the same avatar as the sidebar
         const sidebarPic = document.getElementById('userProfilePic');
         if (sidebarPic && sidebarPic.src) {
@@ -3707,7 +3772,7 @@ function initQuickPost() {
         const text = quickPostInput.value.trim();
         const photoFile = quickPostPhotoInput.files[0];
         const videoFile = quickPostVideoInput.files[0];
-        
+
         if (!text && !photoFile && !videoFile) return;
 
         quickPostBtn.disabled = true;

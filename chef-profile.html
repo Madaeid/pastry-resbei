@@ -496,6 +496,12 @@
                     : `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:5rem;">${categoryEmoji}</div>`}
                 </div>
                 
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button id="modalShareRecipe" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                        <span>🔗</span> Share
+                    </button>
+                </div>
+                
                 <h2 class="modal-recipe-title" style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 5px; color: var(--text-primary); text-align: center;">${source.name || recipe.name}</h2>
                 
                 ${isReshare ? `
@@ -550,6 +556,23 @@
                     </div>
                 ` : ''}
             `;
+
+            // Attach share listener
+            const shareBtn = modal.querySelector('#modalShareRecipe');
+            if (shareBtn) {
+                shareBtn.onclick = () => {
+                    // Reuse handleShareRecipe logic (it should be global or we define a simple version)
+                    const url = `${window.location.origin}/chef-profile.html?username=${source.author?.username || recipe.authorUsername || chefData?.username}&post=${recipe.id}`;
+                    if (navigator.share) {
+                        navigator.share({
+                            title: `Chef Book: ${source.name || recipe.name}`,
+                            url: url
+                        });
+                    } else {
+                        navigator.clipboard.writeText(url).then(() => alert('Link copied to clipboard!'));
+                    }
+                };
+            }
 
             modal.classList.add('show');
         };
@@ -985,15 +1008,15 @@
 
         window.sharePost = async (id, initialNotes = '') => {
             const notes = prompt('Add a note to your share? (Optional)', initialNotes);
-            if (notes === null) return; 
+            if (notes === null) return;
 
             const token = sessionStorage.getItem('authToken');
             try {
-                const resp = await fetch(`${API_URL}/recipes/${id}/share`, { 
-                    method: 'POST', 
-                    headers: { 
+                const resp = await fetch(`${API_URL}/recipes/${id}/share`, {
+                    method: 'POST',
+                    headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` 
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ notes })
                 });

@@ -21,6 +21,7 @@ import adminRoutes from './routes/admin.js';
 import dailyMenuRoutes from './routes/dailyMenu.js';
 import cvRoutes from './routes/cv.js'; // CV routes
 import storeRoutes from './routes/store.js'; // Store marketplace routes
+import walletRoutes from './routes/wallet.js'; // Wallet & transfers
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -64,6 +65,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/daily-menu', dailyMenuRoutes);
 app.use('/api/cv', cvRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/wallet', walletRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

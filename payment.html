@@ -37,15 +37,16 @@
         <div class="user-display">
             <span class="sidebar-logo">👨‍🍳</span>
             <span class="sidebar-title" style="margin-left: 10px;">Chef <span>Book</span></span>
-            <span class="user-name" id="userName" style="margin-left: 15px; font-weight: 500; font-size: 1rem; color: var(--text-secondary); opacity: 0.8;"></span>
+            <span class="user-name" id="userName"
+                style="margin-left: 15px; font-weight: 500; font-size: 1rem; color: var(--text-secondary); opacity: 0.8;"></span>
         </div>
-            <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
-                Premium</span>
-        </div>
-        <a href="./index.html" class="btn-back-home">
-            <span>🏠</span>
-            <span data-i18n="backToApp">Back to App</span>
-        </a>
+        <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
+            Premium</span>
+    </div>
+    <a href="./index.html" class="btn-back-home">
+        <span>🏠</span>
+        <span data-i18n="backToApp">Back to App</span>
+    </a>
     </div>
 
     <!-- Floating Particles Background -->
@@ -324,6 +325,25 @@
                         <span id="summaryTotal">$1.00</span>
                     </div>
                 </div>
+
+                <!-- Wallet Payment Option -->
+                <div class="wallet-payment-option">
+                    <div class="wallet-balance-card">
+                        <div class="wallet-balance-info">
+                            <span class="wallet-label">Wallet Balance</span>
+                            <span class="wallet-amount" id="modalWalletBalance">$--.--</span>
+                        </div>
+                        <button class="btn-wallet" id="payWithWalletBtn" disabled>
+                            <span>👛</span>
+                            <span>Pay with Wallet</span>
+                        </button>
+                    </div>
+                    <div id="insufficientFundsMsg" style="display: none; margin-top: 10px; font-size: 0.8rem; color: #ef4444;">
+                        ❌ Insufficient funds. <a href="./wallet.html" style="color: var(--accent-orange); text-decoration: underline;">Add funds here</a>
+                    </div>
+                </div>
+
+                <div class="payment-divider">OR</div>
 
                 <!-- Stripe Info -->
                 <div class="stripe-info">

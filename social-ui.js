@@ -56,10 +56,10 @@ export function renderCommentsList(commentsList, postAuthorId, currentUserId) {
 
         // Find child replies
         const childReplies = replies.filter(r => r.parentId === c.id);
-        const childrenHtml = childReplies.length > 0 
+        const childrenHtml = childReplies.length > 0
             ? `<div class="replies-container" style="margin-left: 20px; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 10px;">
                 ${childReplies.map(r => renderComment(r, true)).join('')}
-               </div>` 
+               </div>`
             : '';
 
         const authorPic = c.authorPic || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.authorName)}&background=random&color=fff`;
@@ -302,7 +302,8 @@ export function createPostCard(post) {
                                 <span class="user-list-username">@${user.username}</span>
                             </div>
                         </div>
-                    `;}).join('');
+                    `;
+                    }).join('');
                 }
             } catch (err) {
                 console.error(err);
@@ -385,7 +386,7 @@ export function createPostCard(post) {
             e.preventDefault();
             const isHidden = commentsSection.style.display === 'none' || commentsSection.style.display === '';
             commentsSection.style.display = isHidden ? 'block' : 'none';
-            
+
             // If opening, focusing on input if exists
             if (isHidden) {
                 const commentInput = card.querySelector('.comment-input');
@@ -436,7 +437,7 @@ export function createPostCard(post) {
                 e.preventDefault();
                 e.stopPropagation();
                 shareDropdown.style.display = 'none';
-                
+
                 const shareData = {
                     title: `Check out this post from ${authorName}`,
                     text: post.instructions,

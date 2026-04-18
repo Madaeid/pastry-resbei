@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a120b">
+    <meta name="description" content="Chef Book Wallet - Send and receive money securely between chefs">
+    <title>💰 Wallet - Chef Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // Immediate theme initialization
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+    <style>
+        /* ===== Wallet Page Styles ===== */
+        .wallet-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+        }
+
+        .wallet-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 25px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .wallet-back-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-5px);
+        }
+
+        /* Balance Card */
+        .balance-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+            border-radius: 28px;
+            padding: 40px 35px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 107, 138, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .balance-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            left: -20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(77, 182, 172, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .balance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            z-index: 1;
+        }
+
+        .balance-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .balance-amount {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            line-height: 1;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .balance-amount .currency-sign {
+            font-size: 2rem;
+            opacity: 0.7;
+            vertical-align: top;
+            margin-right: 4px;
+        }
+
+        .balance-currency-label {
+            display: inline-block;
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
+        }
+
+        .balance-card-logo {
+            font-size: 2.5rem;
+            opacity: 0.6;
+        }
+
+        /* Quick Action Buttons */
+        .wallet-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 35px;
+            position: relative;
+            z-index: 1;
+            margin-top: 30px;
+        }
+
+        .wallet-action-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 18px 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .wallet-action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .wallet-action-btn .action-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+
+        .wallet-action-btn.btn-send {
+            background: linear-gradient(135deg, rgba(255, 107, 138, 0.2), rgba(255, 107, 138, 0.05));
+            border-color: rgba(255, 107, 138, 0.3);
+        }
+
+        .wallet-action-btn.btn-send:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 138, 0.35), rgba(255, 107, 138, 0.15));
+        }
+
+        .wallet-action-btn.btn-deposit {
+            background: linear-gradient(135deg, rgba(77, 182, 172, 0.2), rgba(77, 182, 172, 0.05));
+            border-color: rgba(77, 182, 172, 0.3);
+        }
+
+        .wallet-action-btn.btn-deposit:hover {
+            background: linear-gradient(135deg, rgba(77, 182, 172, 0.35), rgba(77, 182, 172, 0.15));
+        }
+
+        .wallet-action-btn.btn-history {
+            background: linear-gradient(135deg, rgba(156, 136, 255, 0.2), rgba(156, 136, 255, 0.05));
+            border-color: rgba(156, 136, 255, 0.3);
+        }
+
+        .wallet-action-btn.btn-history:hover {
+            background: linear-gradient(135deg, rgba(156, 136, 255, 0.35), rgba(156, 136, 255, 0.15));
+        }
+
+        /* Sections */
+        .wallet-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 25px;
+        }
+
+        .wallet-section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Send Money Form */
+        .send-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .recipient-search-wrapper {
+            position: relative;
+        }
+
+        .wallet-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 15px 18px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+
+        .wallet-input:focus {
+            border-color: var(--accent-pink);
+            box-shadow: 0 0 0 3px rgba(255, 107, 138, 0.15);
+        }
+
+        .wallet-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .wallet-input-label {
+            display: block;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .amount-input-group {
+            position: relative;
+        }
+
+        .amount-input-group .currency-prefix {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+
+        .amount-input-group .wallet-input {
+            padding-left: 40px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Search Results Dropdown */
+        .user-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-dark, #1a1a2e);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            margin-top: 5px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .user-search-results.visible {
+            display: block;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .search-result-item:first-child {
+            border-radius: 14px 14px 0 0;
+        }
+
+        .search-result-item:last-child {
+            border-radius: 0 0 14px 14px;
+        }
+
+        .search-result-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 107, 138, 0.3);
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-info .name {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .search-result-info .username {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Selected Recipient Badge */
+        .selected-recipient {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 107, 138, 0.08);
+            border: 1px solid rgba(255, 107, 138, 0.2);
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+
+        .selected-recipient.visible {
+            display: flex;
+        }
+
+        .selected-recipient img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-pink);
+        }
+
+        .selected-recipient .recipient-info {
+            flex: 1;
+        }
+
+        .selected-recipient .recipient-info .name {
+            font-weight: 600;
+        }
+
+        .selected-recipient .recipient-info .username {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .selected-recipient .remove-recipient {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            font-size: 1.3rem;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .selected-recipient .remove-recipient:hover {
+            color: #ff6b6b;
+        }
+
+        /* Send Button */
+        .send-money-btn {
+            background: linear-gradient(135deg, var(--accent-pink), #ff8a5f);
+            border: none;
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            margin-top: 5px;
+        }
+
+        .send-money-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 138, 0.3);
+        }
+
+        .send-money-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Deposit Section */
+        .deposit-amounts {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .deposit-amount-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 14px 8px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .deposit-amount-btn:hover,
+        .deposit-amount-btn.active {
+            background: rgba(77, 182, 172, 0.15);
+            border-color: rgba(77, 182, 172, 0.5);
+            transform: scale(1.05);
+        }
+
+        .deposit-btn {
+            background: linear-gradient(135deg, #4db6ac, #26a69a);
+            border: none;
+            color: white;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .deposit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(77, 182, 172, 0.3);
+        }
+
+        .deposit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Transaction History */
+        .transactions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: background 0.2s;
+        }
+
+        .transaction-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tx-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .tx-icon.sent {
+            background: rgba(255, 107, 138, 0.12);
+        }
+
+        .tx-icon.received {
+            background: rgba(77, 182, 172, 0.12);
+        }
+
+        .tx-icon.deposit {
+            background: rgba(156, 136, 255, 0.12);
+        }
+
+        .tx-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .tx-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tx-meta {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .tx-amount {
+            font-weight: 700;
+            font-size: 1.05rem;
+            white-space: nowrap;
+        }
+
+        .tx-amount.negative {
+            color: #ff6b8a;
+        }
+
+        .tx-amount.positive {
+            color: #4db6ac;
+        }
+
+        .empty-transactions {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .empty-transactions .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        /* Card input row */
+        .card-inputs-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        /* Notification Toast */
+        .wallet-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(20, 20, 40, 0.95);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            z-index: 9999;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wallet-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .wallet-toast.success {
+            border-color: rgba(77, 182, 172, 0.4);
+        }
+
+        .wallet-toast.error {
+            border-color: rgba(255, 107, 138, 0.4);
+        }
+
+        /* Tab system */
+        .wallet-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 5px;
+        }
+
+        .wallet-tab {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .wallet-tab.active {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .wallet-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .wallet-panel {
+            display: none;
+        }
+
+        .wallet-panel.active {
+            display: block;
+        }
+
+        /* Success animation */
+        @keyframes successPulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9998;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-overlay.visible {
+            display: flex;
+        }
+
+        .success-content {
+            text-align: center;
+            animation: successPulse 0.5s ease-out;
+        }
+
+        .success-content .checkmark {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .success-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .success-content p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+            margin-bottom: 25px;
+        }
+
+        .success-content .btn-done {
+            background: linear-gradient(135deg, var(--accent-pink), #ff8a5f);
+            border: none;
+            color: white;
+            padding: 14px 40px;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .wallet-container {
+                padding: 20px 15px 50px;
+            }
+
+            .balance-card {
+                padding: 30px 20px;
+            }
+
+            .balance-amount {
+                font-size: 2.5rem;
+            }
+
+            .wallet-actions {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+
+            .deposit-amounts {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .card-inputs-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+
+    <div class="wallet-container">
+        <!-- Back Button -->
+        <a href="index.html" class="wallet-back-btn">
+            <span>←</span> Back to Chef Book
+        </a>
+
+        <!-- Balance Card -->
+        <div class="balance-card">
+            <div class="balance-header">
+                <div>
+                    <div class="balance-label">Available Balance</div>
+                    <div class="balance-amount">
+                        <span class="currency-sign">$</span><span id="walletBalance">0.00</span>
+                    </div>
+                    <div class="balance-currency-label">USD • Chef Book Wallet</div>
+                </div>
+                <div class="balance-card-logo">💰</div>
+            </div>
+
+            <!-- Quick Actions inside the card -->
+            <div class="wallet-actions">
+                <button class="wallet-action-btn btn-send" id="btnSendMoney" data-tab="send">
+                    <span class="action-icon">📤</span>
+                    Send
+                </button>
+                <button class="wallet-action-btn btn-deposit" id="btnDeposit" data-tab="deposit">
+                    <span class="action-icon">💳</span>
+                    Deposit
+                </button>
+                <button class="wallet-action-btn btn-history" id="btnHistory" data-tab="history">
+                    <span class="action-icon">📋</span>
+                    History
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="wallet-tabs">
+            <button class="wallet-tab active" data-tab="send">📤 Send Money</button>
+            <button class="wallet-tab" data-tab="deposit">💳 Add Funds</button>
+            <button class="wallet-tab" data-tab="history">📋 History</button>
+        </div>
+
+        <!-- Send Money Panel -->
+        <div id="sendPanel" class="wallet-panel active">
+            <div class="wallet-section">
+                <h2 class="wallet-section-title">📤 Send Money to Any Chef</h2>
+                <div class="send-form" id="sendForm">
+                    <!-- Recipient Search -->
+                    <div>
+                        <label class="wallet-input-label">Recipient</label>
+                        <div class="recipient-search-wrapper">
+                            <input type="text" class="wallet-input" id="recipientSearch"
+                                placeholder="Search by username or name..." autocomplete="off">
+                            <div class="user-search-results" id="searchResults"></div>
+                        </div>
+                        <div class="selected-recipient" id="selectedRecipient">
+                            <img id="recipientPic" src="" alt="">
+                            <div class="recipient-info">
+                                <div class="name" id="recipientName"></div>
+                                <div class="username" id="recipientUsername"></div>
+                            </div>
+                            <button class="remove-recipient" id="removeRecipient" title="Change recipient">&times;</button>
+                        </div>
+                    </div>
+
+                    <!-- Amount -->
+                    <div>
+                        <label class="wallet-input-label">Amount</label>
+                        <div class="amount-input-group">
+                            <span class="currency-prefix">$</span>
+                            <input type="number" class="wallet-input" id="sendAmount" placeholder="0.00" min="0.01"
+                                step="0.01">
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div>
+                        <label class="wallet-input-label">Note (optional)</label>
+                        <input type="text" class="wallet-input" id="sendNote"
+                            placeholder="e.g. Thanks for the amazing recipe! 🧁">
+                    </div>
+
+                    <!-- Send Button -->
+                    <button class="send-money-btn" id="sendBtn" disabled>
+                        <span>📤</span> Send Money
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposit Panel -->
+        <div id="depositPanel" class="wallet-panel">
+            <div class="wallet-section">
+                <h2 class="wallet-section-title">💳 Add Funds to Wallet</h2>
+
+                <!-- Quick Amounts -->
+                <label class="wallet-input-label">Quick Select</label>
+                <div class="deposit-amounts">
+                    <button class="deposit-amount-btn" data-amount="5">$5</button>
+                    <button class="deposit-amount-btn" data-amount="10">$10</button>
+                    <button class="deposit-amount-btn" data-amount="25">$25</button>
+                    <button class="deposit-amount-btn" data-amount="50">$50</button>
+                    <button class="deposit-amount-btn" data-amount="100">$100</button>
+                    <button class="deposit-amount-btn" data-amount="200">$200</button>
+                    <button class="deposit-amount-btn" data-amount="500">$500</button>
+                    <button class="deposit-amount-btn" data-amount="1000">$1K</button>
+                </div>
+
+                <!-- Custom Amount -->
+                <div style="margin-bottom: 18px">
+                    <label class="wallet-input-label">Or enter custom amount</label>
+                    <div class="amount-input-group">
+                        <span class="currency-prefix">$</span>
+                        <input type="number" class="wallet-input" id="depositAmount" placeholder="0.00" min="1"
+                            step="0.01" value="">
+                    </div>
+                </div>
+
+                <!-- Card Info (Simulated) -->
+                <label class="wallet-input-label">Card Information</label>
+                <div class="card-inputs-row" style="margin-bottom: 18px">
+                    <input type="text" class="wallet-input" id="depositCardNumber"
+                        placeholder="4242 4242 4242 4242" maxlength="19">
+                    <input type="text" class="wallet-input" id="depositCardExpiry" placeholder="MM/YY" maxlength="5">
+                    <input type="text" class="wallet-input" id="depositCardCvv" placeholder="CVC" maxlength="4">
+                </div>
+
+                <!-- Deposit Button -->
+                <button class="deposit-btn" id="depositBtn" disabled>
+                    <span>💳</span> <span id="depositBtnText">Add Funds</span>
+                </button>
+
+                <p style="text-align: center; color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-top: 15px;">
+                    🔒 Payments are securely processed. Demo mode: use any 16-digit card number.
+                </p>
+            </div>
+        </div>
+
+        <!-- History Panel -->
+        <div id="historyPanel" class="wallet-panel">
+            <div class="wallet-section">
+                <h2 class="wallet-section-title">📋 Transaction History</h2>
+                <div class="transactions-list" id="transactionsList">
+                    <div class="empty-transactions">
+                        <div class="empty-icon">📭</div>
+                        <h3>No transactions yet</h3>
+                        <p>Your transaction history will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-content">
+            <div class="checkmark">✅</div>
+            <h2 id="successTitle">Payment Sent!</h2>
+            <p id="successMessage">Your money is on its way.</p>
+            <button class="btn-done" id="successDone">Done</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="wallet-toast" id="walletToast"></div>
+
+    <footer>
+        <p>👨‍🍳 Chef Book &copy; 2024 | Wallet powered securely</p>
+    </footer>
+
+    <script type="module" src="./wallet.js"></script>
+</body>
+
+</html>

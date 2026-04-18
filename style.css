@@ -8914,7 +8914,8 @@ body.rtl .social-btn.loading::after {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.qp-media-preview img, .qp-media-preview video {
+.qp-media-preview img,
+.qp-media-preview video {
     width: 100%;
     display: block;
     object-fit: contain;
@@ -9644,12 +9645,12 @@ body.rtl .social-btn.loading::after {
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
     z-index: 2000;
     transform: translateX(400px);
     opacity: 0;
     transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .notification.show {
@@ -9727,3 +9728,98 @@ body.rtl .social-btn.loading::after {
 [data-theme="light"] .qa-title {
     color: #2d1f13;
 }
+/* ===== Wallet Payment Modal Styles ===== */
+.wallet-payment-option {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(198, 123, 75, 0.2);
+    border-radius: 12px;
+}
+
+[data-theme="light"] .wallet-payment-option {
+ background: rgba(45, 31, 19, 0.03);
+}
+
+.wallet-balance-card {
+ display: flex;
+ justify-content: space-between;
+ align-items: center;
+ gap: 15px;
+}
+
+.wallet-balance-info {
+ display: flex;
+ flex-direction: column;
+ gap: 4px;
+}
+
+.wallet-label {
+ font-size: 0.85rem;
+ color: var(--text-secondary);
+ font-weight: 500;
+}
+
+.wallet-amount {
+ font-size: 1.4rem;
+ color: var(--accent-orange);
+ font-weight: 700;
+}
+
+.btn-wallet {
+ background: var(--primary-gradient);
+ color: white;
+ border: none;
+ padding: 10px 20px;
+ border-radius: 8px;
+ font-weight: 600;
+ font-size: 0.95rem;
+ display: flex;
+ align-items: center;
+ gap: 8px;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ box-shadow: 0 4px 15px rgba(198, 123, 75, 0.3);
+}
+
+.btn-wallet:hover:not(:disabled) {
+ transform: translateY(-2px);
+ box-shadow: 0 6px 20px rgba(198, 123, 75, 0.4);
+}
+
+.btn-wallet:disabled {
+ background: rgba(184, 168, 152, 0.3);
+ color: rgba(255, 255, 255, 0.4);
+ cursor: not-allowed;
+ box-shadow: none;
+}
+
+.payment-divider {
+ display: flex;
+ align-items: center;
+ text-align: center;
+ margin: 25px 0;
+ color: var(--text-secondary);
+ font-size: 0.8rem;
+ font-weight: 600;
+ letter-spacing: 1px;
+}
+
+.payment-divider::before,
+.payment-divider::after {
+  content: '';
+ flex: 1;
+ border-bottom: 1px solid rgba(198, 123, 75, 0.2);
+}
+
+.payment-divider:not(:empty)::before {
+ margin-right: 15px;
+}
+
+.payment-divider:not(:empty)::after {
+ margin-left: 15px;
+}
+
+
+
+

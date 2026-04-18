@@ -426,7 +426,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
         }
 
         const recipeId = session.metadata?.recipeId;
-        
+
         if (!recipeId) {
             console.error('Missing recipeId in session metadata for sessionId:', sessionId);
             return res.status(400).json({ error: 'Invalid session metadata: recipeId missing' });

@@ -155,32 +155,79 @@
 
 
 .premium-badge {
-    font-size: 0.7rem;
-    padding: 2px 8px;
-    background: linear-gradient(135deg, #C67B4B, #D4A55A);
-    color: #fff;
-    border-radius: 12px;
-    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #000;
+    border-radius: 25px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(212, 165, 90, 0.3);
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(255, 165, 0, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.premium-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 165, 0, 0.6);
+}
+
+.user-balance-container {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.user-balance-container:hover {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(77, 182, 172, 0.3);
+    transform: translateY(-1px);
+}
+
+.balance-emoji {
+    font-size: 0.9rem;
+}
+
+.balance-amount {
+    font-weight: 700;
+    color: #4db6ac;
+    font-size: 1.05rem;
+    font-family: 'Poppins', sans-serif;
+}
+
+.balance-currency {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    font-weight: 600;
+    color: #4db6ac;
 }
 
 .profile-logout-btn {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 12px;
-    padding: 2px 10px;
-    font-size: 0.7rem;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ff6b6b;
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 20px;
+    padding: 6px 20px;
+    font-size: 0.75rem;
     font-family: 'Poppins', sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 8px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     transition: all 0.3s ease;
 }
 

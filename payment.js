@@ -516,6 +516,12 @@ function setupEventListeners() {
         payButton.addEventListener('click', handleStripeCheckout);
     }
 
+    // Wallet Payment Button
+    const payWithWalletBtn = document.getElementById('payWithWalletBtn');
+    if (payWithWalletBtn) {
+        payWithWalletBtn.addEventListener('click', handleWalletPurchase);
+    }
+
     // Success modal
     const successContinue = document.getElementById('successContinue');
     if (successContinue) {
@@ -574,6 +580,111 @@ function openPaymentModal(planId) {
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) {
         paymentModal.style.display = 'flex';
+        // Fetch and update wallet balance
+        updateModalWalletBalance(plan.price);
+    }
+}
+
+async function updateModalWalletBalance(requiredAmount) {
+    const modalWalletBalance = document.getElementById('modalWalletBalance');
+    const payWithWalletBtn = document.getElementById('payWithWalletBtn');
+    const insufficientFundsMsg = document.getElementById('insufficientFundsMsg');
+    const token = getAuthToken();
+
+    if (!modalWalletBalance || !payWithWalletBtn || !token) return;
+
+    try {
+        const response = await fetch(`${API_URL}/wallet/balance`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const balance = data.balance;
+            modalWalletBalance.textContent = `$${balance.toFixed(2)}`;
+
+            if (balance >= requiredAmount) {
+                payWithWalletBtn.disabled = false;
+                if (insufficientFundsMsg) insufficientFundsMsg.style.display = 'none';
+            } else {
+                payWithWalletBtn.disabled = true;
+                if (insufficientFundsMsg) insufficientFundsMsg.style.display = 'block';
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching wallet balance for modal:', err);
+    }
+}
+
+async function handleWalletPurchase() {
+    if (!selectedPlan) return;
+
+    const payWithWalletBtn = document.getElementById('payWithWalletBtn');
+    const originalContent = payWithWalletBtn.innerHTML;
+
+    payWithWalletBtn.disabled = true;
+    payWithWalletBtn.innerHTML = '<span>⌛</span> Processing...';
+
+    try {
+        const token = getAuthToken();
+        if (!token) throw new Error('You must be logged in');
+
+        let body = {
+            type: selectedPlan === 'recipe' ? 'recipe' : 'subscription',
+            amount: selectedPlan === 'recipe' ? pendingRecipeData.price : PLANS[selectedPlan].price
+        };
+
+        if (body.type === 'subscription') {
+            body.planId = selectedPlan;
+        } else {
+            body.recipeId = pendingRecipeId;
+        }
+
+        const response = await fetch(`${API_URL}/wallet/purchase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Hide payment modal
+            document.getElementById('paymentModal').style.display = 'none';
+
+            // Show success modal
+            const successModal = document.getElementById('successModal');
+            if (successModal) {
+                const successUserName = document.getElementById('successUserName');
+                const successPlanDetails = document.getElementById('successPlanDetails');
+
+                if (successUserName) successUserName.textContent = getCurrentUser();
+                if (successPlanDetails) {
+                    if (selectedPlan === 'recipe') {
+                        successPlanDetails.textContent = `You have successfully purchased: ${pendingRecipeData.name}`;
+                    } else {
+                        const plan = PLANS[selectedPlan];
+                        successPlanDetails.textContent = `Plan: ${plan.name} - ${plan.displayPrice}`;
+                    }
+                }
+                successModal.style.display = 'flex';
+            }
+
+            // Sync with server and update display
+            await syncSubscriptionFromServer();
+            updateSubscriptionDisplay();
+            showNotification('Purchase successful! 🎉', 'success');
+        } else {
+            throw new Error(data.error || 'Purchase failed');
+        }
+    } catch (err) {
+        console.error('Wallet purchase error:', err);
+        showNotification(err.message, 'error');
+        payWithWalletBtn.disabled = false;
+        payWithWalletBtn.innerHTML = originalContent;
     }
 }
 
