@@ -7,13 +7,11 @@
     "scripts": {
         "start": "node server.js",
         "dev": "nodemon server.js",
-        "init-db": "node database/init.js",
-        "init-db-pg": "node database/init_pg.js",
+        "init-db": "node database/init_pg.js",
         "migrate-pg": "node database/migrate_to_pg.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
-        "better-sqlite3": "^11.0.0",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
         "express": "^4.21.0",

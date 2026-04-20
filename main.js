@@ -496,7 +496,7 @@ function setupEventListeners() {
             // Update hero image based on tab
             const heroImg = document.getElementById('heroChefImg');
             if (heroImg) {
-                let newSrc = '/hero-chef.png'; // Default
+                let newSrc = '/new-chef-hero.png'; // Default (Home tab)
                 if (targetTab === 'chefs') newSrc = '/chef-group.png';
                 else if (targetTab === 'my-chefs') newSrc = '/my-chefs.png';
                 else if (targetTab === 'store') newSrc = '/chef-store.png';

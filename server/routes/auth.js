@@ -68,17 +68,15 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: 'Email already registered' });
         }
 
-        // Check if phone exists (simplified check)
+        // Check if phone exists (Optimized check in DB)
         if (phone) {
             const normalizedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
-            // Simple check - normalize and compare digits only
-            // Note: In PG doing this in code is less efficient than SQL but needed for complex normalization
-            const allPhonesResult = await db.query('SELECT id, phone FROM users WHERE phone IS NOT NULL');
-            const phoneExists = allPhonesResult.rows.some(u => {
-                const userPhone = (u.phone || '').replace(/[\s\-\(\)\.]/g, '');
-                return userPhone === normalizedPhone;
-            });
-            if (phoneExists) {
+            const phoneCheck = await db.query(`
+                SELECT id FROM users 
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '(', ''), ')', ''), '.', '') = $1
+            `, [normalizedPhone]);
+            
+            if (phoneCheck.rows.length > 0) {
                 return res.status(400).json({ error: 'Phone number already registered' });
             }
         }
@@ -242,9 +240,7 @@ router.post('/forgot-password', async (req, res) => {
         res.json({
             success: true,
             maskedContact,
-            method,
-            // Only include code in development
-            ...(process.env.NODE_ENV === 'development' && { code })
+            method
         });
 
     } catch (error) {

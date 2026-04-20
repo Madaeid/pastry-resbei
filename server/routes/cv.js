@@ -86,17 +86,15 @@ router.post('/', authenticateToken, async (req, res) => {
         const updateProfileQuery = `
             UPDATE users 
             SET 
-                display_name = $1,
-                phone = $2,
-                email = $3,
-                birthday = $4,
-                profile_picture = $5,
+                phone = $1,
+                email = $2,
+                birthday = $3,
+                profile_picture = $4,
                 updated_at = NOW()
-            WHERE id = $6
+            WHERE id = $5
         `;
 
         await db.query(updateProfileQuery, [
-            fullName,           // display_name from fullName
             phone || null,      // phone
             email,              // email
             safeDob,            // birthday from dob

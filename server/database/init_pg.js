@@ -278,6 +278,7 @@ async function initDB() {
                 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
                 CREATE INDEX IF NOT EXISTS idx_recipes_user_id ON recipes(user_id);
                 CREATE INDEX IF NOT EXISTS idx_recipes_visibility ON recipes(visibility);
+                CREATE INDEX IF NOT EXISTS idx_recipes_created_at_desc ON recipes(created_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
                 CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
                 CREATE INDEX IF NOT EXISTS idx_daily_menus_user_date ON daily_menus(user_id, menu_date);

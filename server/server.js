@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 // Load environment variables
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -40,6 +40,16 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' })); // Allow large base64 images
 app.use(express.urlencoded({ extended: true }));
 
+// Auth rate limiter (stricter)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20, // Limit each IP to 20 auth requests per windowMs
+    message: { error: 'Too many authentication attempts, please try again later.' }
+});
+
+// Apply authLimiter first so it takes precedence over the general limiter
+app.use('/api/auth', authLimiter);
+
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -48,15 +58,8 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Auth rate limiter (stricter)
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, // Limit each IP to 20 auth requests per windowMs
-    message: { error: 'Too many authentication attempts, please try again later.' }
-});
-
 // ===== Routes =====
-app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/auth', oauthRoutes); // OAuth routes (Google, Apple)
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);

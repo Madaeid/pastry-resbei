@@ -243,10 +243,6 @@ router.put('/profile', authenticateToken, async (req, res) => {
             const cvParams = [];
             let cvParamIndex = 1;
 
-            if (displayName) {
-                cvUpdateFields.push(`full_name = $${cvParamIndex++}`);
-                cvParams.push(displayName);
-            }
             if (phoneValue !== undefined) {
                 cvUpdateFields.push(`phone = $${cvParamIndex++}`);
                 cvParams.push(phoneValue || null);

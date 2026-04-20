@@ -13,66 +13,53 @@ const FREE_RECIPE_LIMIT = 10;
 router.get('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const result = await db.query(`
-            SELECT * FROM recipes WHERE user_id = $1 ORDER BY created_at DESC
-        `, [req.user.userId]);
-
-        const recipes = result.rows;
-        const formattedRecipes = [];
         const currentUserId = req.user.userId;
 
-        for (const recipe of recipes) {
-            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
-            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
-            const commentsResult = await db.query(`
-                SELECT c.id, c.user_id, c.comment_text, c.created_at, c.parent_id, u.display_name, u.profile_picture, u.username 
-                FROM recipe_comments c 
-                JOIN users u ON c.user_id = u.id 
-                WHERE c.recipe_id = $1 
-                ORDER BY c.created_at ASC
-            `, [recipe.id]);
+        const result = await db.query(`
+            SELECT 
+                r.*,
+                (SELECT COUNT(*) FROM recipe_likes WHERE recipe_id = r.id) as likes_count,
+                (SELECT COUNT(*) FROM recipe_shares WHERE recipe_id = r.id) as shares_count,
+                COALESCE(
+                    (SELECT json_agg(comment_data)
+                     FROM (
+                         SELECT 
+                             c.id, c.user_id as "userId", c.comment_text as text, c.created_at as "dateAdded", c.parent_id as "parentId",
+                             u.display_name as "authorName", u.profile_picture as "authorPic", u.username as "authorUsername",
+                             (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) as likes,
+                             EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $1) as "isLikedByMe"
+                         FROM recipe_comments c
+                         JOIN users u ON c.user_id = u.id
+                         WHERE c.recipe_id = r.id
+                         ORDER BY c.created_at ASC
+                     ) comment_data
+                    ), '[]'
+                ) as comments_list
+            FROM recipes r
+            WHERE r.user_id = $1
+            ORDER BY r.created_at DESC
+        `, [currentUserId]);
 
-            // Process comments to include likes
-            const comments = [];
-            for (const row of commentsResult.rows) {
-                const cLikesRes = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [row.id]);
-                const myLikeRes = await db.query('SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [row.id, currentUserId]);
-
-                comments.push({
-                    id: row.id,
-                    userId: row.user_id,
-                    parentId: row.parent_id,
-                    text: row.comment_text,
-                    dateAdded: row.created_at,
-                    authorName: row.display_name,
-                    authorUsername: row.username,
-                    authorPic: row.profile_picture || null,
-                    likes: parseInt(cLikesRes.rows[0].count) || 0,
-                    isLikedByMe: myLikeRes.rows.length > 0
-                });
-            }
-
-            formattedRecipes.push({
-                id: recipe.id,
-                name: recipe.name,
-                category: recipe.category,
-                prepTime: recipe.prep_time,
-                cookTime: recipe.cook_time,
-                servings: recipe.servings,
-                difficulty: recipe.difficulty,
-                ingredients: recipe.ingredients,
-                instructions: recipe.instructions,
-                notes: recipe.notes,
-                photo: recipe.photo,
-                video: recipe.video,
-                visibility: recipe.visibility,
-                dateAdded: recipe.created_at,
-                author: { userId: recipe.user_id },
-                likes: parseInt(likesResult.rows[0].count),
-                shares: parseInt(sharesResult.rows[0].count),
-                comments: comments
-            });
-        }
+        const formattedRecipes = result.rows.map(recipe => ({
+            id: recipe.id,
+            name: recipe.name,
+            category: recipe.category,
+            prepTime: recipe.prep_time,
+            cookTime: recipe.cook_time,
+            servings: recipe.servings,
+            difficulty: recipe.difficulty,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            notes: recipe.notes,
+            photo: recipe.photo,
+            video: recipe.video,
+            visibility: recipe.visibility,
+            dateAdded: recipe.created_at,
+            author: { userId: recipe.user_id },
+            likes: parseInt(recipe.likes_count),
+            shares: parseInt(recipe.shares_count),
+            comments: recipe.comments_list
+        }));
 
         res.json(formattedRecipes);
 
@@ -88,9 +75,15 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
         const db = getDatabase();
         const currentUserId = req.user ? req.user.userId : null;
 
-        // Join with users table to get author info, original recipe, and original store recipe
         const result = await db.query(`
-            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+            SELECT 
+                r.*, 
+                u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+                -- Premium status check
+                (u.is_admin = 1 OR EXISTS(
+                    SELECT 1 FROM subscriptions s 
+                    WHERE s.user_id = r.user_id AND s.status = 'active' AND s.end_date::timestamp > NOW()
+                )) as author_is_premium,
                 -- Info from original standard recipe
                 orig_r.id as orig_id, orig_r.name as orig_name, orig_r.category as orig_category, 
                 orig_r.prep_time as orig_prep_time, orig_r.cook_time as orig_cook_time, orig_r.servings as orig_servings, 
@@ -102,7 +95,26 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
                 sr.prep_time as store_prep_time, sr.cook_time as store_cook_time, 
                 sr.difficulty as store_difficulty, sr.ingredients as store_ingredients, 
                 sr.instructions as store_instructions, sr.photo as store_photo, sr.video as store_video,
-                su.profile_picture as store_author_pic, su.display_name as store_author_name, su.username as store_author_username
+                su.profile_picture as store_author_pic, su.display_name as store_author_name, su.username as store_author_username,
+                -- Social counts
+                (SELECT COUNT(*) FROM recipe_likes WHERE recipe_id = r.id) as likes_count,
+                (SELECT COUNT(*) FROM recipe_shares WHERE recipe_id = r.id) as shares_count,
+                -- Comments
+                COALESCE(
+                    (SELECT json_agg(comment_data)
+                     FROM (
+                         SELECT 
+                             c.id, c.user_id as "userId", c.comment_text as text, c.created_at as "dateAdded", c.parent_id as "parentId",
+                             cu.display_name as "authorName", cu.profile_picture as "authorPic", cu.username as "authorUsername",
+                             (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) as likes,
+                             EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $1) as "isLikedByMe"
+                         FROM recipe_comments c
+                         JOIN users cu ON c.user_id = cu.id
+                         WHERE c.recipe_id = r.id
+                         ORDER BY c.created_at ASC
+                     ) comment_data
+                    ), '[]'
+                ) as comments_list
             FROM recipes r
             LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
             LEFT JOIN users orig_u ON orig_r.user_id = orig_u.id
@@ -112,118 +124,70 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
             WHERE r.visibility = 'public'
             ORDER BY r.created_at DESC
             LIMIT 50
-        `);
+        `, [currentUserId]);
 
-        // Check premium status for each author
-        const recipes = [];
-        for (const recipe of result.rows) {
-            let authorIsPremium = recipe.author_is_admin === 1;
-            if (!authorIsPremium) {
-                const subCheck = await db.query(`
-                    SELECT id FROM subscriptions 
-                    WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
-                    LIMIT 1
-                `, [recipe.user_id]);
-                authorIsPremium = subCheck.rows.length > 0;
-            }
-            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
-            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
-            
-            const commentsResult = await db.query(`
-                SELECT c.id, c.user_id, c.comment_text, c.created_at, c.parent_id, u.display_name, u.profile_picture, u.username 
-                FROM recipe_comments c 
-                JOIN users u ON c.user_id = u.id 
-                WHERE c.recipe_id = $1 
-                ORDER BY c.created_at ASC
-            `, [recipe.id]);
-
-            // Process comments to include likes
-            const comments = [];
-            for (const row of commentsResult.rows) {
-                const cLikesRes = await db.query('SELECT COUNT(*) as count FROM comment_likes WHERE comment_id = $1', [row.id]);
-                let isLikedByMe = false;
-                if (currentUserId) {
-                    const myLikeRes = await db.query('SELECT id FROM comment_likes WHERE comment_id = $1 AND user_id = $2', [row.id, currentUserId]);
-                    isLikedByMe = myLikeRes.rows.length > 0;
-                }
-
-                comments.push({
-                    id: row.id,
-                    userId: row.user_id,
-                    parentId: row.parent_id,
-                    text: row.comment_text,
-                    dateAdded: row.created_at,
-                    authorName: row.display_name,
-                    authorUsername: row.username,
-                    authorPic: row.profile_picture || null,
-                    likes: parseInt(cLikesRes.rows[0].count) || 0,
-                    isLikedByMe: isLikedByMe
-                });
-            }
-
-            recipes.push({
-                id: recipe.id,
-                name: recipe.name,
-                category: recipe.category,
-                prepTime: recipe.prep_time,
-                cookTime: recipe.cook_time,
-                servings: recipe.servings,
-                difficulty: recipe.difficulty,
-                ingredients: recipe.ingredients,
-                instructions: recipe.instructions,
-                notes: recipe.notes,
-                photo: recipe.photo,
-                video: recipe.video,
-                visibility: recipe.visibility,
-                dateAdded: recipe.created_at,
+        const recipes = result.rows.map(recipe => ({
+            id: recipe.id,
+            name: recipe.name,
+            category: recipe.category,
+            prepTime: recipe.prep_time,
+            cookTime: recipe.cook_time,
+            servings: recipe.servings,
+            difficulty: recipe.difficulty,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            notes: recipe.notes,
+            photo: recipe.photo,
+            video: recipe.video,
+            visibility: recipe.visibility,
+            dateAdded: recipe.created_at,
+            author: {
+                userId: recipe.user_id,
+                username: recipe.author_username,
+                name: recipe.author_name,
+                pic: recipe.author_pic,
+                isPremium: recipe.author_is_premium
+            },
+            likes: parseInt(recipe.likes_count),
+            shares: parseInt(recipe.shares_count),
+            comments: recipe.comments_list,
+            sharedFrom: recipe.orig_id ? {
+                id: recipe.orig_id,
+                name: recipe.orig_name,
+                category: recipe.orig_category,
+                prepTime: recipe.orig_prep_time,
+                cookTime: recipe.orig_cook_time,
+                servings: recipe.orig_servings,
+                difficulty: recipe.orig_difficulty,
+                ingredients: recipe.orig_ingredients,
+                instructions: recipe.orig_instructions,
+                photo: recipe.orig_photo,
+                video: recipe.orig_video,
                 author: {
-                    userId: recipe.user_id,
-                    username: recipe.author_username,
-                    name: recipe.author_name,
-                    pic: recipe.author_pic,
-                    isPremium: authorIsPremium
-                },
-                likes: parseInt(likesResult.rows[0].count),
-                shares: parseInt(sharesResult.rows[0].count),
-                comments: comments,
-                sharedFrom: recipe.orig_id ? {
-                    id: recipe.orig_id,
-                    name: recipe.orig_name,
-                    category: recipe.orig_category,
-                    prepTime: recipe.orig_prep_time,
-                    cookTime: recipe.orig_cook_time,
-                    servings: recipe.orig_servings,
-                    difficulty: recipe.orig_difficulty,
-                    ingredients: recipe.orig_ingredients,
-                    instructions: recipe.orig_instructions,
-                    photo: recipe.orig_photo,
-                    video: recipe.orig_video,
-                    author: {
-                        name: recipe.orig_author_name,
-                        username: recipe.orig_author_username,
-                        pic: recipe.orig_author_pic || null
-                    }
-                } : (recipe.store_id ? {
-                    id: recipe.store_id,
-                    name: recipe.store_name,
-                    category: recipe.store_category,
-                    prepTime: recipe.store_prep_time,
-                    cookTime: recipe.store_cook_time,
-                    servings: 1,
-                    difficulty: recipe.store_difficulty,
-                    ingredients: '🔒 Purchase to view ingredients',
-                    instructions: '🔒 Purchase to view instructions',
-                    photo: recipe.store_photo,
-                    video: recipe.store_video,
-                    isStore: true,
-                    author: {
-                        name: recipe.store_author_name,
-                        username: recipe.store_author_username,
-                        pic: recipe.store_author_pic || null
-                    }
-                } : null)
-            });
-        }
+                    name: recipe.orig_author_name,
+                    username: recipe.orig_author_username,
+                    pic: recipe.orig_author_pic || null
+                }
+            } : (recipe.store_id ? {
+                id: recipe.store_id,
+                name: recipe.store_name,
+                category: recipe.store_category,
+                prepTime: recipe.store_prep_time,
+                cookTime: recipe.store_cook_time,
+                servings: 1,
+                difficulty: recipe.store_difficulty,
+                ingredients: '🔒 Purchase to view ingredients',
+                instructions: '🔒 Purchase to view instructions',
+                photo: recipe.store_photo,
+                video: recipe.store_video,
+                isStore: true,
+                author: {
+                    name: recipe.store_author_name,
+                    username: recipe.store_author_username,
+                    pic: recipe.store_author_pic || null
+                }
+            } : null)
+        }));
 
         res.json(recipes);
 
@@ -246,11 +210,35 @@ router.get('/public/user/:username', async (req, res) => {
         }
         const userId = userRes.rows[0].id;
 
-        // Then get their public recipes
+        // Optimized query for user's public recipes
         const result = await db.query(`
-            SELECT r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+            SELECT 
+                r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
+                -- Premium status check
+                (u.is_admin = 1 OR EXISTS(
+                    SELECT 1 FROM subscriptions s 
+                    WHERE s.user_id = r.user_id AND s.status = 'active' AND s.end_date::timestamp > NOW()
+                )) as author_is_premium,
+                -- Info from original shared recipe
                 orig_r.id as orig_id, orig_r.instructions as orig_instructions, orig_r.photo as orig_photo, orig_r.video as orig_video,
-                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username
+                orig_u.profile_picture as orig_author_pic, orig_u.display_name as orig_author_name, orig_u.username as orig_author_username,
+                -- Social counts
+                (SELECT COUNT(*) FROM recipe_likes WHERE recipe_id = r.id) as likes_count,
+                (SELECT COUNT(*) FROM recipe_shares WHERE recipe_id = r.id) as shares_count,
+                -- Comments
+                COALESCE(
+                    (SELECT json_agg(comment_data)
+                     FROM (
+                         SELECT 
+                             c.id, c.user_id as "userId", c.comment_text as text, c.created_at as "dateAdded",
+                             cu.display_name as "authorName", cu.profile_picture as "authorPic", cu.username as "authorUsername"
+                         FROM recipe_comments c
+                         JOIN users cu ON c.user_id = cu.id
+                         WHERE c.recipe_id = r.id
+                         ORDER BY c.created_at ASC
+                     ) comment_data
+                    ), '[]'
+                ) as comments_list
             FROM recipes r
             LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
             LEFT JOIN users orig_u ON orig_r.user_id = orig_u.id
@@ -259,74 +247,43 @@ router.get('/public/user/:username', async (req, res) => {
             ORDER BY r.created_at DESC
         `, [userId]);
 
-        const recipes = [];
-        for (const recipe of result.rows) {
-            let authorIsPremium = recipe.author_is_admin === 1;
-            if (!authorIsPremium) {
-                const subCheck = await db.query(`
-                    SELECT id FROM subscriptions 
-                    WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
-                    LIMIT 1
-                `, [recipe.user_id]);
-                authorIsPremium = subCheck.rows.length > 0;
-            }
-            const likesResult = await db.query('SELECT COUNT(*) as count FROM recipe_likes WHERE recipe_id = $1', [recipe.id]);
-            const sharesResult = await db.query('SELECT COUNT(*) as count FROM recipe_shares WHERE recipe_id = $1', [recipe.id]);
-            
-            const commentsResult = await db.query(`
-                SELECT c.id, c.user_id, c.comment_text, c.created_at, u.display_name, u.profile_picture 
-                FROM recipe_comments c 
-                JOIN users u ON c.user_id = u.id 
-                WHERE c.recipe_id = $1 
-                ORDER BY c.created_at ASC
-            `, [recipe.id]);
-
-            recipes.push({
-                id: recipe.id,
-                name: recipe.name,
-                category: recipe.category,
-                prepTime: recipe.prep_time,
-                cookTime: recipe.cook_time,
-                servings: recipe.servings,
-                difficulty: recipe.difficulty,
-                ingredients: recipe.ingredients,
-                instructions: recipe.instructions,
-                notes: recipe.notes,
-                photo: recipe.photo,
-                video: recipe.video,
-                visibility: recipe.visibility,
-                dateAdded: recipe.created_at,
+        const recipes = result.rows.map(recipe => ({
+            id: recipe.id,
+            name: recipe.name,
+            category: recipe.category,
+            prepTime: recipe.prep_time,
+            cookTime: recipe.cook_time,
+            servings: recipe.servings,
+            difficulty: recipe.difficulty,
+            ingredients: recipe.ingredients,
+            instructions: recipe.instructions,
+            notes: recipe.notes,
+            photo: recipe.photo,
+            video: recipe.video,
+            visibility: recipe.visibility,
+            dateAdded: recipe.created_at,
+            author: {
+                userId: recipe.user_id,
+                username: recipe.author_username,
+                name: recipe.author_name,
+                pic: recipe.author_pic,
+                isPremium: recipe.author_is_premium
+            },
+            likes: parseInt(recipe.likes_count),
+            shares: parseInt(recipe.shares_count),
+            comments: recipe.comments_list,
+            sharedFrom: recipe.orig_id ? {
+                id: recipe.orig_id,
+                instructions: recipe.orig_instructions,
+                photo: recipe.orig_photo,
+                video: recipe.orig_video,
                 author: {
-                    userId: recipe.user_id,
-                    username: recipe.author_username,
-                    name: recipe.author_name,
-                    pic: recipe.author_pic,
-                    isPremium: authorIsPremium
-                },
-                likes: parseInt(likesResult.rows[0].count),
-                shares: parseInt(sharesResult.rows[0].count),
-                comments: commentsResult.rows.map(row => ({
-                    id: row.id,
-                    userId: row.user_id,
-                    text: row.comment_text,
-                    dateAdded: row.created_at,
-                    authorName: row.display_name,
-                    authorUsername: row.username,
-                    authorPic: row.profile_picture || null
-                })),
-                sharedFrom: recipe.orig_id ? {
-                    id: recipe.orig_id,
-                    instructions: recipe.orig_instructions,
-                    photo: recipe.orig_photo,
-                    video: recipe.orig_video,
-                    author: {
-                        name: recipe.orig_author_name,
-                        username: recipe.orig_author_username,
-                        pic: recipe.orig_author_pic || null
-                    }
-                } : null
-            });
-        }
+                    name: recipe.orig_author_name,
+                    username: recipe.orig_author_username,
+                    pic: recipe.orig_author_pic || null
+                }
+            } : null
+        }));
 
         res.json(recipes);
     } catch (error) {

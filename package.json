@@ -24,9 +24,7 @@
     "@capacitor/android": "^8.0.0",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
-    "jspdf": "^4.2.1",
-    "mongodb": "^7.0.0",
-    "pg": "^8.17.2"
+    "jspdf": "^4.2.1"
   },
   "overrides": {
     "serialize-javascript": "^7.0.5"
