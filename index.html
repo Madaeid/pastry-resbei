@@ -73,7 +73,8 @@
             </div>
 
             <div class="user-badges-container">
-                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎 PREMIUM</span>
+                <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
+                    PREMIUM</span>
                 <button class="profile-logout-btn" id="profileLogoutBtn" title="Logout">
                     <span>🚪</span> <span data-i18n="logout">Logout</span>
                 </button>
@@ -142,6 +143,11 @@
                 <span class="sidebar-link-text" data-i18n="dailyMenu">Daily Menu</span>
             </a>
 
+            <a href="./user-analytics.html" id="userDashboardBtn" class="sidebar-link">
+                <span class="sidebar-link-icon">📈</span>
+                <span class="sidebar-link-text">My Dashboard</span>
+            </a>
+
             <a href="./cost-calculator.html" id="costCalculatorBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">🧮</span>
                 <span class="sidebar-link-text" data-i18n="calculator">Calculator</span>
@@ -152,9 +158,9 @@
                 <span class="sidebar-link-text" data-i18n="myCv">My CV</span>
             </a>
 
-            <a href="./wallet.html" id="walletBtn" class="sidebar-link">
+            <!-- <a href="./wallet.html" id="walletBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">💰</span>
-                <span class="sidebar-link-text">Wallet</span>
+                <span class="sidebar-link-text">Wallet</span> -->
             </a>
         </div>
 
@@ -196,9 +202,32 @@
     <div class="hero-section">
         <div class="hero-content">
             <div class="hero-image-wrapper">
-                <img id="heroChefImg" class="hero-image" src="/new-chef-hero.png" alt="Premium Chef" />
+                <img id="heroChefImg" class="hero-image" src="/fruit-spread-header.png" alt="Premium Chef" />
+                <script>
+                    (function () {
+                        const heroImages = [
+                            '/new-chef-hero.png',
+                            '/premium-chef-hero.png',
+                            '/hero-chef.png',
+                            '/hero-chef-premium.png',
+                            '/my-chef-hero.png',
+                            '/another-chef-premium.png',
+                            '/new-premium-hero.png',
+                            '/chef-hero.png',
+                            '/master-chef-header.png',
+                            '/artisan-pastry-chef.png',
+                            '/modern-chef-studio.png',
+                            '/chef-rooftop-garden.png',
+                            '/chef-fire-cooking.png',
+                            '/fruit-spread-header.png'
+                        ];
+                        const randomImg = heroImages[Math.floor(Math.random() * heroImages.length)];
+                        document.getElementById('heroChefImg').src = randomImg;
+                    })();
+                </script>
                 <div class="hero-image-overlay"></div>
                 <h1 data-i18n="appTitle" class="hero-title-overlay">Chef <span>Book</span></h1>
+                <button id="refreshHeroBtn" class="refresh-hero-btn" title="Change Header Photo">🔄</button>
                 <div class="hero-image-decoration"></div>
             </div>
         </div>
@@ -218,9 +247,10 @@
                         <img id="quickPostUserPic" src="" alt="Profile" style="display: none;">
                         <span id="quickPostDefaultAvatar">👤</span>
                     </div>
-                    <textarea id="quickPostInput" data-i18n-placeholder="whatsOnYourMind" placeholder="What's on your mind?"></textarea>
+                    <textarea id="quickPostInput" data-i18n-placeholder="whatsOnYourMind"
+                        placeholder="What's on your mind?"></textarea>
                 </div>
-                
+
                 <div id="quickPostMediaPreview" class="qp-media-preview" style="display: none;">
                     <button type="button" class="qp-remove-media" id="qpRemoveMedia">&times;</button>
                     <img id="qpPhotoPreview" src="" style="display: none;">
@@ -230,7 +260,7 @@
                 <div class="quick-post-actions">
                     <div class="quick-post-media-btns">
                         <button type="button" class="qp-media-btn" id="qpPhotoBtn">
-                             <span class="qp-btn-icon">📸</span> <span data-i18n="photo">photo</span>
+                            <span class="qp-btn-icon">📸</span> <span data-i18n="photo">photo</span>
                         </button>
                         <button type="button" class="qp-media-btn" id="qpVideoBtn">
                             <span class="qp-btn-icon">🎬</span> <span data-i18n="video">Video</span>
@@ -390,13 +420,189 @@
 
     <!-- Book Tab Content -->
     <div id="book" class="tab-content">
-        <div class="recipes-header">
-            <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">Chef's Portfolio Book</h2>
+        <!-- Book List View (shown when no book is selected) -->
+        <div id="bookListView">
+            <div class="recipes-header">
+                <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem;">📚 My Chef Books</h2>
+                <div class="recipes-actions">
+                    <button id="createBookBtn" class="btn btn-primary">
+                        <span class="btn-icon">➕</span>
+                        <span>New Book</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="booksGrid" class="recipes-grid books-grid">
+                <!-- Books will be dynamically inserted here -->
+            </div>
+
+            <div id="booksEmptyState" class="empty-state">
+                <div class="empty-icon">📚</div>
+                <h3>No books yet</h3>
+                <p>Create your first Chef Book to compile your best recipes into a professional portfolio!</p>
+                <button id="createBookEmptyBtn" class="btn btn-primary" style="margin-top: 16px;">
+                    <span class="btn-icon">➕</span>
+                    <span>Create My First Book</span>
+                </button>
+            </div>
         </div>
-        <div class="empty-state show">
-            <div class="empty-icon">📚</div>
-            <h3>Your Portfolio is Ready</h3>
-            <p>Compile your best works into a professional presentation.</p>
+
+        <!-- Book Detail / Editor View (shown when a book is selected) -->
+        <div id="bookDetailView" style="display: none;">
+            <div class="recipes-header book-detail-header">
+                <button id="bookBackBtn" class="btn btn-secondary book-back-btn">
+                    <span>←</span> <span>Back</span>
+                </button>
+                <h2 id="bookDetailTitle" style="font-family: 'Playfair Display', serif; font-size: 1.8rem; flex: 1; text-align: center;">Book Title</h2>
+                <div class="recipes-actions">
+                    <button id="bookPreviewBtn" class="btn btn-secondary">
+                        <span class="btn-icon">👁️</span>
+                        <span>Preview</span>
+                    </button>
+                    <button id="bookExportPdfBtn" class="btn btn-primary">
+                        <span class="btn-icon">📄</span>
+                        <span>Export PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Book Meta Editor -->
+            <div class="book-meta-editor">
+                <div class="book-cover-section">
+                    <div class="book-cover-upload" id="bookCoverUpload">
+                        <img id="bookCoverPreview" src="" alt="Book Cover" style="display: none;">
+                        <div class="upload-placeholder" id="bookCoverPlaceholder">
+                            <span class="upload-icon">📷</span>
+                            <p>Click to set cover photo</p>
+                        </div>
+                        <input type="file" id="bookCoverInput" accept="image/*" hidden>
+                    </div>
+                </div>
+                <div class="book-info-section">
+                    <div class="form-group">
+                        <label for="bookTitleInput">Book Title</label>
+                        <input type="text" id="bookTitleInput" placeholder="My Chef Book" class="search-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="bookDescInput">Description</label>
+                        <textarea id="bookDescInput" rows="2" placeholder="A collection of my finest recipes..." class="search-input" style="resize: vertical;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <div class="book-theme-selector">
+                            <button class="book-theme-btn active" data-theme="classic" title="Classic">
+                                <span class="theme-swatch" style="background: linear-gradient(135deg, #C67B4B, #8B4513);"></span>
+                                <span>Classic</span>
+                            </button>
+                            <button class="book-theme-btn" data-theme="modern" title="Modern">
+                                <span class="theme-swatch" style="background: linear-gradient(135deg, #667eea, #764ba2);"></span>
+                                <span>Modern</span>
+                            </button>
+                            <button class="book-theme-btn" data-theme="minimal" title="Minimal">
+                                <span class="theme-swatch" style="background: linear-gradient(135deg, #2c3e50, #bdc3c7);"></span>
+                                <span>Minimal</span>
+                            </button>
+                            <button class="book-theme-btn" data-theme="rustic" title="Rustic">
+                                <span class="theme-swatch" style="background: linear-gradient(135deg, #8B6914, #D4A55A);"></span>
+                                <span>Rustic</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="bookSaveMetaBtn" class="btn btn-primary" style="margin-top: 8px;">
+                        <span class="btn-icon">💾</span>
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="book-recipes-section">
+                <div class="book-recipes-header">
+                    <h3>📖 Recipes in this Book</h3>
+                    <button id="bookAddRecipesBtn" class="btn btn-primary">
+                        <span class="btn-icon">➕</span>
+                        <span>Add Recipes</span>
+                    </button>
+                </div>
+
+                <div id="bookRecipesList" class="book-recipes-list">
+                    <!-- Book recipes will be rendered here -->
+                </div>
+
+                <div id="bookRecipesEmpty" class="empty-state" style="display: none;">
+                    <div class="empty-icon">📖</div>
+                    <h3>No recipes added yet</h3>
+                    <p>Add recipes from your collection to build your book!</p>
+                </div>
+            </div>
+
+            <!-- Delete Book Button -->
+            <div style="text-align: center; margin-top: 30px; padding-bottom: 30px;">
+                <button id="deleteBookBtn" class="btn btn-danger">
+                    <span class="btn-icon">🗑️</span>
+                    <span>Delete This Book</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recipe Picker Modal (for adding recipes to book) -->
+    <div id="bookRecipePickerModal" class="modal">
+        <div class="modal-content modal-md">
+            <button class="modal-close" id="closeRecipePickerModal">&times;</button>
+            <div class="modal-header">
+                <h2>📖 <span>Add Recipes to Book</span></h2>
+            </div>
+            <div class="modal-body">
+                <div class="search-container" style="margin-bottom: 16px;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="recipePickerSearch" class="search-input" placeholder="Search your recipes...">
+                </div>
+                <div id="recipePickerList" class="recipe-picker-list">
+                    <!-- Picker items rendered here -->
+                </div>
+                <div class="form-actions" style="margin-top: 16px;">
+                    <button id="recipePickerAddBtn" class="btn btn-primary" style="width: 100%;">
+                        <span class="btn-icon">✅</span>
+                        <span>Add Selected (<span id="recipePickerCount">0</span>)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Preview Modal -->
+    <div id="bookPreviewModal" class="modal">
+        <div class="modal-content modal-lg">
+            <button class="modal-close" id="closeBookPreviewModal">&times;</button>
+            <div id="bookPreviewBody" class="book-preview-body">
+                <!-- Preview pages rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Book Modal -->
+    <div id="createBookModal" class="modal">
+        <div class="modal-content modal-sm">
+            <button class="modal-close" id="closeCreateBookModal">&times;</button>
+            <div class="modal-header">
+                <h2>📚 <span>Create New Book</span></h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newBookTitle">Book Title</label>
+                    <input type="text" id="newBookTitle" class="search-input" placeholder="e.g., My Best Cakes" required>
+                </div>
+                <div class="form-group">
+                    <label for="newBookDesc">Description (optional)</label>
+                    <textarea id="newBookDesc" class="search-input" rows="2" placeholder="What's this book about?" style="resize: vertical;"></textarea>
+                </div>
+                <div class="form-actions" style="margin-top: 16px;">
+                    <button id="createBookSubmitBtn" class="btn btn-primary" style="width: 100%;">
+                        <span class="btn-icon">📚</span>
+                        <span>Create Book</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -474,19 +680,77 @@
                             style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px;"></p>
                     </div>
 
-                    <!-- Visibility Toggle -->
-                    <div class="form-group"
-                        style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-                        <div>
-                            <label style="margin-bottom: 0px; text-transform: none; font-size: 1rem;">🌍 Public
-                                Profile</label>
-                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">If enabled,
-                                your profile will be visible in the chefs directory.</p>
+                    <!-- Visibility Settings -->
+                    <div class="form-group profile-visibility-section"
+                        style="margin-top: 15px; padding: 14px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        
+                        <!-- Main Toggle -->
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div>
+                                <label style="margin-bottom: 0px; text-transform: none; font-size: 1rem;">🌍 Public
+                                    Profile</label>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">If enabled,
+                                    your profile will be visible in the chefs directory.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="userIsPublic" checked>
+                                <span class="slider round"></span>
+                            </label>
                         </div>
-                        <label class="switch">
-                            <input type="checkbox" id="userIsPublic" checked>
-                            <span class="slider round"></span>
-                        </label>
+
+                        <!-- Visibility Level Options (shown when public is ON) -->
+                        <div id="visibilityLevelOptions" class="visibility-level-options" style="margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); display: block;">
+                            <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 10px; display: block; text-transform: none;">
+                                👁️ Who can see your profile?
+                            </label>
+                            
+                            <div class="visibility-radio-group" style="display: flex; flex-direction: column; gap: 8px;">
+                                <!-- All -->
+                                <label class="visibility-radio-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); transition: all 0.2s;">
+                                    <input type="radio" name="profileVisibility" value="all" id="visibilityAll" checked
+                                        style="accent-color: var(--accent-gold); width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <span style="font-size: 0.95rem; font-weight: 600;">🌍 Everyone</span>
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0 0;">All users and visitors can see your profile.</p>
+                                    </div>
+                                </label>
+
+                                <!-- Followers Only -->
+                                <label class="visibility-radio-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); transition: all 0.2s;">
+                                    <input type="radio" name="profileVisibility" value="followers" id="visibilityFollowers"
+                                        style="accent-color: var(--accent-gold); width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <span style="font-size: 0.95rem; font-weight: 600;">👥 Followers Only</span>
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0 0;">Only people who follow you can see your full profile.</p>
+                                    </div>
+                                </label>
+
+                                <!-- Specific Users -->
+                                <label class="visibility-radio-item" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); transition: all 0.2s;">
+                                    <input type="radio" name="profileVisibility" value="specific" id="visibilitySpecific"
+                                        style="accent-color: var(--accent-gold); width: 18px; height: 18px; cursor: pointer;">
+                                    <div>
+                                        <span style="font-size: 0.95rem; font-weight: 600;">🔒 Specific Users</span>
+                                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 2px 0 0 0;">Only users you choose can see your profile.</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <!-- Specific Users Picker (shown when "Specific Users" is selected) -->
+                            <div id="specificUsersPicker" style="display: none; margin-top: 12px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
+                                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                    <input type="text" id="specificUsersSearch" placeholder="Search users to add..."
+                                        style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: var(--text-primary); font-size: 0.85rem; outline: none;">
+                                </div>
+                                <!-- Search Results Dropdown -->
+                                <div id="specificUsersSearchResults" style="display: none; max-height: 150px; overflow-y: auto; border-radius: 8px; background: var(--card-bg, #1a1a2e); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 8px;">
+                                </div>
+                                <!-- Selected Users Tags -->
+                                <div id="selectedSpecificUsers" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 30px;">
+                                    <span style="font-size: 0.8rem; color: var(--text-secondary); padding: 4px;">No users selected yet</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-actions" style="margin-top: 20px; justify-content: space-between;">

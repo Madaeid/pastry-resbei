@@ -224,7 +224,7 @@ window.closePremiumModal = function () {
 // ===== Storage Functions =====
 async function loadUserRecipes() {
     try {
-        const token = sessionStorage.getItem('token');
+        const token = sessionStorage.getItem('authToken');
         if (!token) {
             console.error('No token found');
             userRecipes = [];

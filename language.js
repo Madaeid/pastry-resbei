@@ -295,6 +295,7 @@ const translations = {
         areYouSure: "Are you sure?",
         actionCannotBeUndone: "This action cannot be undone.",
         editUser: "Edit User",
+        deleteUser: "Delete User",
         newPasswordKeep: "New Password (leave blank to keep)",
         adminFooter: "👑 Admin Dashboard - Chef Book © 2024",
 
@@ -679,6 +680,7 @@ const translations = {
         areYouSure: "هل أنت متأكد؟",
         actionCannotBeUndone: "لا يمكن التراجع عن هذا الإجراء.",
         editUser: "تعديل المستخدم",
+        deleteUser: "حذف المستخدم",
         newPasswordKeep: "كلمة مرور جديدة (اتركها فارغة للإبقاء على الحالية)",
         adminFooter: "👑 Admin Dashboard - Chef Book © 2024",
 

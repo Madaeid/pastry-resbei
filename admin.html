@@ -36,6 +36,10 @@
             <span class="admin-title" data-i18n="adminDashboard">Admin Dashboard</span>
         </div>
         <div class="admin-nav">
+            <a href="./admin-analytics.html" class="admin-nav-link">
+                <span>📊</span>
+                <span>Analytics</span>
+            </a>
             <a href="./index.html" class="admin-nav-link">
                 <span>📖</span>
                 <span data-i18n="viewApp">View App</span>
@@ -105,7 +109,11 @@
                     <span class="section-icon">👥</span>
                     <span data-i18n="userManagement">User Management</span>
                 </h2>
-                <div class="section-actions">
+                <div class="section-actions" style="display: flex; gap: 15px; align-items: center;">
+                    <div class="search-wrapper">
+                        <input type="text" id="searchUsersInput" placeholder="Search users by name, email, or username..." 
+                            style="padding: 10px 18px; border-radius: 50px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(198, 123, 75, 0.2); color: var(--text-primary); font-size: 0.9rem; width: 300px; transition: all 0.3s ease; outline: none;">
+                    </div>
                     <button class="btn btn-secondary" id="refreshUsers">
                         <span class="btn-icon">🔄</span>
                         <span data-i18n="refresh">Refresh</span>
@@ -226,6 +234,8 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancelEditUser"
                         data-i18n="cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteUserFromModal"
+                        data-i18n="deleteUser">Delete User</button>
                     <button type="submit" class="btn btn-primary" data-i18n="saveChanges">Save Changes</button>
                 </div>
             </form>

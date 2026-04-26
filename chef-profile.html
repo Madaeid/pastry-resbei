@@ -20,7 +20,7 @@
         .profile-hero {
             background: rgba(255, 255, 255, 0.03);
             border-radius: 24px;
-            padding: 40px;
+            padding: 20px 40px;
             margin-bottom: 30px;
             border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
@@ -286,29 +286,6 @@
             width: 100% !important;
         }
 
-        .banner-mode {
-            flex-direction: column !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-        }
-
-        .banner-mode .hero-avatar {
-            width: 100% !important;
-            height: 300px !important;
-            border-radius: 0 !important;
-            border: none !important;
-            padding: 0 !important;
-        }
-
-        .banner-mode .hero-avatar img {
-            border-radius: 0 !important;
-        }
-
-        .banner-mode .hero-info {
-            padding: 30px !important;
-            width: 100% !important;
-            text-align: center !important;
-        }
     </style>
 </head>
 
@@ -318,7 +295,52 @@
             <span>←</span> Back to Feed
         </a>
 
-        <div id="chefProfileHero" class="profile-hero banner-mode">
+        <div id="chefProfileHero" class="profile-hero">
+            <button id="refreshProfileHeroBtn" class="refresh-hero-btn" title="Change Header Photo" style="position: absolute; top: 15px; right: 15px; z-index: 10;">🔄</button>
+            <script>
+                (function() {
+                    const headerImages = [
+                        '/new-chef-hero.png',
+                        '/premium-chef-hero.png',
+                        '/hero-chef.png',
+                        '/hero-chef-premium.png',
+                        '/my-chef-hero.png',
+                        '/another-chef-premium.png',
+                        '/new-premium-hero.png',
+                        '/chef-hero.png',
+                        '/master-chef-header.png',
+                        '/artisan-pastry-chef.png',
+                        '/modern-chef-studio.png',
+                        '/chef-rooftop-garden.png',
+                        '/chef-fire-cooking.png'
+                    ];
+                    let currentHeroInterval = null;
+                    
+                    function setRandomHero(manual = false) {
+                        const heroEl = document.getElementById('chefProfileHero');
+                        if (!heroEl) return;
+                        const randomImg = headerImages[Math.floor(Math.random() * headerImages.length)];
+                        // We use !important because the initial style block uses it
+                        heroEl.style.setProperty('background', `linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${randomImg}') no-repeat center center / cover`, 'important');
+                        
+                        if (manual && currentHeroInterval) {
+                            clearInterval(currentHeroInterval);
+                            currentHeroInterval = setInterval(() => setRandomHero(false), 15000);
+                        }
+                    }
+                    
+                    const initialImg = headerImages[Math.floor(Math.random() * headerImages.length)];
+                    document.write(`<style>#chefProfileHero { transition: background 0.8s ease; background: linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${initialImg}') no-repeat center center / cover !important; }</style>`);
+                    
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const refreshBtn = document.getElementById('refreshProfileHeroBtn');
+                        if (refreshBtn) {
+                            refreshBtn.addEventListener('click', () => setRandomHero(true));
+                        }
+                        currentHeroInterval = setInterval(() => setRandomHero(false), 15000);
+                    });
+                })();
+            </script>
             <div class="hero-avatar">
                 <img id="chefPic" src="assets/default-avatar.png" alt="Chef">
             </div>
@@ -604,8 +626,13 @@
             }
 
             try {
-                // 1. Load Profile Info
-                const profileRes = await fetch(`${API_URL}/users/public/${username}`);
+                // 1. Load Profile Info (send token so admin can bypass privacy)
+                const token = sessionStorage.getItem('authToken');
+                const profileFetchOptions = {};
+                if (token) {
+                    profileFetchOptions.headers = { 'Authorization': `Bearer ${token}` };
+                }
+                const profileRes = await fetch(`${API_URL}/users/public/${username}`, profileFetchOptions);
                 chefData = await profileRes.json();
 
                 if (chefData.error) {
@@ -630,9 +657,19 @@
                     document.getElementById('chefPremiumBadge').style.display = 'inline-block';
                 }
 
+                // Show 'Private Profile' badge if admin is viewing a private user
+                if (chefData.isPrivate) {
+                    const nameRow = document.querySelector('.hero-name-row');
+                    if (nameRow) {
+                        const privateBadge = document.createElement('span');
+                        privateBadge.textContent = '🔒 Private Profile';
+                        privateBadge.style.cssText = 'background: rgba(255,60,60,0.15); color: #ff6b6b; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,60,60,0.3);';
+                        nameRow.appendChild(privateBadge);
+                    }
+                }
+
                 // Auth check
                 const currentUserUsername = sessionStorage.getItem('currentUser') || 'null';
-                const token = sessionStorage.getItem('authToken');
                 const isOwnProfile = currentUserUsername !== 'null' && currentUserUsername === chefData.username;
 
                 if (isOwnProfile) {

@@ -82,7 +82,8 @@ router.get('/users', async (req, res) => {
                 birthday: user.birthday,
                 isAdmin: user.is_admin === 1,
                 isPremium,
-                isPublic: user.is_public === true,
+                isPublic: user.is_public && user.is_public !== 'private' && user.is_public !== 'false',
+                visibilityLevel: user.is_public || 'all',
                 subscriptionPlan: user.subscription_plan,
                 subscriptionStatus: user.subscription_status,
                 subscriptionEndDate: user.subscription_end_date,
@@ -410,6 +411,168 @@ router.post('/recipes/clear-all', async (req, res) => {
     } catch (error) {
         console.error('Clear recipes error:', error);
         res.status(500).json({ error: 'Failed to clear recipes' });
+    }
+});
+
+// ===== Analytics Dashboard Data =====
+router.get('/analytics', async (req, res) => {
+    try {
+        const db = getDatabase();
+
+        // --- Revenue Data ---
+        let totalRevenue = 0;
+        let recentTransactions = [];
+        try {
+            const revenueResult = await db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE status = 'completed'`);
+            totalRevenue = parseFloat(revenueResult.rows[0].total || 0);
+
+            const recentTxResult = await db.query(`
+                SELECT t.*, u.username, u.display_name 
+                FROM transactions t 
+                JOIN users u ON t.user_id = u.id 
+                ORDER BY t.created_at DESC LIMIT 10
+            `);
+            recentTransactions = recentTxResult.rows.map(tx => ({
+                id: tx.transaction_id,
+                type: tx.type,
+                plan: tx.plan,
+                amount: parseFloat(tx.amount || 0),
+                status: tx.status,
+                username: tx.username,
+                displayName: tx.display_name,
+                date: tx.created_at
+            }));
+        } catch (err) {
+            console.warn('Transactions query failed:', err.message);
+        }
+
+        // --- User Growth (last 7 days count) ---
+        let newUsersThisWeek = 0;
+        try {
+            const weekResult = await db.query(`SELECT COUNT(*) as count FROM users WHERE created_at > NOW() - INTERVAL '7 days'`);
+            newUsersThisWeek = parseInt(weekResult.rows[0].count || 0);
+        } catch (err) {
+            console.warn('New users query failed:', err.message);
+        }
+
+        // --- Recipe Categories Distribution ---
+        let categoryDistribution = [];
+        try {
+            const catResult = await db.query(`SELECT category, COUNT(*) as count FROM recipes GROUP BY category ORDER BY count DESC`);
+            categoryDistribution = catResult.rows.map(r => ({ category: r.category || 'Uncategorized', count: parseInt(r.count) }));
+        } catch (err) {
+            console.warn('Category distribution query failed:', err.message);
+        }
+
+        // --- Top Users by Recipe Count ---
+        let topUsers = [];
+        try {
+            const topResult = await db.query(`
+                SELECT u.id, u.username, u.display_name, u.profile_picture, u.is_admin, u.created_at,
+                       COUNT(r.id) as recipe_count
+                FROM users u
+                LEFT JOIN recipes r ON r.user_id = u.id
+                GROUP BY u.id, u.username, u.display_name, u.profile_picture, u.is_admin, u.created_at
+                ORDER BY recipe_count DESC
+                LIMIT 5
+            `);
+            topUsers = topResult.rows.map(u => ({
+                id: u.id,
+                username: u.username,
+                displayName: u.display_name,
+                profilePic: u.profile_picture,
+                isAdmin: u.is_admin === 1,
+                recipeCount: parseInt(u.recipe_count),
+                joinDate: u.created_at
+            }));
+        } catch (err) {
+            console.warn('Top users query failed:', err.message);
+        }
+
+        // --- Subscription Breakdown ---
+        let subscriptionBreakdown = { monthly: 0, yearly: 0, lifetime: 0, adminGranted: 0 };
+        try {
+            const subBreakdown = await db.query(`
+                SELECT plan, granted_by_admin, COUNT(*) as count 
+                FROM subscriptions 
+                WHERE status = 'active' AND end_date > NOW()
+                GROUP BY plan, granted_by_admin
+            `);
+            subBreakdown.rows.forEach(r => {
+                if (r.granted_by_admin === 1) {
+                    subscriptionBreakdown.adminGranted += parseInt(r.count);
+                } else if (subscriptionBreakdown[r.plan] !== undefined) {
+                    subscriptionBreakdown[r.plan] = parseInt(r.count);
+                }
+            });
+        } catch (err) {
+            console.warn('Subscription breakdown query failed:', err.message);
+        }
+
+        // --- Store Stats ---
+        let storeStats = { totalListings: 0, totalSales: 0, totalStoreRevenue: 0 };
+        try {
+            const listingsResult = await db.query(`SELECT COUNT(*) as count FROM store_recipes WHERE is_active = TRUE`);
+            storeStats.totalListings = parseInt(listingsResult.rows[0].count || 0);
+
+            const salesResult = await db.query(`SELECT COUNT(*) as count, COALESCE(SUM(price_paid), 0) as revenue FROM store_purchases`);
+            storeStats.totalSales = parseInt(salesResult.rows[0].count || 0);
+            storeStats.totalStoreRevenue = parseFloat(salesResult.rows[0].revenue || 0);
+        } catch (err) {
+            console.warn('Store stats query failed:', err.message);
+        }
+
+        // --- Wallet Stats ---
+        let walletStats = { totalDeposits: 0, totalTransfers: 0, totalWalletBalance: 0 };
+        try {
+            const walletResult = await db.query(`SELECT COALESCE(SUM(balance), 0) as total FROM wallet_balances`);
+            walletStats.totalWalletBalance = parseFloat(walletResult.rows[0].total || 0);
+
+            const depositsResult = await db.query(`SELECT COUNT(*) as count FROM wallet_transactions WHERE type = 'deposit'`);
+            walletStats.totalDeposits = parseInt(depositsResult.rows[0].count || 0);
+
+            const transfersResult = await db.query(`SELECT COUNT(*) as count FROM wallet_transactions WHERE type = 'transfer'`);
+            walletStats.totalTransfers = parseInt(transfersResult.rows[0].count || 0);
+        } catch (err) {
+            console.warn('Wallet stats query failed:', err.message);
+        }
+
+        // --- Recent Users ---
+        let recentUsers = [];
+        try {
+            const recentUsersResult = await db.query(`
+                SELECT id, username, display_name, profile_picture, is_admin, created_at 
+                FROM users 
+                ORDER BY created_at DESC 
+                LIMIT 5
+            `);
+            recentUsers = recentUsersResult.rows.map(u => ({
+                id: u.id,
+                username: u.username,
+                displayName: u.display_name,
+                profilePic: u.profile_picture,
+                isAdmin: u.is_admin === 1,
+                joinDate: u.created_at
+            }));
+        } catch (err) {
+            console.warn('Recent users query failed:', err.message);
+        }
+
+        res.json({
+            totalRevenue,
+            newUsersThisWeek,
+            categoryDistribution,
+            topUsers,
+            recentUsers,
+            recentTransactions,
+            subscriptionBreakdown,
+            storeStats,
+            walletStats
+        });
+
+    } catch (error) {
+        console.error('Analytics error:', error);
+        res.status(500).json({ error: 'Failed to get analytics data' });
     }
 });
 

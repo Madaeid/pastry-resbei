@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0612">
+    <meta name="description" content="Chef Book User Dashboard — Track your recipes, likes, and sales.">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>📈 My Dashboard - Chef Book</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="user-analytics.css">
+    <script>
+        // Immediate theme initialization
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+        // Auth check
+        if (!sessionStorage.getItem('currentUser')) {
+            window.location.replace('./auth.html');
+        }
+    </script>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="analytics-header" id="analyticsHeader">
+        <div class="header-left">
+            <span class="header-logo">📈</span>
+            <h1 class="header-title">My Dashboard</h1>
+        </div>
+        <nav class="header-nav">
+            <a href="./index.html" class="nav-pill">
+                <span>🏠</span> <span class="nav-text">Home</span>
+            </a>
+            <a href="./wallet.html" class="nav-pill">
+                <span>💳</span> <span class="nav-text">Wallet</span>
+            </a>
+            <button class="nav-pill theme-btn" id="themeToggle" title="Toggle Theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Ambient Background -->
+    <div class="ambient-bg">
+        <div class="ambient-orb orb-a"></div>
+        <div class="ambient-orb orb-b"></div>
+        <div class="ambient-orb orb-c"></div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Loading your stats...</p>
+    </div>
+
+    <!-- Main Dashboard -->
+    <main class="dashboard" id="dashboardContent" style="display: none;">
+        
+        <!-- Welcome Section -->
+        <section class="welcome-section">
+            <h2 id="welcomeMessage">Welcome back, Chef!</h2>
+            <p>Here's how your recipes and store are performing.</p>
+        </section>
+
+        <!-- KPI Row -->
+        <section class="kpi-row">
+            <div class="kpi-card kpi-recipes">
+                <div class="kpi-icon-wrap"><span class="kpi-icon">📖</span></div>
+                <div class="kpi-body">
+                    <span class="kpi-value" id="kpiRecipes">0</span>
+                    <span class="kpi-label">Total Recipes</span>
+                </div>
+            </div>
+            <div class="kpi-card kpi-likes">
+                <div class="kpi-icon-wrap"><span class="kpi-icon">❤️</span></div>
+                <div class="kpi-body">
+                    <span class="kpi-value" id="kpiLikes">0</span>
+                    <span class="kpi-label">Total Likes</span>
+                </div>
+            </div>
+            <div class="kpi-card kpi-followers">
+                <div class="kpi-icon-wrap"><span class="kpi-icon">👥</span></div>
+                <div class="kpi-body">
+                    <span class="kpi-value" id="kpiFollowers">0</span>
+                    <span class="kpi-label">Followers</span>
+                </div>
+            </div>
+            <div class="kpi-card kpi-wallet">
+                <div class="kpi-icon-wrap"><span class="kpi-icon">💳</span></div>
+                <div class="kpi-body">
+                    <span class="kpi-value" id="kpiWallet">$0.00</span>
+                    <span class="kpi-label">Wallet Balance</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Store Performance -->
+        <section class="grid-2col">
+            <div class="panel" id="storePanel">
+                <div class="panel-header">
+                    <h2><span class="panel-icon">🏪</span> Store Performance</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="metric-tiles">
+                        <div class="metric-tile">
+                            <span class="metric-value" id="storeListings">0</span>
+                            <span class="metric-label">Active Listings</span>
+                        </div>
+                        <div class="metric-tile">
+                            <span class="metric-value" id="storeSalesCount">0</span>
+                            <span class="metric-label">Total Sales</span>
+                        </div>
+                        <div class="metric-tile accent">
+                            <span class="metric-value" id="storeRevenue">$0.00</span>
+                            <span class="metric-label">Est. Revenue</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" id="topListingsPanel">
+                <div class="panel-header">
+                    <h2><span class="panel-icon">🔥</span> Top Listings</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="list-container" id="topListingsList">
+                        <div class="empty-state">No store listings yet</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Transactions -->
+        <section class="full-width-panel">
+            <div class="panel" id="transactionsPanel">
+                <div class="panel-header">
+                    <h2><span class="panel-icon">📜</span> Recent Wallet Activity</h2>
+                    <a href="./wallet.html" class="view-all-link">View Wallet</a>
+                </div>
+                <div class="panel-body">
+                    <div class="transactions-table-wrap">
+                        <table class="transactions-table" id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Note</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                        <div id="noTransactions" class="empty-state" style="display: none;">
+                            No recent activity
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="analytics-footer">
+        <p>📈 My Dashboard — Chef Book © 2024</p>
+    </footer>
+
+    <script type="module" src="./user-analytics.js"></script>
+</body>
+
+</html>

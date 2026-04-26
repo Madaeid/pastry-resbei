@@ -33,7 +33,8 @@ async function initDB() {
                     birthday TEXT,
                     password_hash TEXT NOT NULL,
                     is_admin INTEGER DEFAULT 0,
-                    is_public BOOLEAN DEFAULT true,
+                    is_public TEXT DEFAULT 'all',
+                    allowed_viewers JSON DEFAULT '[]',
                     profile_picture TEXT,
                     gallery JSON DEFAULT '[]',
                     cv_file TEXT,
@@ -272,7 +273,34 @@ async function initDB() {
             `);
             console.log('✅ Legacy compatibility tables created');
 
-            // 10. Create Indexes
+            // 10. Books & Book Recipes Tables
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS books (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    title TEXT NOT NULL DEFAULT 'My Chef Book',
+                    description TEXT,
+                    cover_photo TEXT,
+                    theme TEXT DEFAULT 'classic',
+                    is_public BOOLEAN DEFAULT false,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS book_recipes (
+                    id SERIAL PRIMARY KEY,
+                    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                    recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+                    order_index INTEGER DEFAULT 0,
+                    section_title TEXT,
+                    notes TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(book_id, recipe_id)
+                );
+            `);
+            console.log('✅ Books tables created');
+
+            // 11. Create Indexes
             await client.query(`
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
                 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -282,6 +310,8 @@ async function initDB() {
                 CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
                 CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
                 CREATE INDEX IF NOT EXISTS idx_daily_menus_user_date ON daily_menus(user_id, menu_date);
+                CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
+                CREATE INDEX IF NOT EXISTS idx_book_recipes_book_id ON book_recipes(book_id);
             `);
             console.log('✅ Performance indexes created');
 

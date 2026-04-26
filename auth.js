@@ -75,6 +75,7 @@ function getAllUsers() {
         profilePicture: users[key].profilePicture || null,
         cvFile: users[key].cvFile || null,
         isPublic: users[key].isPublic !== undefined ? users[key].isPublic : true,
+        allowedViewers: users[key].allowedViewers || [],
         gallery: users[key].gallery || [],
         createdAt: users[key].createdAt
     }));
@@ -182,7 +183,12 @@ async function updateUser(username, data) {
 
     // 5c. Handle Profile Visibility Update
     if (data.isPublic !== undefined) {
-        user.isPublic = data.isPublic;
+        user.isPublic = data.isPublic; // Can be false, 'all', 'followers', or 'specific'
+    }
+
+    // 5c2. Handle Allowed Viewers (for 'specific' visibility)
+    if (data.allowedViewers !== undefined) {
+        user.allowedViewers = data.allowedViewers;
     }
 
     // 5d. Handle Gallery Update
@@ -248,6 +254,7 @@ async function updateUser(username, data) {
                 profilePicture: data.profilePicture,
                 cvFile: data.cvFile,
                 isPublic: data.isPublic,
+                allowedViewers: data.allowedViewers,
                 gallery: data.gallery
             };
 

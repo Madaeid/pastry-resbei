@@ -21,6 +21,7 @@ const currentDateEl = document.getElementById('currentDate');
 const usersTableBody = document.getElementById('usersTableBody');
 const noUsersEl = document.getElementById('noUsers');
 const refreshUsersBtn = document.getElementById('refreshUsers');
+const searchUsersInput = document.getElementById('searchUsersInput');
 
 // Quick action buttons
 const viewAllRecipesBtn = document.getElementById('viewAllRecipes');
@@ -115,16 +116,24 @@ async function loadStats() {
 async function loadUsers() {
     try {
         currentUsers = await adminFetch('/users');
-        
-        if (currentUsers.length === 0) {
-            usersTableBody.innerHTML = '';
-            noUsersEl.style.display = 'block';
-            return;
-        }
+        renderUsersList(currentUsers);
+    } catch (err) {
+        console.error('Failed to load users:', err);
+        showNotification('Error loading users', 'error');
+    }
+}
 
-        noUsersEl.style.display = 'none';
+function renderUsersList(usersToRender) {
+    if (usersToRender.length === 0) {
+        usersTableBody.innerHTML = '';
+        noUsersEl.style.display = 'block';
+        return;
+    }
 
-        usersTableBody.innerHTML = currentUsers.map(user => {
+    noUsersEl.style.display = 'none';
+    try {
+
+    usersTableBody.innerHTML = usersToRender.map(user => {
             const joinDate = user.createdAt
                 ? new Date(user.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -168,7 +177,10 @@ async function loadUsers() {
                     </td>
                     <td>
                         <span class="visibility-badge ${user.isPublic ? 'vid-public' : 'vid-private'}">
-                            ${user.isPublic ? '🌐 Public' : '🔒 Private'}
+                            ${!user.isPublic ? '🔒 Private' :
+                              user.visibilityLevel === 'followers' ? '👥 Followers' :
+                              user.visibilityLevel === 'specific' ? '🔑 Specific' :
+                              '🌐 Everyone'}
                         </span>
                     </td>
                     <td>
@@ -201,7 +213,7 @@ async function loadUsers() {
 
         setupUserActionButtons();
     } catch (err) {
-        console.error('Failed to load users:', err);
+        console.error('Failed to render users:', err);
         showNotification('Error loading users', 'error');
     }
 }
@@ -319,6 +331,36 @@ editUserForm.onsubmit = async (e) => {
         showNotification(err.message, 'error');
     }
 };
+
+// ===== Delete User From Modal Logic =====
+const deleteUserFromModalBtn = document.getElementById('deleteUserFromModal');
+if (deleteUserFromModalBtn) {
+    deleteUserFromModalBtn.addEventListener('click', () => {
+        const userId = document.getElementById('editUsername').value;
+        const username = document.getElementById('displayUsername').value;
+
+        if (username === 'admin') {
+            showNotification('Cannot delete main admin user', 'error');
+            return;
+        }
+
+        showConfirmModal(
+            '🗑️',
+            'Delete User',
+            `Permanently delete user @${username} and all their recipes?`,
+            async () => {
+                try {
+                    await adminFetch(`/users/${userId}`, { method: 'DELETE' });
+                    showNotification('User deleted successfully');
+                    editUserModal.classList.remove('active');
+                    updateDashboardData();
+                } catch (err) {
+                    showNotification(err.message, 'error');
+                }
+            }
+        );
+    });
+}
 
 // ===== Quick Actions =====
 async function handleViewAllRecipes() {
@@ -446,6 +488,28 @@ function showNotification(message, type = 'success') {
 function setupEventListeners() {
     logoutBtn.addEventListener('click', logout);
     refreshUsersBtn.addEventListener('click', updateDashboardData);
+    
+    if (searchUsersInput) {
+        searchUsersInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                renderUsersList(currentUsers);
+                return;
+            }
+            
+            const filtered = currentUsers.filter(user => {
+                const username = (user.username || '').toLowerCase();
+                const displayName = (user.displayName || '').toLowerCase();
+                const email = (user.email || '').toLowerCase();
+                
+                return username.includes(query) || 
+                       displayName.includes(query) || 
+                       email.includes(query);
+            });
+            
+            renderUsersList(filtered);
+        });
+    }
     
     // Quick actions
     viewAllRecipesBtn.addEventListener('click', handleViewAllRecipes);

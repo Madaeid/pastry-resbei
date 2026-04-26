@@ -3,32 +3,53 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { getDatabase } from '../database/db.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, optionalAuthenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // ===== Get Public Chef Profiles =====
-router.get('/public', async (req, res) => {
+router.get('/public', optionalAuthenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        // Return all non-admin users. 
-        // In a more complex app, we'd check for an is_public column, 
-        // but for now we follow the existing pattern of returning display data.
-        const result = await db.query(`
-            SELECT username, display_name, profile_picture, gallery, cv_file, created_at, is_admin, is_public
-            FROM users 
-            WHERE is_public IS NOT false
-            ORDER BY created_at DESC
-        `);
 
-        // Filter out admins and format
+        // Check if requesting user is admin
+        let isRequestingAdmin = false;
+        if (req.user) {
+            const adminCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+            isRequestingAdmin = adminCheck.rows[0]?.is_admin === 1;
+        }
+
+        let result;
+        if (isRequestingAdmin) {
+            // Admin can see ALL users including private profiles
+            result = await db.query(`
+                SELECT username, display_name, profile_picture, gallery, cv_file, created_at, is_admin, is_public
+                FROM users 
+                ORDER BY created_at DESC
+            `);
+        } else {
+            // Return users whose profile is visible (not 'private' or false)
+            result = await db.query(`
+                SELECT username, display_name, profile_picture, gallery, cv_file, created_at, is_admin, is_public
+                FROM users 
+                WHERE is_public IS NOT NULL AND is_public != 'private' AND is_public != 'false'
+                ORDER BY created_at DESC
+            `);
+        }
+
+        // Filter out admins from the list and format
         const chefs = result.rows
-            .filter(user => user.username !== 'admin' && user.is_admin !== 1 && user.is_public !== false)
+            .filter(user => {
+                if (user.username === 'admin' || user.is_admin === 1) return false;
+                // For non-admin requesters, also filter private
+                if (!isRequestingAdmin && (user.is_public === false || user.is_public === 'private')) return false;
+                return true;
+            })
             .map(user => ({
                 username: user.username,
                 displayName: user.display_name,
                 profilePicture: user.profile_picture,
-                isPublic: user.is_public !== false,
+                isPublic: user.is_public || 'all',
                 gallery: user.gallery || [],
                 cvFile: user.cv_file,
                 createdAt: user.created_at
@@ -42,16 +63,35 @@ router.get('/public', async (req, res) => {
 });
 
 // ===== Get Specific Public Chef Profile =====
-router.get('/public/:username', async (req, res) => {
+router.get('/public/:username', optionalAuthenticateToken, async (req, res) => {
     try {
         const { username } = req.params;
         const db = getDatabase();
-        const result = await db.query(`
-            SELECT id, username, display_name, profile_picture, gallery, created_at, is_public
-            FROM users 
-            WHERE username = $1 AND is_public IS NOT false
-            LIMIT 1
-        `, [username]);
+
+        // Check if requesting user is admin
+        let isRequestingAdmin = false;
+        if (req.user) {
+            const adminCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
+            isRequestingAdmin = adminCheck.rows[0]?.is_admin === 1;
+        }
+
+        let result;
+        if (isRequestingAdmin) {
+            // Admin bypass: fetch user regardless of visibility
+            result = await db.query(`
+                SELECT id, username, display_name, profile_picture, gallery, created_at, is_public, allowed_viewers
+                FROM users 
+                WHERE username = $1
+                LIMIT 1
+            `, [username]);
+        } else {
+            result = await db.query(`
+                SELECT id, username, display_name, profile_picture, gallery, created_at, is_public, allowed_viewers
+                FROM users 
+                WHERE username = $1 AND is_public IS NOT NULL AND is_public != 'private' AND is_public != 'false'
+                LIMIT 1
+            `, [username]);
+        }
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Chef not found or profile is private' });
@@ -77,6 +117,7 @@ router.get('/public/:username', async (req, res) => {
             profilePicture: user.profile_picture,
             gallery: user.gallery || [],
             createdAt: user.created_at,
+            isPrivate: user.is_public === 'private' || user.is_public === 'false',
             stats: {
                 posts: parseInt(stats.post_count) || 0,
                 likes: parseInt(stats.total_likes) || 0,
@@ -95,7 +136,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const result = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public, allowed_viewers
             FROM users WHERE id = $1
         `, [req.user.userId]);
 
@@ -109,7 +150,8 @@ router.get('/profile', authenticateToken, async (req, res) => {
             SELECT 
                 (SELECT COUNT(id) FROM recipes WHERE user_id = $1) as post_count,
                 (SELECT COUNT(id) FROM follows WHERE following_id = $1) as followers_count,
-                (SELECT COUNT(id) FROM follows WHERE follower_id = $1) as following_count
+                (SELECT COUNT(id) FROM follows WHERE follower_id = $1) as following_count,
+                (SELECT SUM((SELECT COUNT(*) FROM recipe_likes WHERE recipe_id = recipes.id)) FROM recipes WHERE user_id = $1) as total_likes
         `, [user.id]);
         const stats = statsResult.rows[0];
 
@@ -121,13 +163,15 @@ router.get('/profile', authenticateToken, async (req, res) => {
             phone: user.phone,
             birthday: user.birthday,
             isAdmin: user.is_admin === 1,
-            isPublic: user.is_public !== false,
+            isPublic: user.is_public || 'all',
+            allowedViewers: user.allowed_viewers || [],
             profilePicture: user.profile_picture,
             gallery: user.gallery || [],
             cvFile: user.cv_file,
             createdAt: user.created_at,
             stats: {
                 posts: parseInt(stats.post_count) || 0,
+                likes: parseInt(stats.total_likes) || 0,
                 followers: parseInt(stats.followers_count) || 0,
                 following: parseInt(stats.following_count) || 0
             }
@@ -142,7 +186,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile, isPublic } = req.body;
+        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile, isPublic, allowedViewers } = req.body;
         const db = getDatabase();
         const userId = req.user.userId;
 
@@ -194,8 +238,16 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         // Update visibility
         if (isPublic !== undefined) {
+            // isPublic can be false, 'all', 'followers', or 'specific'
+            const visibilityValue = isPublic === false ? 'private' : (isPublic === true ? 'all' : isPublic);
             updates.push(`is_public = $${paramIndex++}`);
-            params.push(isPublic);
+            params.push(visibilityValue);
+        }
+
+        // Update allowed viewers
+        if (allowedViewers !== undefined) {
+            updates.push(`allowed_viewers = $${paramIndex++}`);
+            params.push(JSON.stringify(allowedViewers));
         }
 
         // Update gallery
@@ -271,7 +323,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
         // Get updated user
         const updatedUserResult = await db.query(`
-            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public
+            SELECT id, username, display_name, email, phone, birthday, is_admin, created_at, profile_picture, gallery, cv_file, is_public, allowed_viewers
             FROM users WHERE id = $1
         `, [userId]);
         const updatedUser = updatedUserResult.rows[0];
@@ -287,7 +339,8 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 phone: updatedUser.phone,
                 birthday: updatedUser.birthday,
                 isAdmin: updatedUser.is_admin === 1,
-                isPublic: updatedUser.is_public !== false,
+                isPublic: updatedUser.is_public || 'all',
+                allowedViewers: updatedUser.allowed_viewers || [],
                 profilePicture: updatedUser.profile_picture,
                 gallery: updatedUser.gallery || [],
                 cvFile: updatedUser.cv_file

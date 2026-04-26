@@ -490,28 +490,36 @@ function setupEventListeners() {
                 loadHomeFeed();
             } else if (targetTab === 'store') {
                 loadStoreRecipes();
+            } else if (targetTab === 'book') {
+                loadBooks();
             }
 
 
-            // Update hero image based on tab
-            const heroImg = document.getElementById('heroChefImg');
-            if (heroImg) {
-                let newSrc = '/new-chef-hero.png'; // Default (Home tab)
-                if (targetTab === 'chefs') newSrc = '/chef-group.png';
-                else if (targetTab === 'my-chefs') newSrc = '/my-chefs.png';
-                else if (targetTab === 'store') newSrc = '/chef-store.png';
-                else if (targetTab === 'my-recipes' || targetTab === 'add-recipe') newSrc = '/chef-book.png';
-                else if (targetTab === 'book') newSrc = '/chef-portfolio.png';
-
-                // Simple fade effect
-                heroImg.style.opacity = '0.5';
-                setTimeout(() => {
-                    heroImg.src = newSrc;
-                    heroImg.style.opacity = '1';
-                }, 200);
-            }
+            // Update hero image randomly
+            randomizeHeroImage();
         });
     });
+
+    // Refresh Hero Button
+    const refreshHeroBtn = document.getElementById('refreshHeroBtn');
+    if (refreshHeroBtn) {
+        refreshHeroBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            randomizeHeroImage();
+        });
+    }
+
+    // Zoom Hero Image
+    const heroImageWrapper = document.querySelector('.hero-image-wrapper');
+    if (heroImageWrapper) {
+        heroImageWrapper.addEventListener('click', (e) => {
+            if (e.target.closest('#refreshHeroBtn')) return;
+            heroImageWrapper.classList.toggle('zoomed');
+        });
+    }
+
+    // Auto-rotate hero image every 15 seconds
+    setInterval(randomizeHeroImage, 15000);
 
 
 
@@ -709,11 +717,77 @@ function openEditUserModal() {
         }
     }
 
-    // Set Visibility Toggle
+    // Set Visibility Toggle & Level
     const editIsPublic = document.getElementById('userIsPublic');
+    const visibilityLevelOptions = document.getElementById('visibilityLevelOptions');
+    const specificUsersPicker = document.getElementById('specificUsersPicker');
+
     if (editIsPublic) {
-        // Users are public by default
-        editIsPublic.checked = user.isPublic !== false;
+        // Determine if profile is public (true, 'all', 'followers', 'specific' are all "public on")
+        const isPublicValue = user.isPublic;
+        const isProfilePublic = isPublicValue !== false && isPublicValue !== 'private';
+        editIsPublic.checked = isProfilePublic;
+
+        // Show/hide visibility level options based on toggle
+        if (visibilityLevelOptions) {
+            visibilityLevelOptions.style.display = isProfilePublic ? 'block' : 'none';
+        }
+
+        // Set the correct radio button
+        let visibilityLevel = 'all'; // default
+        if (typeof isPublicValue === 'string') {
+            if (['all', 'followers', 'specific'].includes(isPublicValue)) {
+                visibilityLevel = isPublicValue;
+            }
+        }
+
+        const radioBtn = document.querySelector(`input[name="profileVisibility"][value="${visibilityLevel}"]`);
+        if (radioBtn) radioBtn.checked = true;
+
+        // Handle specific users display
+        if (specificUsersPicker) {
+            specificUsersPicker.style.display = visibilityLevel === 'specific' ? 'block' : 'none';
+        }
+
+        // Load allowed users list if available
+        window._selectedAllowedUsers = user.allowedViewers || [];
+        renderSelectedSpecificUsers();
+
+        // Toggle handler
+        editIsPublic.addEventListener('change', function () {
+            if (visibilityLevelOptions) {
+                visibilityLevelOptions.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+
+        // Radio button handlers
+        document.querySelectorAll('input[name="profileVisibility"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                if (specificUsersPicker) {
+                    specificUsersPicker.style.display = this.value === 'specific' ? 'block' : 'none';
+                }
+                // Highlight selected option
+                document.querySelectorAll('.visibility-radio-item').forEach(item => {
+                    item.style.borderColor = 'rgba(255,255,255,0.06)';
+                    item.style.background = 'rgba(255,255,255,0.02)';
+                });
+                this.closest('.visibility-radio-item').style.borderColor = 'var(--accent-gold, #C67B4B)';
+                this.closest('.visibility-radio-item').style.background = 'rgba(198,123,75,0.08)';
+            });
+        });
+
+        // Highlight currently selected radio
+        const currentRadio = document.querySelector(`input[name="profileVisibility"]:checked`);
+        if (currentRadio) {
+            const item = currentRadio.closest('.visibility-radio-item');
+            if (item) {
+                item.style.borderColor = 'var(--accent-gold, #C67B4B)';
+                item.style.background = 'rgba(198,123,75,0.08)';
+            }
+        }
+
+        // Setup specific users search
+        setupSpecificUsersSearch();
     }
 
     editUserModal.classList.add('show');
@@ -736,8 +810,23 @@ async function handleEditUserSubmit(e) {
         displayName: displayName,
         email: email,
         phoneNumber: phoneNumber,
-        isPublic: document.getElementById('userIsPublic')?.checked
     };
+
+    // Determine profile visibility
+    const isPublicToggle = document.getElementById('userIsPublic');
+    if (isPublicToggle && !isPublicToggle.checked) {
+        updateData.isPublic = false;
+    } else {
+        // Get the selected visibility level
+        const selectedVisibility = document.querySelector('input[name="profileVisibility"]:checked');
+        const level = selectedVisibility ? selectedVisibility.value : 'all';
+        updateData.isPublic = level; // 'all', 'followers', or 'specific'
+
+        // If specific, include the allowed users list
+        if (level === 'specific') {
+            updateData.allowedViewers = window._selectedAllowedUsers || [];
+        }
+    }
 
     if (newUsername !== currentUser) {
         updateData.newUsername = newUsername;
@@ -804,6 +893,150 @@ async function handleEditUserSubmit(e) {
         handleProfilePic();
     }
 }
+
+// ===== Profile Visibility: Specific Users Helpers =====
+// Initialize the selected users array
+if (!window._selectedAllowedUsers) {
+    window._selectedAllowedUsers = [];
+}
+
+// Render selected specific users as tags
+function renderSelectedSpecificUsers() {
+    const container = document.getElementById('selectedSpecificUsers');
+    if (!container) return;
+
+    const users = window._selectedAllowedUsers || [];
+
+    if (users.length === 0) {
+        container.innerHTML = '<span style="font-size: 0.8rem; color: var(--text-secondary); padding: 4px;">No users selected yet</span>';
+        return;
+    }
+
+    container.innerHTML = users.map(u => `
+        <span class="specific-user-tag" style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; background: linear-gradient(135deg, rgba(198,123,75,0.2), rgba(198,123,75,0.1)); border: 1px solid rgba(198,123,75,0.3); font-size: 0.8rem; color: var(--text-primary);">
+            <span>${u.displayName || u.username}</span>
+            <button type="button" onclick="removeSpecificUser('${u.username}')" 
+                style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 1rem; padding: 0 2px; line-height: 1;">×</button>
+        </span>
+    `).join('');
+}
+
+// Remove a user from specific users list
+window.removeSpecificUser = function (username) {
+    window._selectedAllowedUsers = (window._selectedAllowedUsers || []).filter(u => u.username !== username);
+    renderSelectedSpecificUsers();
+};
+
+// Setup the search for adding specific users
+function setupSpecificUsersSearch() {
+    const searchInput = document.getElementById('specificUsersSearch');
+    const resultsContainer = document.getElementById('specificUsersSearchResults');
+    if (!searchInput || !resultsContainer) return;
+
+    let searchTimeout;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim().toLowerCase();
+
+        if (query.length < 2) {
+            resultsContainer.style.display = 'none';
+            resultsContainer.innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                // Try backend search first
+                const token = sessionStorage.getItem('authToken');
+                let matchedUsers = [];
+
+                if (token) {
+                    try {
+                        const res = await fetch(`${API_URL}/users/public`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (res.ok) {
+                            const allUsers = await res.json();
+                            matchedUsers = allUsers.filter(u =>
+                                (u.username.toLowerCase().includes(query) ||
+                                    (u.displayName || '').toLowerCase().includes(query)) &&
+                                u.username !== getCurrentUser()
+                            ).slice(0, 8);
+                        }
+                    } catch (e) {
+                        console.log('Backend search unavailable, using local');
+                    }
+                }
+
+                // Fallback to local users
+                if (matchedUsers.length === 0) {
+                    const localUsers = getAllUsers();
+                    matchedUsers = localUsers.filter(u =>
+                        (u.username.toLowerCase().includes(query) ||
+                            (u.displayName || '').toLowerCase().includes(query)) &&
+                        u.username !== getCurrentUser()
+                    ).slice(0, 8);
+                }
+
+                if (matchedUsers.length === 0) {
+                    resultsContainer.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--text-secondary); font-size: 0.85rem;">No users found</div>';
+                } else {
+                    const alreadySelected = (window._selectedAllowedUsers || []).map(u => u.username);
+
+                    resultsContainer.innerHTML = matchedUsers.map(u => {
+                        const isSelected = alreadySelected.includes(u.username);
+                        return `
+                            <div class="specific-user-result" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: ${isSelected ? 'default' : 'pointer'}; border-bottom: 1px solid rgba(255,255,255,0.04); opacity: ${isSelected ? '0.5' : '1'}; transition: background 0.2s;"
+                                ${!isSelected ? `onclick="addSpecificUser('${u.username}', '${(u.displayName || u.username).replace(/'/g, "\\'")}')"` : ''}
+                                onmouseenter="if(!${isSelected})this.style.background='rgba(198,123,75,0.1)'"
+                                onmouseleave="this.style.background='transparent'">
+                                <div style="width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #C67B4B, #8B4513); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: white; flex-shrink: 0;">
+                                    ${u.profilePicture
+                                ? `<img src="${u.profilePicture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`
+                                : (u.displayName || u.username).charAt(0).toUpperCase()}
+                                </div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">${u.displayName || u.username}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">@${u.username}</div>
+                                </div>
+                                ${isSelected ? '<span style="font-size: 0.75rem; color: var(--accent-gold);">✓ Added</span>' : '<span style="font-size: 0.75rem; color: var(--accent-gold);">+ Add</span>'}
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                resultsContainer.style.display = 'block';
+            } catch (err) {
+                console.error('Error searching users:', err);
+            }
+        }, 300);
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.style.display = 'none';
+        }
+    });
+}
+
+// Add a user to the specific users list
+window.addSpecificUser = function (username, displayName) {
+    if (!window._selectedAllowedUsers) window._selectedAllowedUsers = [];
+
+    // Don't add duplicates
+    if (window._selectedAllowedUsers.some(u => u.username === username)) return;
+
+    window._selectedAllowedUsers.push({ username, displayName });
+    renderSelectedSpecificUsers();
+
+    // Refresh search results to show updated state
+    const searchInput = document.getElementById('specificUsersSearch');
+    if (searchInput && searchInput.value.trim()) {
+        searchInput.dispatchEvent(new Event('input'));
+    }
+};
 
 // Show Notification Helper (if not already accessible, duplicate here or ensure it's available)
 function showNotification(message, type = 'success') {
@@ -1043,6 +1276,16 @@ function checkAuth() {
                 adminDashboardBtn.style.display = 'inline-flex';
             } else {
                 adminDashboardBtn.style.display = 'none';
+            }
+        }
+
+        // Hide user dashboard button if admin
+        const userDashboardBtn = document.getElementById('userDashboardBtn');
+        if (userDashboardBtn) {
+            if (isAdmin()) {
+                userDashboardBtn.style.display = 'none';
+            } else {
+                userDashboardBtn.style.display = 'inline-flex';
             }
         }
 
@@ -1302,13 +1545,15 @@ async function loadChefs() {
     try {
         grid.innerHTML = '<div class="loading">Loading chefs...</div>';
 
-        const response = await fetch(`${API_URL}/users/public`);
+        const token = sessionStorage.getItem('authToken');
+        const fetchOptions = token ? { headers: { 'Authorization': `Bearer ${token}` } } : {};
+        const response = await fetch(`${API_URL}/users/public`, fetchOptions);
         let chefs = response.ok ? await response.json() : [];
 
         if (!Array.isArray(chefs)) chefs = [];
 
-        // Filter out admins
-        chefs = chefs.filter(c => c.username !== 'admin' && c.isPublic !== false);
+        // Filter out admins (private profiles are now handled server-side based on admin status)
+        chefs = chefs.filter(c => c.username !== 'admin');
 
         // Search logic
         if (searchInput && searchInput.value.trim()) {
@@ -1836,7 +2081,7 @@ function createRecipeCard(recipe, isPublicFeed = false) {
 // Handle Share Recipe
 async function handleShareRecipe(recipe) {
     if (!recipe) return;
-    
+
     // Construct the direct link to this recipe
     const username = recipe.author?.username || recipe.authorUsername || getCurrentUser();
     const url = `${window.location.origin}/chef-profile.html?username=${username}&post=${recipe.id}`;
@@ -3029,7 +3274,9 @@ async function loadMyChefs() {
         let followed = getFollowedChefs();
 
         // Sync with server for latest info (gallery, pic, etc.)
-        const pubResponse = await fetch(`${API_URL}/users/public`);
+        const pubToken = sessionStorage.getItem('authToken');
+        const pubFetchOptions = pubToken ? { headers: { 'Authorization': `Bearer ${pubToken}` } } : {};
+        const pubResponse = await fetch(`${API_URL}/users/public`, pubFetchOptions);
         if (pubResponse.ok) {
             const allProfiles = await pubResponse.json();
 
@@ -3822,4 +4069,666 @@ function initQuickPost() {
             quickPostBtn.textContent = originalText;
         }
     };
+}
+
+/**
+ * Randomizes the hero image with a smooth transition
+ */
+function randomizeHeroImage() {
+    const heroImg = document.getElementById('heroChefImg');
+    if (!heroImg) return;
+
+    const heroImages = [
+        '/new-chef-hero.png',
+        '/premium-chef-hero.png',
+        '/hero-chef.png',
+        '/hero-chef-premium.png',
+        '/my-chef-hero.png',
+        '/another-chef-premium.png',
+        '/new-premium-hero.png',
+        '/chef-hero.png',
+        '/master-chef-header.png',
+        '/artisan-pastry-chef.png',
+        '/modern-chef-studio.png',
+        '/chef-rooftop-garden.png',
+        '/chef-fire-cooking.png',
+        '/fruit-spread-header.png'
+    ];
+
+    // Pick a random image different from current if possible
+    let currentSrc = heroImg.src.split('/').pop();
+    let availableImages = heroImages.filter(img => img.split('/').pop() !== currentSrc);
+    const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)] || heroImages[0];
+
+    // Premium transition
+    heroImg.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+    heroImg.style.transform = 'scale(1.1)';
+    heroImg.style.opacity = '0.3';
+    heroImg.style.filter = 'blur(10px)';
+
+    setTimeout(() => {
+        heroImg.src = randomImg;
+        heroImg.onload = () => {
+            heroImg.style.transform = 'scale(1)';
+            heroImg.style.opacity = '1';
+            heroImg.style.filter = 'blur(0)';
+        };
+    }, 400);
+}
+
+// ===== BOOK TAB FUNCTIONS =====
+let currentBookId = null;
+let currentBookRecipes = [];
+const BOOK_API = '/api/books';
+
+// Theme color map
+const bookThemeColors = {
+    classic: '#C67B4B',
+    modern: '#667eea',
+    minimal: '#2c3e50',
+    rustic: '#8B6914'
+};
+
+async function loadBooks() {
+    const grid = document.getElementById('booksGrid');
+    const empty = document.getElementById('booksEmptyState');
+    const listView = document.getElementById('bookListView');
+    const detailView = document.getElementById('bookDetailView');
+    if (!grid) return;
+
+    // Show list view, hide detail
+    listView.style.display = '';
+    detailView.style.display = 'none';
+    currentBookId = null;
+
+    const token = sessionStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+        grid.innerHTML = '<div class="loading">Loading books...</div>';
+        const res = await fetch(BOOK_API, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        const books = data.books || [];
+
+        grid.innerHTML = '';
+        if (books.length === 0) {
+            empty.classList.add('show');
+            grid.style.display = 'none';
+        } else {
+            empty.classList.remove('show');
+            grid.style.display = '';
+            books.forEach(book => {
+                grid.appendChild(createBookCard(book));
+            });
+        }
+    } catch (err) {
+        console.error('Load books error:', err);
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Failed to load books.</p>';
+    }
+}
+
+function createBookCard(book) {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.onclick = () => openBookDetail(book.id);
+
+    const themeColor = bookThemeColors[book.theme] || bookThemeColors.classic;
+    const coverHtml = book.cover_photo
+        ? `<img class="book-card-cover" src="${book.cover_photo}" alt="${book.title}">`
+        : `<div class="book-card-cover-placeholder">📚</div>`;
+
+    const date = new Date(book.updated_at || book.created_at);
+    const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+    card.innerHTML = `
+        <div class="book-card-theme-dot" style="background: ${themeColor};"></div>
+        ${coverHtml}
+        <div class="book-card-body">
+            <div class="book-card-title">${book.title}</div>
+            <div class="book-card-meta">
+                <span class="book-card-count">📖 ${book.recipe_count || 0} recipes</span>
+                <span class="book-card-date">${dateStr}</span>
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+async function openBookDetail(bookId) {
+    const token = sessionStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+        const res = await fetch(`${BOOK_API}/${bookId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Failed to load book');
+        const data = await res.json();
+
+        currentBookId = bookId;
+        currentBookRecipes = data.recipes || [];
+
+        const listView = document.getElementById('bookListView');
+        const detailView = document.getElementById('bookDetailView');
+        listView.style.display = 'none';
+        detailView.style.display = '';
+
+        // Fill editor
+        document.getElementById('bookDetailTitle').textContent = data.book.title;
+        document.getElementById('bookTitleInput').value = data.book.title;
+        document.getElementById('bookDescInput').value = data.book.description || '';
+
+        // Cover
+        const coverPreview = document.getElementById('bookCoverPreview');
+        const coverPlaceholder = document.getElementById('bookCoverPlaceholder');
+        if (data.book.cover_photo) {
+            coverPreview.src = data.book.cover_photo;
+            coverPreview.style.display = 'block';
+            coverPlaceholder.style.display = 'none';
+        } else {
+            coverPreview.style.display = 'none';
+            coverPlaceholder.style.display = '';
+        }
+
+        // Theme buttons
+        document.querySelectorAll('.book-theme-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.theme === (data.book.theme || 'classic'));
+        });
+
+        renderBookRecipesList();
+        setupBookDetailListeners();
+    } catch (err) {
+        console.error('Open book error:', err);
+        showNotification('❌ Failed to load book', 'error');
+    }
+}
+
+function renderBookRecipesList() {
+    const list = document.getElementById('bookRecipesList');
+    const empty = document.getElementById('bookRecipesEmpty');
+    if (!list) return;
+
+    list.innerHTML = '';
+    if (currentBookRecipes.length === 0) {
+        empty.style.display = '';
+        list.style.display = 'none';
+        return;
+    }
+
+    empty.style.display = 'none';
+    list.style.display = '';
+
+    currentBookRecipes.forEach((r, idx) => {
+        const item = document.createElement('div');
+        item.className = 'book-recipe-item';
+
+        const photoHtml = r.photo
+            ? `<img class="book-recipe-photo" src="${r.photo}" alt="${r.name}">`
+            : `<div class="book-recipe-photo-placeholder">${getCategoryEmoji(r.category)}</div>`;
+
+        item.innerHTML = `
+            <div class="book-recipe-order">${idx + 1}</div>
+            ${photoHtml}
+            <div class="book-recipe-info">
+                <div class="book-recipe-name">${r.name}</div>
+                <div class="book-recipe-category">${r.category || ''} • ${getDifficultyText(r.difficulty)}</div>
+            </div>
+            <div class="book-recipe-actions">
+                <button title="Move Up" onclick="moveBookRecipe(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3"' : ''}>⬆️</button>
+                <button title="Move Down" onclick="moveBookRecipe(${idx}, 1)" ${idx === currentBookRecipes.length - 1 ? 'disabled style="opacity:0.3"' : ''}>⬇️</button>
+                <button class="btn-remove-recipe" title="Remove" onclick="removeBookRecipe(${r.id})">✕</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+let bookDetailListenersSet = false;
+function setupBookDetailListeners() {
+    if (bookDetailListenersSet) return;
+    bookDetailListenersSet = true;
+
+    // Back button
+    document.getElementById('bookBackBtn')?.addEventListener('click', loadBooks);
+
+    // Cover upload
+    const coverUpload = document.getElementById('bookCoverUpload');
+    const coverInput = document.getElementById('bookCoverInput');
+    if (coverUpload && coverInput) {
+        coverUpload.onclick = () => coverInput.click();
+        coverInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 500 * 1024) {
+                showNotification('❌ Cover image must be under 500KB', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('bookCoverPreview').src = ev.target.result;
+                document.getElementById('bookCoverPreview').style.display = 'block';
+                document.getElementById('bookCoverPlaceholder').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        };
+    }
+
+    // Theme selector
+    document.querySelectorAll('.book-theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.book-theme-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    // Save meta
+    document.getElementById('bookSaveMetaBtn')?.addEventListener('click', saveBookMeta);
+
+    // Add recipes
+    document.getElementById('bookAddRecipesBtn')?.addEventListener('click', openRecipePicker);
+
+    // Delete book
+    document.getElementById('deleteBookBtn')?.addEventListener('click', deleteCurrentBook);
+
+    // Preview
+    document.getElementById('bookPreviewBtn')?.addEventListener('click', openBookPreview);
+
+    // Export PDF
+    document.getElementById('bookExportPdfBtn')?.addEventListener('click', exportBookPdf);
+
+    // Recipe picker modal close
+    document.getElementById('closeRecipePickerModal')?.addEventListener('click', () => {
+        document.getElementById('bookRecipePickerModal').classList.remove('show');
+    });
+    document.getElementById('bookRecipePickerModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('bookRecipePickerModal')) e.target.classList.remove('show');
+    });
+
+    // Picker add button
+    document.getElementById('recipePickerAddBtn')?.addEventListener('click', addSelectedRecipes);
+
+    // Preview modal close
+    document.getElementById('closeBookPreviewModal')?.addEventListener('click', () => {
+        document.getElementById('bookPreviewModal').classList.remove('show');
+    });
+    document.getElementById('bookPreviewModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('bookPreviewModal')) e.target.classList.remove('show');
+    });
+
+    // Create book modal
+    const openCreateModal = () => {
+        document.getElementById('newBookTitle').value = '';
+        document.getElementById('newBookDesc').value = '';
+        document.getElementById('createBookModal').classList.add('show');
+    };
+    document.getElementById('createBookBtn')?.addEventListener('click', openCreateModal);
+    document.getElementById('createBookEmptyBtn')?.addEventListener('click', openCreateModal);
+    document.getElementById('closeCreateBookModal')?.addEventListener('click', () => {
+        document.getElementById('createBookModal').classList.remove('show');
+    });
+    document.getElementById('createBookModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('createBookModal')) e.target.classList.remove('show');
+    });
+    document.getElementById('createBookSubmitBtn')?.addEventListener('click', createNewBook);
+}
+
+// Initialize book listeners on first tab visit
+setupBookDetailListeners();
+
+async function saveBookMeta() {
+    if (!currentBookId) return;
+    const token = sessionStorage.getItem('authToken');
+    const title = document.getElementById('bookTitleInput').value.trim();
+    const description = document.getElementById('bookDescInput').value.trim();
+    const theme = document.querySelector('.book-theme-btn.active')?.dataset.theme || 'classic';
+    const coverImg = document.getElementById('bookCoverPreview');
+    const cover_photo = coverImg?.style.display !== 'none' ? coverImg.src : null;
+
+    try {
+        const res = await fetch(`${BOOK_API}/${currentBookId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ title, description, theme, cover_photo })
+        });
+        if (!res.ok) throw new Error('Update failed');
+        document.getElementById('bookDetailTitle').textContent = title;
+        showNotification('✅ Book updated!', 'success');
+    } catch (err) {
+        console.error('Save book meta error:', err);
+        showNotification('❌ Failed to save changes', 'error');
+    }
+}
+
+async function createNewBook() {
+    const token = sessionStorage.getItem('authToken');
+    const title = document.getElementById('newBookTitle').value.trim();
+    const description = document.getElementById('newBookDesc').value.trim();
+    if (!title) { showNotification('❌ Please enter a book title', 'error'); return; }
+
+    try {
+        const res = await fetch(BOOK_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ title, description })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            showNotification(`❌ ${data.message || data.error}`, 'error');
+            if (data.code === 'LIMIT_REACHED') {
+                setTimeout(() => showUpgradePrompt('default'), 500);
+            }
+            return;
+        }
+        document.getElementById('createBookModal').classList.remove('show');
+        showNotification('✅ Book created!', 'success');
+        loadBooks();
+    } catch (err) {
+        console.error('Create book error:', err);
+        showNotification('❌ Failed to create book', 'error');
+    }
+}
+
+async function deleteCurrentBook() {
+    if (!currentBookId) return;
+    if (!confirm('Are you sure you want to delete this book? This cannot be undone.')) return;
+    const token = sessionStorage.getItem('authToken');
+    try {
+        await fetch(`${BOOK_API}/${currentBookId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        showNotification('🗑️ Book deleted', 'success');
+        loadBooks();
+    } catch (err) {
+        showNotification('❌ Failed to delete book', 'error');
+    }
+}
+
+async function openRecipePicker() {
+    if (!currentBookId) return;
+    const token = sessionStorage.getItem('authToken');
+    const list = document.getElementById('recipePickerList');
+    const searchInput = document.getElementById('recipePickerSearch');
+    list.innerHTML = '<p style="text-align:center;padding:20px">Loading...</p>';
+    document.getElementById('bookRecipePickerModal').classList.add('show');
+    document.getElementById('recipePickerCount').textContent = '0';
+    if (searchInput) searchInput.value = '';
+
+    try {
+        const res = await fetch(`${BOOK_API}/${currentBookId}/available-recipes`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const recipes = await res.json();
+        window._pickerRecipes = recipes;
+        renderPickerList(recipes);
+
+        if (searchInput) {
+            searchInput.oninput = () => {
+                const q = searchInput.value.toLowerCase().trim();
+                const filtered = recipes.filter(r => r.name.toLowerCase().includes(q) || (r.category || '').toLowerCase().includes(q));
+                renderPickerList(filtered);
+            };
+        }
+    } catch (err) {
+        list.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Failed to load recipes.</p>';
+    }
+}
+
+function renderPickerList(recipes) {
+    const list = document.getElementById('recipePickerList');
+    list.innerHTML = '';
+
+    if (recipes.length === 0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:30px">No recipes found. Add recipes in the My Recipes tab first!</p>';
+        return;
+    }
+
+    recipes.forEach(r => {
+        const item = document.createElement('div');
+        const inBook = r.in_book === true || r.in_book === 't';
+        item.className = `recipe-picker-item${inBook ? ' in-book' : ''}`;
+        item.dataset.id = r.id;
+
+        const photoHtml = r.photo
+            ? `<img class="recipe-picker-photo" src="${r.photo}" alt="${r.name}">`
+            : `<div class="recipe-picker-photo-placeholder">${getCategoryEmoji(r.category)}</div>`;
+
+        item.innerHTML = `
+            <div class="recipe-picker-checkbox">${inBook ? '✓' : ''}</div>
+            ${photoHtml}
+            <div class="recipe-picker-info">
+                <div class="recipe-picker-name">${r.name}</div>
+                <div class="recipe-picker-detail">${r.category || 'Uncategorized'}${inBook ? ' • Already in book' : ''}</div>
+            </div>
+        `;
+
+        if (!inBook) {
+            item.onclick = () => {
+                item.classList.toggle('selected');
+                const cb = item.querySelector('.recipe-picker-checkbox');
+                cb.textContent = item.classList.contains('selected') ? '✓' : '';
+                updatePickerCount();
+            };
+        }
+        list.appendChild(item);
+    });
+}
+
+function updatePickerCount() {
+    const count = document.querySelectorAll('.recipe-picker-item.selected').length;
+    document.getElementById('recipePickerCount').textContent = count;
+}
+
+async function addSelectedRecipes() {
+    const selected = document.querySelectorAll('.recipe-picker-item.selected');
+    if (selected.length === 0) { showNotification('Select at least one recipe', 'error'); return; }
+    const recipeIds = Array.from(selected).map(el => parseInt(el.dataset.id));
+    const token = sessionStorage.getItem('authToken');
+
+    try {
+        const res = await fetch(`${BOOK_API}/${currentBookId}/recipes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ recipeIds })
+        });
+        if (!res.ok) throw new Error('Failed');
+        document.getElementById('bookRecipePickerModal').classList.remove('show');
+        showNotification(`✅ Added ${recipeIds.length} recipe(s)!`, 'success');
+        openBookDetail(currentBookId);
+    } catch (err) {
+        showNotification('❌ Failed to add recipes', 'error');
+    }
+}
+
+window.removeBookRecipe = async function(recipeId) {
+    if (!currentBookId) return;
+    const token = sessionStorage.getItem('authToken');
+    try {
+        await fetch(`${BOOK_API}/${currentBookId}/recipes/${recipeId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        currentBookRecipes = currentBookRecipes.filter(r => r.id !== recipeId);
+        renderBookRecipesList();
+        showNotification('Recipe removed from book', 'success');
+    } catch (err) {
+        showNotification('❌ Failed to remove recipe', 'error');
+    }
+};
+
+window.moveBookRecipe = async function(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= currentBookRecipes.length) return;
+
+    // Swap in array
+    [currentBookRecipes[index], currentBookRecipes[newIndex]] = [currentBookRecipes[newIndex], currentBookRecipes[index]];
+    renderBookRecipesList();
+
+    // Save new order
+    const token = sessionStorage.getItem('authToken');
+    const recipeOrder = currentBookRecipes.map((r, i) => ({ recipeId: r.id, orderIndex: i }));
+    try {
+        await fetch(`${BOOK_API}/${currentBookId}/reorder`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ recipeOrder })
+        });
+    } catch (err) {
+        console.error('Reorder error:', err);
+    }
+};
+
+function openBookPreview() {
+    const body = document.getElementById('bookPreviewBody');
+    const title = document.getElementById('bookTitleInput').value.trim() || 'My Chef Book';
+    const desc = document.getElementById('bookDescInput').value.trim();
+    const coverImg = document.getElementById('bookCoverPreview');
+    const hasCover = coverImg?.style.display !== 'none' && coverImg?.src;
+
+    let html = '';
+
+    // Cover page
+    html += `<div class="book-preview-page book-preview-cover">`;
+    if (hasCover) {
+        html += `<img class="book-preview-cover-img" src="${coverImg.src}" alt="Cover">`;
+    } else {
+        html += `<div class="book-preview-cover-placeholder">📚</div>`;
+    }
+    html += `<h1>${title}</h1>`;
+    if (desc) html += `<p>${desc}</p>`;
+    html += `<p style="opacity:0.5;font-size:0.9rem">${new Date().toLocaleDateString()}</p>`;
+    html += `</div>`;
+
+    // Table of Contents
+    if (currentBookRecipes.length > 0) {
+        html += `<div class="book-preview-page book-preview-toc"><h2>Table of Contents</h2>`;
+        currentBookRecipes.forEach((r, i) => {
+            html += `<div class="toc-item"><span><span class="toc-number">${i + 1}.</span> ${r.name}</span><span>${r.category || ''}</span></div>`;
+        });
+        html += `</div>`;
+
+        // Recipe pages
+        currentBookRecipes.forEach((r, i) => {
+            html += `<div class="book-preview-page book-preview-recipe">`;
+            html += `<h2>${getCategoryEmoji(r.category)} ${r.name}</h2>`;
+            html += `<div class="book-preview-recipe-meta">`;
+            html += `<span>📂 ${r.category || 'Uncategorized'}</span>`;
+            html += `<span>⏱️ Prep: ${r.prep_time || 0}min</span>`;
+            html += `<span>🔥 Cook: ${r.cook_time || 0}min</span>`;
+            html += `<span>${getDifficultyText(r.difficulty)}</span>`;
+            html += `</div>`;
+            if (r.photo) html += `<img class="book-preview-recipe-photo" src="${r.photo}" alt="${r.name}">`;
+            if (r.ingredients) html += `<h3>🧂 Ingredients</h3><p>${r.ingredients}</p>`;
+            if (r.instructions) html += `<h3>📝 Instructions</h3><p>${r.instructions}</p>`;
+            if (r.notes) html += `<h3>💡 Chef's Notes</h3><p>${r.notes}</p>`;
+            html += `</div>`;
+        });
+    }
+
+    body.innerHTML = html;
+    document.getElementById('bookPreviewModal').classList.add('show');
+}
+
+function exportBookPdf() {
+    if (!isPremium()) {
+        showUpgradePrompt('pdf_export');
+        return;
+    }
+    if (currentBookRecipes.length === 0) {
+        showNotification('Add recipes to your book first!', 'error');
+        return;
+    }
+
+    const title = document.getElementById('bookTitleInput').value.trim() || 'My Chef Book';
+    const theme = document.querySelector('.book-theme-btn.active')?.dataset.theme || 'classic';
+    const colors = { classic: [198,123,75], modern: [102,126,234], minimal: [44,62,80], rustic: [139,105,20] };
+    const c = colors[theme] || colors.classic;
+
+    const doc = new jsPDF();
+
+    // Cover
+    doc.setFillColor(c[0], c[1], c[2]);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(36);
+    doc.setFont('helvetica', 'bold');
+    const titleLines = doc.splitTextToSize(title, 160);
+    doc.text(titleLines, 105, 120, { align: 'center' });
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${currentBookRecipes.length} Recipes`, 105, 160, { align: 'center' });
+    doc.text(new Date().toLocaleDateString(), 105, 280, { align: 'center' });
+
+    // TOC
+    doc.addPage();
+    doc.setTextColor(c[0], c[1], c[2]);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Table of Contents', 20, 30);
+    doc.setTextColor(60, 60, 60);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    currentBookRecipes.forEach((r, i) => {
+        doc.text(`${i + 1}. ${r.name}`, 25, 50 + i * 10);
+    });
+
+    // Recipe pages
+    currentBookRecipes.forEach((r, i) => {
+        doc.addPage();
+        doc.setFillColor(c[0], c[1], c[2]);
+        doc.rect(0, 0, 210, 35, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text(r.name, 15, 23);
+
+        let y = 45;
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${r.category || ''} | Prep: ${r.prep_time || 0}min | Cook: ${r.cook_time || 0}min | ${r.difficulty || 'Medium'}`, 15, y);
+        y += 15;
+
+        if (r.ingredients) {
+            doc.setTextColor(c[0], c[1], c[2]);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Ingredients', 15, y); y += 8;
+            doc.setTextColor(60, 60, 60);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const ingLines = doc.splitTextToSize(r.ingredients, 180);
+            doc.text(ingLines, 15, y); y += ingLines.length * 5 + 10;
+        }
+        if (r.instructions) {
+            if (y > 240) { doc.addPage(); y = 20; }
+            doc.setTextColor(c[0], c[1], c[2]);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Instructions', 15, y); y += 8;
+            doc.setTextColor(60, 60, 60);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const insLines = doc.splitTextToSize(r.instructions, 180);
+            doc.text(insLines, 15, y); y += insLines.length * 5 + 10;
+        }
+        if (r.notes) {
+            if (y > 250) { doc.addPage(); y = 20; }
+            doc.setTextColor(c[0], c[1], c[2]);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text("Chef's Notes", 15, y); y += 8;
+            doc.setTextColor(60, 60, 60);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            const noteLines = doc.splitTextToSize(r.notes, 180);
+            doc.text(noteLines, 15, y);
+        }
+
+        doc.setTextColor(150, 150, 150);
+        doc.setFontSize(9);
+        doc.text(`Recipe ${i + 1} of ${currentBookRecipes.length}`, 105, 290, { align: 'center' });
+    });
+
+    const safeTitle = title.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    doc.save(`${safeTitle}.pdf`);
+    showNotification('📄 Book exported as PDF!', 'success');
 }

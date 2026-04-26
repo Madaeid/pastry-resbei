@@ -22,9 +22,57 @@ import dailyMenuRoutes from './routes/dailyMenu.js';
 import cvRoutes from './routes/cv.js'; // CV routes
 import storeRoutes from './routes/store.js'; // Store marketplace routes
 import walletRoutes from './routes/wallet.js'; // Wallet & transfers
+import booksRoutes from './routes/books.js'; // Chef Book portfolio
+
+import { getDatabase } from './database/db.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// ===== Database Migrations =====
+async function runMigrations() {
+    try {
+        const db = getDatabase();
+        
+        // Migration: Convert is_public from BOOLEAN to TEXT and add allowed_viewers
+        try {
+            // Check if is_public is still boolean type
+            const colCheck = await db.query(`
+                SELECT data_type FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'is_public'
+            `);
+            
+            if (colCheck.rows.length > 0 && colCheck.rows[0].data_type === 'boolean') {
+                console.log('🔄 Migrating is_public from BOOLEAN to TEXT...');
+                await db.query(`
+                    ALTER TABLE users 
+                    ALTER COLUMN is_public TYPE TEXT USING CASE WHEN is_public = true THEN 'all' WHEN is_public = false THEN 'private' ELSE 'all' END
+                `);
+                await db.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
+                console.log('✅ is_public column migrated to TEXT');
+            }
+            
+            // Add allowed_viewers column if it doesn't exist
+            const viewersCheck = await db.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'allowed_viewers'
+            `);
+            
+            if (viewersCheck.rows.length === 0) {
+                await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
+                console.log('✅ allowed_viewers column added');
+            }
+        } catch (migErr) {
+            // Migration may fail if already done or table doesn't exist yet
+            console.log('Migration note:', migErr.message);
+        }
+    } catch (err) {
+        console.error('Migration error:', err.message);
+    }
+}
+
+// Run migrations on startup
+runMigrations();
 
 // ===== Middleware =====
 
@@ -69,6 +117,7 @@ app.use('/api/daily-menu', dailyMenuRoutes);
 app.use('/api/cv', cvRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/wallet', walletRoutes);
+app.use('/api/books', booksRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

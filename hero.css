@@ -1,8 +1,8 @@
 /* ===== Hero Section (Premium Design) ===== */
 .hero-section {
-    max-width: 1400px;
-    margin: 40px auto;
-    padding: 20px;
+    max-width: 2400px;
+    margin: 20px auto 40px;
+    padding: 0 20px;
     position: relative;
     z-index: 10;
 }
@@ -10,16 +10,14 @@
 .hero-content {
     display: flex;
     align-items: center;
-    gap: 60px;
     background: linear-gradient(145deg, rgba(30, 20, 12, 0.9), rgba(22, 15, 9, 0.95));
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-glow);
     border-radius: 40px;
-    padding: 40px 60px;
+    padding: 100px;
     box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5), 0 0 80px var(--shadow-color);
     overflow: hidden;
     position: relative;
-    min-height: 450px;
 }
 
 .hero-content::before {
@@ -78,15 +76,19 @@
 }
 
 .hero-image-wrapper {
-    flex: 1;
+    width: 80%;
+    height: 250px;
+    max-height: 30vh;
+    margin: 0 auto;
     position: relative;
-    height: 400px;
-    border-radius: 40px;
-    /* Increased for a more premium, rounded look */
+    border-radius: 28px;
     overflow: hidden;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.1);
     animation: heroScaleIn 1s cubic-bezier(0.4, 0, 0.2, 1) both;
+    flex: none;
+    cursor: zoom-in;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero-image {
@@ -94,12 +96,47 @@
     height: 100%;
     object-fit: cover;
     transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 40px;
-    /* Matching the wrapper for consistency */
+    border-radius: inherit;
 }
 
-.hero-image-wrapper:hover .hero-image {
-    transform: scale(1.1);
+.hero-image-wrapper:not(.zoomed):hover .hero-image {
+    transform: scale(1.05);
+}
+
+/* Zoom Functionality */
+.hero-image-wrapper.zoomed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    z-index: 9999;
+    border-radius: 0;
+    cursor: zoom-out;
+    background: rgba(10, 10, 10, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.hero-image-wrapper.zoomed .hero-image {
+    object-fit: contain;
+    max-width: 90vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.hero-image-wrapper.zoomed .hero-image-overlay,
+.hero-image-wrapper.zoomed .hero-title-overlay,
+.hero-image-wrapper.zoomed .refresh-hero-btn,
+.hero-image-wrapper.zoomed .hero-image-decoration {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .hero-title-overlay {
@@ -107,7 +144,7 @@
     bottom: 40px;
     left: 40px;
     z-index: 5;
-    font-size: 5rem;
+    font-size: 4rem;
     font-weight: 900;
     font-family: 'Playfair Display', serif;
     color: #f8f1e7;
@@ -200,7 +237,7 @@
     .hero-content {
         flex-direction: column;
         text-align: center;
-        padding: 50px 30px;
+        padding: 15px;
         min-height: auto;
     }
 
@@ -215,7 +252,7 @@
 
     .hero-image-wrapper {
         width: 100%;
-        height: 250px;
+        height: 180px;
         flex: none;
     }
 
@@ -485,4 +522,55 @@
     font-size: 0.85rem;
     color: var(--accent-orange);
     opacity: 0.9;
+}
+
+/* Refresh Hero Button */
+.refresh-hero-btn {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(30, 20, 12, 0.5);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 25;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    opacity: 0;
+    transform: scale(0.5) rotate(-90deg);
+}
+
+.hero-image-wrapper:hover .refresh-hero-btn {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+
+.refresh-hero-btn:hover {
+    background: var(--primary-gradient);
+    border-color: transparent;
+    transform: scale(1.15) rotate(180deg);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), 0 0 20px rgba(198, 123, 75, 0.3);
+}
+
+.refresh-hero-btn:active {
+    transform: scale(0.9) rotate(180deg);
+}
+
+@media (max-width: 992px) {
+    .refresh-hero-btn {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+        top: 15px;
+        right: 15px;
+    }
 }
