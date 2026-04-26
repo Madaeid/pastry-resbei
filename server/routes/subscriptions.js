@@ -576,8 +576,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                     );
 
                     if (existing.rows.length === 0) {
-                        const recipeResult = await db.query('SELECT price FROM store_recipes WHERE id = $1', [recipeId]);
-                        const pricePaid = recipeResult.rows[0]?.price || 0;
+                        const recipeResult = await db.query('SELECT seller_id, price, name FROM store_recipes WHERE id = $1', [recipeId]);
+                        const recipe = recipeResult.rows[0];
+                        const pricePaid = recipe?.price || 0;
+                        const sellerId = recipe?.seller_id;
 
                         await db.query(`
                             INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid, stripe_session_id)
@@ -590,11 +592,69 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         `, [
                             userId,
                             `TXN-RECIPE-${Date.now()}`,
-                            `Recipe #${recipeId}`,
+                            `Recipe: ${recipe?.name || recipeId}`,
                             pricePaid,
                             session.id
                         ]);
-                        console.log(`Recipe purchase fulfilled via webhook for user ${userId} - Recipe: ${recipeId}`);
+
+                        if (sellerId) {
+                            // Credit seller wallet
+                            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
+                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [pricePaid, sellerId]);
+                            
+                            // Record seller side transaction
+                            await db.query(`
+                                INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                                VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
+                            `, [null, sellerId, pricePaid, `Stripe Sale: "${recipe?.name || recipeId}"`, `STRIPE-REC-${session.id}`]);
+                        }
+
+                        console.log(`Recipe purchase fulfilled via webhook. Buyer: ${userId}, Seller: ${sellerId}, Recipe: ${recipeId}`);
+                    }
+                } else if (type === 'book_purchase') {
+                    const bookId = session.metadata.bookId;
+
+                    // Check if already processed
+                    const existing = await db.query(
+                        'SELECT id FROM book_purchases WHERE stripe_session_id = $1',
+                        [session.id]
+                    );
+
+                    if (existing.rows.length === 0) {
+                        const bookResult = await db.query('SELECT user_id, price, title FROM books WHERE id = $1', [bookId]);
+                        const book = bookResult.rows[0];
+                        const pricePaid = book?.price || 0;
+                        const sellerId = book?.user_id;
+
+                        await db.query(`
+                            INSERT INTO book_purchases (buyer_id, book_id, price_paid, stripe_session_id)
+                            VALUES ($1, $2, $3, $4)
+                        `, [userId, bookId, pricePaid, session.id]);
+
+                        await db.query(`
+                            INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+                            VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
+                        `, [
+                            userId,
+                            `TXN-BOOK-${Date.now()}`,
+                            `Book: ${book?.title || bookId}`,
+                            pricePaid,
+                            session.id
+                        ]);
+
+                        if (sellerId) {
+                            // Credit seller wallet
+                            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
+                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [pricePaid, sellerId]);
+                            
+                            // Record seller side transaction
+                            await db.query(`
+                                INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                                VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
+                            `, [null, sellerId, pricePaid, `Stripe Sale: "${book?.title || bookId}"`, `STRIPE-BOOK-${session.id}`]);
+                        }
+
+                        console.log(`Book purchase fulfilled via webhook. Buyer: ${userId}, Seller: ${sellerId}, Book: ${bookId}`);
                     }
                 } else {
                     const planId = session.metadata.planId;

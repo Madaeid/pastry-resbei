@@ -172,11 +172,53 @@ async function createRecipeCheckoutSession(userId, userEmail, recipe, successUrl
     return session;
 }
 
+// Create a Stripe Checkout session for a specific book
+async function createBookCheckoutSession(userId, userEmail, book, successUrl, cancelUrl) {
+    const separator = successUrl.includes('?') ? '&' : '?';
+    const fullSuccessUrl = `${successUrl}${separator}session_id={CHECKOUT_SESSION_ID}`;
+
+    const imageUrls = [];
+    if (book.cover_photo && book.cover_photo.startsWith('http')) {
+        imageUrls.push(book.cover_photo);
+    }
+
+    const priceInCents = Math.round(parseFloat(book.price) * 100);
+
+    const sessionConfig = {
+        payment_method_types: ['card'],
+        customer_email: userEmail,
+        mode: 'payment',
+        success_url: fullSuccessUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+            userId: userId.toString(),
+            bookId: book.id.toString(),
+            type: 'book_purchase'
+        },
+        line_items: [{
+            price_data: {
+                currency: 'usd',
+                product_data: {
+                    name: `Book: ${book.title}`,
+                    description: `One-time purchase of the complete book by ${book.author.name}`,
+                    ...(imageUrls.length > 0 && { images: imageUrls })
+                },
+                unit_amount: priceInCents,
+            },
+            quantity: 1,
+        }],
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
+    return session;
+}
+
 export {
     stripe,
     PLANS,
     createCheckoutSession,
     createRecipeCheckoutSession,
+    createBookCheckoutSession,
     verifyCheckoutSession,
     createPortalSession,
     constructWebhookEvent

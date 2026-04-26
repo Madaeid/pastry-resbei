@@ -3,6 +3,7 @@
 import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { createBookCheckoutSession, verifyCheckoutSession } from '../config/stripe.js';
 
 const router = express.Router();
 
@@ -50,7 +51,7 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { title, description, cover_photo, theme } = req.body;
+        const { title, description, cover_photo, theme, price } = req.body;
         const premium = await isPremiumUser(db, req.user.userId);
 
         // Free user limit: 1 book
@@ -67,15 +68,16 @@ router.post('/', authenticateToken, async (req, res) => {
         }
 
         const insertResult = await db.query(`
-            INSERT INTO books (user_id, title, description, cover_photo, theme)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO books (user_id, title, description, cover_photo, theme, price)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `, [
             req.user.userId,
             title || 'My Chef Book',
             description || '',
             cover_photo || null,
-            theme || 'classic'
+            theme || 'classic',
+            parseFloat(price) >= 0 ? parseFloat(price) : 0
         ]);
 
         res.status(201).json({ book: insertResult.rows[0] });
@@ -123,7 +125,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { title, description, cover_photo, theme } = req.body;
+        const { title, description, cover_photo, theme, price, is_public } = req.body;
 
         // Verify ownership
         const bookResult = await db.query('SELECT * FROM books WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
@@ -131,15 +133,19 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Book not found' });
         }
 
+        const priceVal = price !== undefined && price !== null && price !== '' ? parseFloat(price) : null;
+        const isPublicVal = is_public !== undefined ? is_public : null;
         await db.query(`
             UPDATE books 
             SET title = COALESCE($1, title),
                 description = COALESCE($2, description),
                 cover_photo = COALESCE($3, cover_photo),
                 theme = COALESCE($4, theme),
+                price = COALESCE($5, price),
+                is_public = COALESCE($6, is_public),
                 updated_at = NOW()
-            WHERE id = $5
-        `, [title, description, cover_photo, theme, req.params.id]);
+            WHERE id = $7
+        `, [title, description, cover_photo, theme, priceVal, isPublicVal, req.params.id]);
 
         const updatedResult = await db.query('SELECT * FROM books WHERE id = $1', [req.params.id]);
         res.json({ book: updatedResult.rows[0] });
@@ -283,6 +289,357 @@ router.get('/:id/available-recipes', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Get available recipes error:', error);
         res.status(500).json({ error: 'Failed to get recipes' });
+    }
+});
+// ===== BOOK MARKETPLACE ENDPOINTS =====
+
+// ===== Browse Public Books =====
+router.get('/public/browse', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT b.id, b.title, b.description, b.cover_photo, b.theme, b.price,
+                   b.created_at, b.updated_at,
+                   u.id as author_id, u.display_name as author_name,
+                   u.profile_picture as author_pic, u.username as author_username,
+                   COUNT(br.id) as recipe_count
+            FROM books b
+            JOIN users u ON b.user_id = u.id
+            LEFT JOIN book_recipes br ON b.id = br.book_id
+            WHERE b.is_public = true
+            GROUP BY b.id, u.id
+            ORDER BY b.created_at DESC
+        `);
+
+        res.json(result.rows.map(b => ({
+            id: b.id,
+            title: b.title,
+            description: b.description,
+            coverPhoto: b.cover_photo,
+            theme: b.theme,
+            price: parseFloat(b.price) || 0,
+            recipeCount: parseInt(b.recipe_count),
+            createdAt: b.created_at,
+            author: {
+                id: b.author_id,
+                name: b.author_name,
+                pic: b.author_pic,
+                username: b.author_username
+            }
+        })));
+    } catch (error) {
+        console.error('Browse public books error:', error);
+        res.status(500).json({ error: 'Failed to browse books' });
+    }
+});
+
+// ===== View a Public Book (preview or full if purchased) =====
+router.get('/public/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const bookResult = await db.query(`
+            SELECT b.*, u.display_name as author_name, u.profile_picture as author_pic,
+                   u.username as author_username, u.id as author_id
+            FROM books b
+            JOIN users u ON b.user_id = u.id
+            WHERE b.id = $1 AND b.is_public = true
+        `, [req.params.id]);
+
+        if (!bookResult.rows[0]) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        const book = bookResult.rows[0];
+        const isOwner = book.user_id === req.user.userId;
+        const bookPrice = parseFloat(book.price) || 0;
+
+        // Check if user has purchased
+        let hasPurchased = false;
+        if (!isOwner) {
+            const purchaseCheck = await db.query(
+                'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
+                [req.user.userId, req.params.id]
+            );
+            hasPurchased = purchaseCheck.rows.length > 0;
+        }
+
+        const canViewFull = isOwner || hasPurchased || bookPrice === 0;
+
+        // Get recipe count
+        const countResult = await db.query(
+            'SELECT COUNT(*) as c FROM book_recipes WHERE book_id = $1',
+            [req.params.id]
+        );
+        const recipeCount = parseInt(countResult.rows[0].c);
+
+        const baseResponse = {
+            id: book.id,
+            title: book.title,
+            description: book.description,
+            coverPhoto: book.cover_photo,
+            theme: book.theme,
+            price: bookPrice,
+            recipeCount,
+            isOwner,
+            hasPurchased,
+            canViewFull,
+            author: {
+                id: book.author_id,
+                name: book.author_name,
+                pic: book.author_pic,
+                username: book.author_username
+            }
+        };
+
+        if (canViewFull) {
+            // Get full recipes
+            const recipesResult = await db.query(`
+                SELECT br.order_index, br.section_title, br.notes as book_notes,
+                       r.id, r.name, r.category, r.difficulty, r.prep_time, r.cook_time,
+                       r.servings, r.photo, r.ingredients, r.instructions, r.notes
+                FROM book_recipes br
+                JOIN recipes r ON br.recipe_id = r.id
+                WHERE br.book_id = $1
+                ORDER BY br.order_index ASC
+            `, [req.params.id]);
+
+            baseResponse.recipes = recipesResult.rows;
+        }
+
+        res.json(baseResponse);
+    } catch (error) {
+        console.error('View public book error:', error);
+        res.status(500).json({ error: 'Failed to view book' });
+    }
+});
+
+// ===== Purchase a Book =====
+router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+
+        // Get book info
+        const bookResult = await db.query(
+            'SELECT id, user_id, title, price FROM books WHERE id = $1 AND is_public = true',
+            [req.params.id]
+        );
+        if (!bookResult.rows[0]) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        const book = bookResult.rows[0];
+        const bookPrice = parseFloat(book.price) || 0;
+
+        // Can't buy your own book
+        if (book.user_id === req.user.userId) {
+            return res.status(400).json({ error: 'You cannot purchase your own book' });
+        }
+
+        // Check if already purchased
+        const existingPurchase = await db.query(
+            'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
+            [req.user.userId, req.params.id]
+        );
+        if (existingPurchase.rows.length > 0) {
+            return res.status(400).json({ error: 'You have already purchased this book' });
+        }
+
+        // If free book, just record purchase
+        if (bookPrice === 0) {
+            await db.query(
+                'INSERT INTO book_purchases (buyer_id, book_id, price_paid) VALUES ($1, $2, 0)',
+                [req.user.userId, req.params.id]
+            );
+            return res.json({ success: true, message: `"${book.title}" added to your library!` });
+        }
+
+        // Check buyer wallet balance
+        let walletResult = await db.query(
+            'SELECT balance FROM wallet_balances WHERE user_id = $1',
+            [req.user.userId]
+        );
+        if (!walletResult.rows[0]) {
+            // Create wallet
+            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [req.user.userId]);
+            walletResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
+        }
+
+        const buyerBalance = parseFloat(walletResult.rows[0]?.balance || 0);
+        if (buyerBalance < bookPrice) {
+            return res.status(400).json({
+                error: 'Insufficient funds',
+                balance: buyerBalance,
+                price: bookPrice,
+                message: `You need $${bookPrice.toFixed(2)} but only have $${buyerBalance.toFixed(2)}. Please deposit funds first.`
+            });
+        }
+
+        // Deduct from buyer wallet
+        await db.query(
+            'UPDATE wallet_balances SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2',
+            [bookPrice, req.user.userId]
+        );
+
+        // Credit seller wallet
+        await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [book.user_id]);
+        await db.query(
+            'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+            [bookPrice, book.user_id]
+        );
+
+        // Record purchase
+        await db.query(
+            'INSERT INTO book_purchases (buyer_id, book_id, price_paid) VALUES ($1, $2, $3)',
+            [req.user.userId, req.params.id, bookPrice]
+        );
+
+        // Record wallet transactions
+        const refId = `BOOK-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        await db.query(
+            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+             VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
+            [req.user.userId, book.user_id, bookPrice, `Book Purchase: "${book.title}"`, refId]
+        );
+
+        // Get updated balance
+        const newBalResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
+        const newBalance = parseFloat(newBalResult.rows[0]?.balance || 0);
+
+        res.json({
+            success: true,
+            message: `Successfully purchased "${book.title}"!`,
+            balance: newBalance
+        });
+    } catch (error) {
+        console.error('Purchase book error:', error);
+        res.status(500).json({ error: 'Failed to purchase book' });
+    }
+});
+
+// ===== Get My Purchased Books =====
+router.get('/purchased/my', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const result = await db.query(`
+            SELECT b.id, b.title, b.description, b.cover_photo, b.theme, b.price,
+                   bp.price_paid, bp.purchased_at,
+                   u.display_name as author_name, u.profile_picture as author_pic,
+                   u.username as author_username, u.id as author_id,
+                   COUNT(br.id) as recipe_count
+            FROM book_purchases bp
+            JOIN books b ON bp.book_id = b.id
+            JOIN users u ON b.user_id = u.id
+            LEFT JOIN book_recipes br ON b.id = br.book_id
+            WHERE bp.buyer_id = $1
+            GROUP BY b.id, bp.price_paid, bp.purchased_at, u.id, u.display_name, u.profile_picture, u.username
+            ORDER BY bp.purchased_at DESC
+        `, [req.user.userId]);
+
+        res.json(result.rows.map(b => ({
+            id: b.id,
+            title: b.title,
+            description: b.description,
+            coverPhoto: b.cover_photo,
+            theme: b.theme,
+            price: parseFloat(b.price) || 0,
+            pricePaid: parseFloat(b.price_paid) || 0,
+            purchasedAt: b.purchased_at,
+            recipeCount: parseInt(b.recipe_count),
+            author: {
+                id: b.author_id,
+                name: b.author_name,
+                pic: b.author_pic,
+                username: b.author_username
+            }
+        })));
+    } catch (error) {
+        console.error('Get purchased books error:', error);
+        res.status(500).json({ error: 'Failed to get purchased books' });
+    }
+});
+
+// ===== Create Stripe Checkout Session =====
+router.post('/create-checkout-session', authenticateToken, async (req, res) => {
+    try {
+        const { bookId, successUrl, cancelUrl } = req.body;
+        const db = getDatabase();
+
+        // Get book info
+        const bookResult = await db.query(`
+            SELECT b.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username
+            FROM books b
+            JOIN users u ON b.user_id = u.id
+            WHERE b.id = $1 AND b.is_public = true
+        `, [bookId]);
+
+        if (bookResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
+        const book = {
+            ...bookResult.rows[0],
+            price: parseFloat(bookResult.rows[0].price),
+            author: {
+                name: bookResult.rows[0].author_name,
+                pic: bookResult.rows[0].author_pic,
+                username: bookResult.rows[0].author_username
+            }
+        };
+
+        // Get user email
+        const userResult = await db.query('SELECT email FROM users WHERE id = $1', [req.user.userId]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Create Stripe checkout session
+        const session = await createBookCheckoutSession(
+            req.user.userId,
+            user.email,
+            book,
+            successUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-success.html?type=book`,
+            cancelUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment.html?bookId=${bookId}`
+        );
+
+        res.json({ url: session.url });
+    } catch (error) {
+        console.error('Book checkout session error:', error);
+        res.status(500).json({ error: 'Failed to create checkout session' });
+    }
+});
+
+// ===== Verify Stripe Session =====
+router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const db = getDatabase();
+
+        // Verify the session with Stripe
+        const session = await verifyCheckoutSession(sessionId);
+
+        if (session.payment_status !== 'paid') {
+            return res.status(400).json({
+                success: false,
+                error: 'Payment not completed'
+            });
+        }
+
+        if (session.metadata.userId !== req.user.userId.toString()) {
+            return res.status(403).json({
+                success: false,
+                error: 'Session does not belong to this user'
+            });
+        }
+
+        return res.json({
+            success: true,
+            bookId: session.metadata.bookId
+        });
+    } catch (error) {
+        console.error('Verify checkout session error:', error);
+        res.status(500).json({ success: false, error: 'Failed to verify session' });
     }
 });
 

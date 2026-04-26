@@ -247,6 +247,7 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
         if (recipeResult.rows.length === 0) return res.status(404).json({ error: 'Recipe not found' });
 
         const recipe = recipeResult.rows[0];
+        const recipePrice = parseFloat(recipe.price) || 0;
 
         // Can't buy your own recipe
         if (recipe.seller_id === req.user.userId) {
@@ -262,10 +263,42 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'You have already purchased this recipe' });
         }
 
-        // Process purchase (mock payment - just record the transaction)
+        // If free, just record
+        if (recipePrice <= 0) {
+            await db.query(
+                'INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid) VALUES ($1, $2, 0)',
+                [req.user.userId, req.params.id]
+            );
+            return res.json({ success: true, message: `Successfully added "${recipe.name}" to your collection!` });
+        }
+
+        // Check buyer wallet balance
+        const walletResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
+        const buyerBalance = parseFloat(walletResult.rows[0]?.balance || 0);
+
+        if (buyerBalance < recipePrice) {
+            return res.status(400).json({ error: 'Insufficient wallet balance' });
+        }
+
+        // Deduct from buyer
+        await db.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [recipePrice, req.user.userId]);
+
+        // Credit seller
+        await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [recipe.seller_id]);
+        await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [recipePrice, recipe.seller_id]);
+
+        // Record purchase
         await db.query(
             'INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid) VALUES ($1, $2, $3)',
-            [req.user.userId, req.params.id, recipe.price]
+            [req.user.userId, req.params.id, recipePrice]
+        );
+
+        // Record transactions
+        const refId = `REC-PUR-${Date.now()}`;
+        await db.query(
+            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+             VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+            [req.user.userId, recipe.seller_id, recipePrice, `Recipe Purchase: "${recipe.name}"`, refId]
         );
 
         res.json({

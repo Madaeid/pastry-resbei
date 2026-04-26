@@ -202,8 +202,9 @@ async function initApp() {
                 const token = sessionStorage.getItem('authToken');
                 if (!token) {
                     showNotification('❌ Session expired. Please log in again.', 'error');
-                    window.location.href = 'auth.html';
-                    return;
+                    if (confirm(data.message + '\n\nWould you like to upgrade to Premium now?')) {
+                        window.location.href = 'payment.html?source=book';
+                    } return;
                 }
 
                 try {
@@ -324,10 +325,34 @@ async function initApp() {
     // Handle initial tab from hash or default to home
     handleHashRouting();
 
-    // Check for open_recipe in URL
+    // Check for open_recipe or tab in URL
     const urlParams = new URLSearchParams(window.location.search);
     const openRecipeId = urlParams.get('open_recipe');
-    if (openRecipeId) {
+    const targetTab = urlParams.get('tab');
+    const targetSubtab = urlParams.get('subtab');
+
+    if (targetTab) {
+        const tabBtn = document.querySelector(`.nav-btn[data-tab="${targetTab}"]`);
+        if (tabBtn) {
+            tabBtn.click();
+
+            // Handle store subtabs specifically
+            if (targetTab === 'store' && targetSubtab) {
+                setTimeout(() => {
+                    const subtabBtn = document.querySelector(`.store-tab-btn[data-store-tab="${targetSubtab}"]`);
+                    if (subtabBtn) subtabBtn.click();
+                }, 100);
+            }
+
+            // Handle book subtabs specifically
+            if (targetTab === 'book' && targetSubtab) {
+                setTimeout(() => {
+                    const subtabBtn = document.querySelector(`.book-tab-btn[data-book-tab="${targetSubtab}"]`);
+                    if (subtabBtn) subtabBtn.click();
+                }, 100);
+            }
+        }
+    } else if (openRecipeId) {
         // Switch to store tab
         const storeTabBtn = document.querySelector('[data-tab="store"]');
         if (storeTabBtn) storeTabBtn.click();
@@ -3030,7 +3055,7 @@ async function handleClearAll() {
 }
 
 // Show Upgrade Prompt Modal
-function showUpgradePrompt(feature) {
+function showUpgradePrompt(feature, source = null) {
     const featureMessages = {
         'pdf_export': {
             title: '📄 PDF Export is a Premium Feature',
@@ -3071,6 +3096,14 @@ function showUpgradePrompt(feature) {
     modal.id = 'upgradePromptModal';
     modal.className = 'modal';
     modal.style.display = 'flex';
+
+    // Determine source if not provided
+    if (!source) {
+        if (feature === 'recipe_limit') source = 'my-recipes';
+        else if (feature === 'pdf_export') source = 'my-recipes';
+        else source = 'home';
+    }
+
     modal.innerHTML = `
         <div class="modal-content upgrade-modal-content">
             <button class="modal-close" id="closeUpgradeModal">&times;</button>
@@ -3084,7 +3117,7 @@ function showUpgradePrompt(feature) {
                 <button class="btn btn-secondary" id="maybeLaterBtn">
                     <span>⏰</span> Maybe Later
                 </button>
-                <a href="./payment.html" class="btn btn-upgrade" style="text-decoration: none;">
+                <a href="./payment.html?source=${source}" class="btn btn-upgrade" style="text-decoration: none;">
                     <span>💎</span> Upgrade Now
                 </a>
             </div>
@@ -4134,9 +4167,11 @@ async function loadBooks() {
     const empty = document.getElementById('booksEmptyState');
     const listView = document.getElementById('bookListView');
     const detailView = document.getElementById('bookDetailView');
+    const myBooksSection = document.getElementById('myBooksSection');
     if (!grid) return;
 
-    // Show list view, hide detail
+    // Show My Books sub-tab, show list view, hide detail
+    if (myBooksSection) myBooksSection.style.display = '';
     listView.style.display = '';
     detailView.style.display = 'none';
     currentBookId = null;
@@ -4180,6 +4215,11 @@ function createBookCard(book) {
     const date = new Date(book.updated_at || book.created_at);
     const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
+    const priceVal = parseFloat(book.price) || 0;
+    const priceHtml = priceVal > 0
+        ? `<span class="book-card-price" style="color: #10b981; font-weight: 700;">$${priceVal.toFixed(2)}</span>`
+        : `<span class="book-card-price" style="color: var(--text-secondary); opacity: 0.6;">Free</span>`;
+
     card.innerHTML = `
         <div class="book-card-theme-dot" style="background: ${themeColor};"></div>
         ${coverHtml}
@@ -4187,6 +4227,7 @@ function createBookCard(book) {
             <div class="book-card-title">${book.title}</div>
             <div class="book-card-meta">
                 <span class="book-card-count">📖 ${book.recipe_count || 0} recipes</span>
+                ${priceHtml}
                 <span class="book-card-date">${dateStr}</span>
             </div>
         </div>
@@ -4215,6 +4256,11 @@ async function openBookDetail(bookId) {
         document.getElementById('bookDetailTitle').textContent = data.book.title;
         document.getElementById('bookTitleInput').value = data.book.title;
         document.getElementById('bookDescInput').value = data.book.description || '';
+        document.getElementById('bookPriceInput').value = parseFloat(data.book.price) || 0;
+
+        // is_public toggle
+        const isPublicCheckbox = document.getElementById('bookIsPublic');
+        if (isPublicCheckbox) isPublicCheckbox.checked = data.book.is_public === true;
 
         // Cover
         const coverPreview = document.getElementById('bookCoverPreview');
@@ -4357,6 +4403,7 @@ function setupBookDetailListeners() {
     const openCreateModal = () => {
         document.getElementById('newBookTitle').value = '';
         document.getElementById('newBookDesc').value = '';
+        document.getElementById('newBookPrice').value = '0';
         document.getElementById('createBookModal').classList.add('show');
     };
     document.getElementById('createBookBtn')?.addEventListener('click', openCreateModal);
@@ -4378,6 +4425,8 @@ async function saveBookMeta() {
     const token = sessionStorage.getItem('authToken');
     const title = document.getElementById('bookTitleInput').value.trim();
     const description = document.getElementById('bookDescInput').value.trim();
+    const price = parseFloat(document.getElementById('bookPriceInput').value) || 0;
+    const is_public = document.getElementById('bookIsPublic')?.checked || false;
     const theme = document.querySelector('.book-theme-btn.active')?.dataset.theme || 'classic';
     const coverImg = document.getElementById('bookCoverPreview');
     const cover_photo = coverImg?.style.display !== 'none' ? coverImg.src : null;
@@ -4386,7 +4435,7 @@ async function saveBookMeta() {
         const res = await fetch(`${BOOK_API}/${currentBookId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ title, description, theme, cover_photo })
+            body: JSON.stringify({ title, description, theme, cover_photo, price, is_public })
         });
         if (!res.ok) throw new Error('Update failed');
         document.getElementById('bookDetailTitle').textContent = title;
@@ -4401,19 +4450,20 @@ async function createNewBook() {
     const token = sessionStorage.getItem('authToken');
     const title = document.getElementById('newBookTitle').value.trim();
     const description = document.getElementById('newBookDesc').value.trim();
+    const price = parseFloat(document.getElementById('newBookPrice').value) || 0;
     if (!title) { showNotification('❌ Please enter a book title', 'error'); return; }
 
     try {
         const res = await fetch(BOOK_API, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ title, description })
+            body: JSON.stringify({ title, description, price })
         });
         const data = await res.json();
         if (!res.ok) {
             showNotification(`❌ ${data.message || data.error}`, 'error');
             if (data.code === 'LIMIT_REACHED') {
-                setTimeout(() => showUpgradePrompt('default'), 500);
+                setTimeout(() => showUpgradePrompt('default', 'book'), 500);
             }
             return;
         }
@@ -4538,7 +4588,7 @@ async function addSelectedRecipes() {
     }
 }
 
-window.removeBookRecipe = async function(recipeId) {
+window.removeBookRecipe = async function (recipeId) {
     if (!currentBookId) return;
     const token = sessionStorage.getItem('authToken');
     try {
@@ -4554,7 +4604,7 @@ window.removeBookRecipe = async function(recipeId) {
     }
 };
 
-window.moveBookRecipe = async function(index, direction) {
+window.moveBookRecipe = async function (index, direction) {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= currentBookRecipes.length) return;
 
@@ -4639,7 +4689,7 @@ function exportBookPdf() {
 
     const title = document.getElementById('bookTitleInput').value.trim() || 'My Chef Book';
     const theme = document.querySelector('.book-theme-btn.active')?.dataset.theme || 'classic';
-    const colors = { classic: [198,123,75], modern: [102,126,234], minimal: [44,62,80], rustic: [139,105,20] };
+    const colors = { classic: [198, 123, 75], modern: [102, 126, 234], minimal: [44, 62, 80], rustic: [139, 105, 20] };
     const c = colors[theme] || colors.classic;
 
     const doc = new jsPDF();
@@ -4732,3 +4782,274 @@ function exportBookPdf() {
     doc.save(`${safeTitle}.pdf`);
     showNotification('📄 Book exported as PDF!', 'success');
 }
+
+// ===== BOOK MARKETPLACE FUNCTIONS =====
+
+// Sub-tab switching
+document.querySelectorAll('.book-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.book-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const tab = btn.dataset.bookTab;
+        document.getElementById('myBooksSection').style.display = tab === 'my-books' ? '' : 'none';
+        document.getElementById('browseBooksSection').style.display = tab === 'browse-books' ? '' : 'none';
+        document.getElementById('purchasedBooksSection').style.display = tab === 'purchased-books' ? '' : 'none';
+
+        if (tab === 'browse-books') loadBrowseBooks();
+        if (tab === 'purchased-books') loadPurchasedBooks();
+        if (tab === 'my-books') loadBooks();
+    });
+});
+
+// Browse public books
+async function loadBrowseBooks() {
+    const grid = document.getElementById('browseBooksGrid');
+    const empty = document.getElementById('browseBooksEmpty');
+    if (!grid) return;
+
+    grid.innerHTML = '<div class="loading">Loading marketplace...</div>';
+    empty.style.display = 'none';
+
+    try {
+        const res = await fetch(`${BOOK_API}/public/browse`);
+        const books = await res.json();
+
+        grid.innerHTML = '';
+        if (books.length === 0) {
+            empty.style.display = '';
+            grid.style.display = 'none';
+        } else {
+            empty.style.display = 'none';
+            grid.style.display = '';
+            books.forEach(book => {
+                grid.appendChild(createPublicBookCard(book));
+            });
+        }
+    } catch (err) {
+        console.error('Browse books error:', err);
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Failed to load books.</p>';
+    }
+}
+
+function createPublicBookCard(book) {
+    const card = document.createElement('div');
+    card.className = 'book-card book-card-public';
+    card.onclick = () => viewPublicBook(book.id);
+
+    const themeColor = bookThemeColors[book.theme] || bookThemeColors.classic;
+    const coverHtml = book.coverPhoto
+        ? `<img class="book-card-cover" src="${book.coverPhoto}" alt="${book.title}">`
+        : `<div class="book-card-cover-placeholder">📚</div>`;
+
+    const priceVal = book.price || 0;
+    const priceHtml = priceVal > 0
+        ? `<span class="book-card-price" style="color: #10b981; font-weight: 700;">$${priceVal.toFixed(2)}</span>`
+        : `<span class="book-card-price" style="color: var(--accent-orange); font-weight: 600;">Free</span>`;
+
+    const authorPic = book.author?.pic
+        ? `<img src="${book.author.pic}" alt="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.2);">`
+        : `<span style="font-size: 1rem;">👨‍🍳</span>`;
+
+    card.innerHTML = `
+        <div class="book-card-theme-dot" style="background: ${themeColor};"></div>
+        ${coverHtml}
+        <div class="book-card-body">
+            <div class="book-card-title">${book.title}</div>
+            ${book.description ? `<p style="font-size: 0.82rem; color: var(--text-secondary); margin: 4px 0 8px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${book.description}</p>` : ''}
+            <div class="book-card-author" style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                ${authorPic}
+                <span style="font-size: 0.85rem; color: var(--accent-orange); font-weight: 500;">@${book.author?.username || 'unknown'}</span>
+            </div>
+            <div class="book-card-meta">
+                <span class="book-card-count">📖 ${book.recipeCount || 0} recipes</span>
+                ${priceHtml}
+            </div>
+        </div>
+    `;
+    return card;
+}
+
+// View public book modal
+async function viewPublicBook(bookId) {
+    const token = sessionStorage.getItem('authToken');
+    if (!token) {
+        showNotification('Please log in to view books', 'error');
+        return;
+    }
+
+    const body = document.getElementById('publicBookBody');
+    body.innerHTML = '<div class="loading" style="padding: 40px; text-align: center;">Loading book...</div>';
+    document.getElementById('viewPublicBookModal').classList.add('show');
+
+    try {
+        const res = await fetch(`${BOOK_API}/public/${bookId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to load book');
+        const data = await res.json();
+
+        const priceVal = data.price || 0;
+        const coverHtml = data.coverPhoto
+            ? `<img src="${data.coverPhoto}" alt="${data.title}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 16px; margin-bottom: 20px;">`
+            : '';
+
+        const authorPic = data.author?.pic
+            ? `<img src="${data.author.pic}" alt="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(198,123,75,0.3);">`
+            : `<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, rgba(198,123,75,0.2), rgba(139,69,19,0.2)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">👨‍🍳</div>`;
+
+        let actionHtml = '';
+        if (data.isOwner) {
+            actionHtml = '<div style="padding: 12px 20px; background: rgba(198,123,75,0.1); border-radius: 12px; text-align: center; color: var(--accent-orange); font-weight: 600;">📚 This is your book</div>';
+        } else if (data.hasPurchased || priceVal === 0) {
+            actionHtml = '<div style="padding: 12px 20px; background: rgba(16,185,129,0.1); border-radius: 12px; text-align: center; color: #10b981; font-weight: 600;">✅ You own this book</div>';
+        } else {
+            actionHtml = `
+                <button id="purchaseBookBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem; border-radius: 14px;" onclick="purchaseBook(${bookId})">
+                    <span class="btn-icon">🛒</span>
+                    <span>Purchase for $${priceVal.toFixed(2)}</span>
+                </button>
+                <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">You will be redirected to complete your purchase</p>
+            `;
+        }
+
+        let recipesHtml = '';
+        if (data.canViewFull && data.recipes && data.recipes.length > 0) {
+            recipesHtml = '<div style="margin-top: 24px;"><h3 style="font-family: \'Playfair Display\', serif; font-size: 1.4rem; margin-bottom: 16px;">📖 Recipes</h3>';
+            data.recipes.forEach((r, i) => {
+                const photoHtml = r.photo
+                    ? `<img src="${r.photo}" alt="${r.name}" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0;">`
+                    : `<div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, rgba(198,123,75,0.15), rgba(139,69,19,0.15)); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">🍽️</div>`;
+
+                recipesHtml += `
+                    <div style="display: flex; align-items: center; gap: 16px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; margin-bottom: 10px; cursor: pointer;" onclick="this.querySelector('.recipe-expand')?.classList.toggle('show')">
+                        <div style="width: 32px; height: 32px; background: var(--primary-gradient); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">${i + 1}</div>
+                        ${photoHtml}
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: var(--text-primary);">${r.name}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">${r.category || ''} • ${r.difficulty || 'Medium'}</div>
+                        </div>
+                        <span style="font-size: 1.2rem; opacity: 0.5;">▼</span>
+                    </div>
+                    <div class="recipe-expand" style="display: none; padding: 16px 20px; margin: -10px 0 10px; background: rgba(198,123,75,0.04); border-radius: 0 0 14px 14px; border: 1px solid rgba(255,255,255,0.06); border-top: none;">
+                        ${r.ingredients ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">🧂 Ingredients</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; margin-bottom: 12px;">${r.ingredients}</p>` : ''}
+                        ${r.instructions ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">📝 Instructions</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; margin-bottom: 12px;">${r.instructions}</p>` : ''}
+                        ${r.notes ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">💡 Chef's Notes</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap;">${r.notes}</p>` : ''}
+                    </div>
+                `;
+            });
+            recipesHtml += '</div>';
+        } else if (!data.canViewFull) {
+            recipesHtml = `
+                <div style="margin-top: 24px; text-align: center; padding: 40px 20px; background: rgba(255,255,255,0.02); border-radius: 16px; border: 2px dashed rgba(198,123,75,0.15);">
+                    <div style="font-size: 3rem; margin-bottom: 12px;">🔒</div>
+                    <h3 style="color: var(--text-primary); margin-bottom: 8px;">Purchase to unlock ${data.recipeCount} recipe${data.recipeCount !== 1 ? 's' : ''}</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">Buy this book to see all the recipes inside.</p>
+                </div>
+            `;
+        }
+
+        body.innerHTML = `
+            ${coverHtml}
+            <div style="padding: 0 4px;">
+                <h2 style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 8px;">${data.title}</h2>
+                ${data.description ? `<p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; margin-bottom: 16px;">${data.description}</p>` : ''}
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                    ${authorPic}
+                    <div>
+                        <div style="font-weight: 600; color: var(--text-primary);">${data.author?.name || 'Unknown Chef'}</div>
+                        <div style="font-size: 0.85rem; color: var(--accent-orange);">@${data.author?.username || 'unknown'}</div>
+                    </div>
+                    <div style="margin-left: auto; text-align: right;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">📖 ${data.recipeCount} recipes</div>
+                        <div style="font-weight: 700; color: ${priceVal > 0 ? '#10b981' : 'var(--accent-orange)'}; font-size: 1.1rem;">${priceVal > 0 ? '$' + priceVal.toFixed(2) : 'Free'}</div>
+                    </div>
+                </div>
+                ${actionHtml}
+                ${recipesHtml}
+            </div>
+        `;
+
+        // Add expand toggle
+        body.querySelectorAll('.recipe-expand').forEach(el => {
+            el.classList.add = function (cls) {
+                if (cls === 'show') {
+                    this.style.display = this.style.display === 'none' ? 'block' : 'none';
+                }
+            };
+        });
+        // Fix expand toggles
+        body.querySelectorAll('[onclick*="recipe-expand"]').forEach(el => {
+            el.onclick = function () {
+                const expand = this.nextElementSibling;
+                if (expand) expand.style.display = expand.style.display === 'none' ? 'block' : 'none';
+            };
+        });
+
+    } catch (err) {
+        console.error('View public book error:', err);
+        body.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-secondary)">Failed to load book.</p>';
+    }
+}
+
+// Purchase a book
+window.purchaseBook = async function (bookId) {
+    const token = sessionStorage.getItem('authToken');
+    if (!token) { showNotification('Please log in', 'error'); return; }
+
+    const btn = document.getElementById('purchaseBookBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Redirecting to Payment...'; }
+
+    // Redirect to the centralized payment page with the book ID
+    window.location.href = `./payment.html?bookId=${bookId}`;
+};
+
+// Load purchased books
+async function loadPurchasedBooks() {
+    const grid = document.getElementById('purchasedBooksGrid');
+    const empty = document.getElementById('purchasedBooksEmpty');
+    const token = sessionStorage.getItem('authToken');
+    if (!grid || !token) return;
+
+    grid.innerHTML = '<div class="loading">Loading purchased books...</div>';
+    empty.style.display = 'none';
+
+    try {
+        const res = await fetch(`${BOOK_API}/purchased/my`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const books = await res.json();
+
+        grid.innerHTML = '';
+        if (books.length === 0) {
+            empty.style.display = '';
+            grid.style.display = 'none';
+        } else {
+            empty.style.display = 'none';
+            grid.style.display = '';
+            books.forEach(book => {
+                const card = createPublicBookCard(book);
+                // Add "Owned" badge
+                const badge = document.createElement('div');
+                badge.className = 'book-owned-badge';
+                badge.innerHTML = '✅ Owned';
+                badge.style.cssText = 'position: absolute; top: 12px; left: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; z-index: 3;';
+                card.appendChild(badge);
+                grid.appendChild(card);
+            });
+        }
+    } catch (err) {
+        console.error('Load purchased books error:', err);
+        grid.innerHTML = '<p style="text-align:center;color:var(--text-secondary)">Failed to load purchased books.</p>';
+    }
+}
+
+// Close public book modal
+document.getElementById('closeViewPublicBookModal')?.addEventListener('click', () => {
+    document.getElementById('viewPublicBookModal').classList.remove('show');
+});
+document.getElementById('viewPublicBookModal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('viewPublicBookModal')) {
+        e.target.classList.remove('show');
+    }
+});

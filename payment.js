@@ -293,6 +293,9 @@ function initPaymentPage() {
 
     // Check for pending recipe purchase
     checkPendingRecipe();
+    
+    // Check for pending book purchase
+    checkPendingBook();
 
     // Format card inputs
     setupCardInputFormatting();
@@ -324,6 +327,75 @@ async function checkPendingRecipe() {
     } catch (err) {
         console.error('Error fetching pending recipe:', err);
     }
+}
+
+let pendingBookId = null;
+let pendingBookData = null;
+
+async function checkPendingBook() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookId = urlParams.get('bookId');
+    if (!bookId) return;
+
+    pendingBookId = bookId;
+
+    try {
+        const token = getAuthToken();
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const response = await fetch(`${API_URL}/books/public/${bookId}`, { headers });
+        if (response.ok) {
+            const book = await response.json();
+            pendingBookData = book;
+            renderBookSpecialOffer(book);
+
+            if (token) {
+                openPaymentModal('book');
+            }
+        }
+    } catch (err) {
+        console.error('Error fetching pending book:', err);
+    }
+}
+
+function renderBookSpecialOffer(book) {
+    const container = document.querySelector('.pricing-container');
+    if (!container) return;
+
+    const card = document.createElement('div');
+    card.className = 'pricing-card recipe-offer';
+    card.style.borderColor = 'var(--accent-orange)';
+    card.style.background = 'rgba(255, 154, 86, 0.05)';
+    card.innerHTML = `
+        <div class="monthly-offer-badge" style="background: var(--accent-orange);">📚 EXCLUSIVE BOOK</div>
+        <div class="pricing-card-header">
+            <span class="plan-emoji">📚</span>
+            <h3>${book.title}</h3>
+            <p class="plan-subtitle">Complete Book Purchase</p>
+        </div>
+        <div class="pricing-card-price">
+            <span class="currency">$</span>
+            <span class="amount">${Math.floor(book.price)}</span>
+            <span class="cents">.${(book.price % 1).toFixed(2).slice(2)}</span>
+            <span class="period">once</span>
+        </div>
+        <div class="savings-badge" style="background: var(--accent-orange);">BY ${(book.author?.name || 'Unknown').toUpperCase()}</div>
+        <ul class="pricing-features">
+            <li><span class="feature-icon">✅</span> ${book.recipeCount || 0} Professional Recipes</li>
+            <li><span class="feature-icon">✅</span> Lifetime Access</li>
+        </ul>
+        <button class="btn btn-subscribe" id="purchaseSingleBook" style="background: linear-gradient(135deg, var(--accent-orange), #ff7e5f); border: none;">
+            <span class="btn-icon">🛒</span>
+            Purchase This Book
+        </button>
+    `;
+
+    container.insertBefore(card, container.firstChild);
+
+    document.getElementById('purchaseSingleBook').addEventListener('click', () => {
+        openPaymentModal('book');
+    });
+
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function renderRecipeSpecialOffer(recipe) {
@@ -546,7 +618,10 @@ function setupEventListeners() {
 let selectedPlan = null;
 
 function openPaymentModal(planId) {
-    const plan = (planId === 'recipe') ? pendingRecipeData : PLANS[planId];
+    let plan;
+    if (planId === 'recipe') plan = pendingRecipeData;
+    else if (planId === 'book') plan = pendingBookData;
+    else plan = PLANS[planId];
     if (!plan) return;
 
     selectedPlan = planId;
@@ -566,6 +641,13 @@ function openPaymentModal(planId) {
         if (summaryPrice) summaryPrice.textContent = `$${recipe.price.toFixed(2)}`;
         if (summaryTotal) summaryTotal.textContent = `$${recipe.price.toFixed(2)}`;
         if (summaryLabel) summaryLabel.textContent = 'Recipe';
+    } else if (planId === 'book') {
+        const book = pendingBookData;
+        if (selectedPlanText) selectedPlanText.textContent = `Book: ${book.title} - $${book.price.toFixed(2)}`;
+        if (summaryPlan) summaryPlan.textContent = book.title;
+        if (summaryPrice) summaryPrice.textContent = `$${book.price.toFixed(2)}`;
+        if (summaryTotal) summaryTotal.textContent = `$${book.price.toFixed(2)}`;
+        if (summaryLabel) summaryLabel.textContent = 'Book';
     } else {
         const planObj = PLANS[planId];
         if (selectedPlanText) selectedPlanText.textContent = `${planObj.name} Plan - ${planObj.displayPrice}`;
@@ -630,23 +712,31 @@ async function handleWalletPurchase() {
         if (!token) throw new Error('You must be logged in');
 
         let body = {
-            type: selectedPlan === 'recipe' ? 'recipe' : 'subscription',
-            amount: selectedPlan === 'recipe' ? pendingRecipeData.price : PLANS[selectedPlan].price
+            type: selectedPlan === 'recipe' ? 'recipe' : (selectedPlan === 'book' ? 'book' : 'subscription'),
+            amount: selectedPlan === 'recipe' ? pendingRecipeData.price : (selectedPlan === 'book' ? pendingBookData.price : PLANS[selectedPlan].price)
         };
 
         if (body.type === 'subscription') {
             body.planId = selectedPlan;
-        } else {
+        } else if (body.type === 'recipe') {
             body.recipeId = pendingRecipeId;
+        } else if (body.type === 'book') {
+            // we will need to change the API endpoint for books
         }
 
-        const response = await fetch(`${API_URL}/wallet/purchase`, {
+        let apiEndpoint = `${API_URL}/wallet/purchase`;
+        if (selectedPlan === 'book') {
+            apiEndpoint = `${API_URL}/books/public/${pendingBookId}/purchase`;
+            body = {}; // book purchase doesn't take body
+        }
+
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(body)
+            body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined
         });
 
         const data = await response.json();
@@ -665,6 +755,8 @@ async function handleWalletPurchase() {
                 if (successPlanDetails) {
                     if (selectedPlan === 'recipe') {
                         successPlanDetails.textContent = `You have successfully purchased: ${pendingRecipeData.name}`;
+                    } else if (selectedPlan === 'book') {
+                        successPlanDetails.textContent = `You have successfully purchased: ${pendingBookData.title}`;
                     } else {
                         const plan = PLANS[selectedPlan];
                         successPlanDetails.textContent = `Plan: ${plan.name} - ${plan.displayPrice}`;
@@ -768,12 +860,14 @@ async function handleStripeCheckout(e) {
         // Improved URL construction to support subpath deployments (GitHub Pages) and local dev
         const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
+        const source = urlParams.get('source');
+
         // Check if we are purchasing a recipe or a plan
         let endpoint = '/subscriptions/create-checkout-session';
         let body = {
             planId: selectedPlan,
-            successUrl: `${baseUrl}/payment-success.html`,
-            cancelUrl: `${baseUrl}/payment.html`
+            successUrl: `${baseUrl}/payment-success.html${source ? `?source=${source}` : ''}`,
+            cancelUrl: `${baseUrl}/payment.html${source ? `?source=${source}` : ''}`
         };
 
         if (selectedPlan === 'recipe') {
@@ -782,6 +876,13 @@ async function handleStripeCheckout(e) {
                 recipeId: pendingRecipeId,
                 successUrl: `${baseUrl}/payment-success.html?type=recipe&recipe_id=${pendingRecipeId}`,
                 cancelUrl: `${baseUrl}/payment.html?recipeId=${pendingRecipeId}`
+            };
+        } else if (selectedPlan === 'book') {
+            endpoint = '/books/create-checkout-session';
+            body = {
+                bookId: pendingBookId,
+                successUrl: `${baseUrl}/payment-success.html?type=book&book_id=${pendingBookId}`,
+                cancelUrl: `${baseUrl}/payment.html?bookId=${pendingBookId}`
             };
         }
 

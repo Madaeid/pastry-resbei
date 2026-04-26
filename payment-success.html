@@ -237,7 +237,7 @@
                     </ul>
                 </div>
 
-                <button class="btn-continue" onclick="window.location.href='./index.html'">
+                <button class="btn-continue" id="successContinueBtn">
                     <span>🚀</span>
                     <span data-i18n="startUsingPremium">Start Using Premium Features</span>
                 </button>
@@ -252,17 +252,20 @@
         // Initialize language
         initLanguage();
 
-        const API_URL = 'http://localhost:3001/api';
+        const API_URL = '/api';
 
         // Get session_id from URL
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('session_id');
         let type = urlParams.get('type');
         const recipeId = urlParams.get('recipe_id');
+        const bookId = urlParams.get('book_id');
 
         // Fallback: If recipe_id exists but type is not set, it's a recipe purchase
         if (!type && recipeId) {
             type = 'recipe';
+        } else if (!type && bookId) {
+            type = 'book';
         }
 
         const loadingState = document.getElementById('loadingState');
@@ -300,6 +303,46 @@
 
             const token = getAuthToken();
             if (!token) {
+                setTimeout(() => window.location.href = './payment.html', 3000);
+            }
+        }
+
+        function showBookSuccess(data) {
+            loadingState.classList.remove('active');
+            readyState.classList.remove('hidden');
+
+            const userName = getCurrentUser();
+            document.getElementById('userName').textContent = userName || 'User';
+            
+            // UI adjustments for book
+            document.querySelector('h1').textContent = 'Book Purchased!';
+            const welcomeText = document.querySelector('.ready-state p');
+            if (welcomeText) welcomeText.innerHTML = `You now have full access to your new book, <strong>${userName}</strong>!`;
+
+            const planInfo = document.querySelector('.plan-info');
+            planInfo.innerHTML = `
+                <div class="plan-name">Book Added to your collection</div>
+                <div class="plan-expiry">ID: ${data.bookId}</div>
+            `;
+
+            const featuresList = document.querySelector('.features-list');
+            featuresList.innerHTML = `
+                <h3 data-i18n="youNowHaveAccess">You now have access to:</h3>
+                <ul>
+                    <li>View all recipes inside this book</li>
+                    <li>Access your purchased books in "My Books"</li>
+                </ul>
+            `;
+        }
+
+        async function verifySession() {
+            if (!sessionId) {
+                showError('No session ID found. Please try again.');
+                return;
+            }
+
+            const token = getAuthToken();
+            if (!token) {
                 window.location.href = './auth.html';
                 return;
             }
@@ -308,7 +351,7 @@
                 // Determine endpoint based on type
                 const endpoint = type === 'recipe' 
                     ? `${API_URL}/store/verify-session/${sessionId}`
-                    : `${API_URL}/subscriptions/verify-session/${sessionId}`;
+                    : (type === 'book' ? `${API_URL}/books/verify-session/${sessionId}` : `${API_URL}/subscriptions/verify-session/${sessionId}`);
 
                 const response = await fetch(endpoint, {
                     method: 'GET',
@@ -326,6 +369,8 @@
                 if (data.success) {
                     if (type === 'recipe') {
                         showRecipeSuccess(data);
+                    } else if (type === 'book') {
+                        showBookSuccess(data);
                     } else {
                         // Save subscription to localStorage so frontend isPremium() works
                         saveSubscriptionToLocalStorage(data.subscription);
@@ -401,6 +446,15 @@
                         })}`;
                     }
                 }
+            }
+
+            // Set continue button destination
+            const source = urlParams.get('source');
+            const btn = document.getElementById('successContinueBtn');
+            if (btn) {
+                btn.onclick = () => {
+                    window.location.href = `./index.html${source ? `?tab=${source}` : ''}`;
+                };
             }
         }
 

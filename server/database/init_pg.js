@@ -282,6 +282,7 @@ async function initDB() {
                     description TEXT,
                     cover_photo TEXT,
                     theme TEXT DEFAULT 'classic',
+                    price DECIMAL(10,2) DEFAULT 0,
                     is_public BOOLEAN DEFAULT false,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -299,6 +300,20 @@ async function initDB() {
                 );
             `);
             console.log('✅ Books tables created');
+
+            // 10b. Book Purchases Table
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS book_purchases (
+                    id SERIAL PRIMARY KEY,
+                    buyer_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    book_id INTEGER NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                    price_paid DECIMAL(10,2) NOT NULL DEFAULT 0,
+                    stripe_session_id TEXT,
+                    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(buyer_id, book_id)
+                );
+            `);
+            console.log('✅ Book purchases table created');
 
             // 11. Create Indexes
             await client.query(`
