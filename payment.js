@@ -791,6 +791,8 @@ async function handleStripeCheckout(e) {
         return;
     }
 
+    // Allow the user to proceed with Stripe checkout even if wallet has enough balance.
+
     const payButton = document.getElementById('payButton');
     const payButtonText = document.getElementById('payButtonText');
 

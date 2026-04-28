@@ -322,12 +322,16 @@ async function initApp() {
     // Setup Store Marketplace listeners
     setupStoreListeners();
 
+    // Initialize Home User Search
+    initHomeUserSearch();
+
     // Handle initial tab from hash or default to home
     handleHashRouting();
 
-    // Check for open_recipe or tab in URL
+    // Check for open_recipe, open_book or tab in URL
     const urlParams = new URLSearchParams(window.location.search);
     const openRecipeId = urlParams.get('open_recipe');
+    const openBookId = urlParams.get('open_book');
     const targetTab = urlParams.get('tab');
     const targetSubtab = urlParams.get('subtab');
 
@@ -359,6 +363,13 @@ async function initApp() {
 
         // Open the specific recipe
         setTimeout(() => typeof viewStoreRecipe === 'function' && viewStoreRecipe(openRecipeId), 500);
+    } else if (openBookId) {
+        // Switch to book tab
+        const bookTabBtn = document.querySelector('[data-tab="book"]');
+        if (bookTabBtn) bookTabBtn.click();
+
+        // Open the specific book
+        setTimeout(() => typeof viewPublicBook === 'function' && viewPublicBook(openBookId), 500);
     }
 
     // Expose social functions to window for social-ui.js
@@ -1441,6 +1452,76 @@ async function saveRecipe(recipe) {
         console.error('Error saving recipe:', error);
         showNotification(error.message || '❌ Error saving recipe.', 'error');
     }
+}
+
+// ===== Home User Search Logic =====
+function initHomeUserSearch() {
+    const searchInput = document.getElementById('homeUserSearch');
+    const dropdown = document.getElementById('homeSearchDropdown');
+    if (!searchInput || !dropdown) return;
+
+    let searchTimeout;
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 1) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        searchTimeout = setTimeout(async () => {
+            try {
+                // Fetch users matching query
+                const response = await fetch(`${API_URL}/users/public?search=${encodeURIComponent(query)}`);
+                if (!response.ok) throw new Error('Search failed');
+                
+                const users = await response.json();
+                renderHomeSearchResults(users, dropdown);
+            } catch (err) {
+                console.error('Home search error:', err);
+            }
+        }, 300);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Re-show dropdown if input is focused and has text
+    searchInput.addEventListener('focus', () => {
+        if (searchInput.value.trim().length > 0 && dropdown.children.length > 0) {
+            dropdown.style.display = 'block';
+        }
+    });
+}
+
+function renderHomeSearchResults(users, dropdown) {
+    if (!users || users.length === 0) {
+        dropdown.innerHTML = '<div class="search-no-results">No chefs found</div>';
+    } else {
+        dropdown.innerHTML = users.slice(0, 8).map(user => `
+            <div class="search-result-item" onclick="window.location.href='./chef-profile.html?username=${user.username}'">
+                <div class="search-result-avatar">
+                    ${user.profilePicture 
+                        ? `<img src="${user.profilePicture}" alt="${user.displayName}">` 
+                        : `<span>${(user.displayName || user.username).charAt(0).toUpperCase()}</span>`
+                    }
+                </div>
+                <div class="search-result-info">
+                    <div class="search-result-name">${user.displayName || user.username}</div>
+                    <div class="search-result-username">@${user.username}</div>
+                </div>
+                <div class="search-result-action">View Profile</div>
+            </div>
+        `).join('');
+    }
+    dropdown.style.display = 'block';
 }
 
 // Load Home Feed (Public Recipes)
@@ -3783,11 +3864,35 @@ async function purchaseRecipe(id) {
     const btn = document.getElementById('confirmPurchaseBtn');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<span class="loading-spinner"></span> Redirecting to Payment...';
+        btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
     }
 
-    // Redirect to the centralized payment page with the recipe ID
-    window.location.href = `./payment.html?recipeId=${id}`;
+    try {
+        const response = await fetch(`/api/store/${id}/purchase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showNotification(data.message || 'Recipe purchased successfully!', 'success');
+            const modal = document.getElementById('storeRecipeViewModal');
+            if (modal) modal.style.display = 'none';
+            if (typeof viewStoreRecipe === 'function') {
+                viewStoreRecipe(id);
+            }
+        } else {
+            // Fallback to payment page if insufficient funds or other error
+            window.location.href = `./payment.html?recipeId=${id}`;
+        }
+    } catch (err) {
+        console.error('Wallet purchase error:', err);
+        window.location.href = `./payment.html?recipeId=${id}`;
+    }
 }
 
 
@@ -4909,7 +5014,7 @@ async function viewPublicBook(bookId) {
                     <span class="btn-icon">🛒</span>
                     <span>Purchase for $${priceVal.toFixed(2)}</span>
                 </button>
-                <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">You will be redirected to complete your purchase</p>
+                <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">Uses wallet balance. Redirects if funds are low.</p>
             `;
         }
 
@@ -4998,10 +5103,32 @@ window.purchaseBook = async function (bookId) {
     if (!token) { showNotification('Please log in', 'error'); return; }
 
     const btn = document.getElementById('purchaseBookBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Redirecting to Payment...'; }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Processing...'; }
 
-    // Redirect to the centralized payment page with the book ID
-    window.location.href = `./payment.html?bookId=${bookId}`;
+    try {
+        const response = await fetch(`/api/books/public/${bookId}/purchase`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            showNotification(data.message || 'Book purchased successfully!', 'success');
+            if (typeof viewPublicBook === 'function') {
+                viewPublicBook(bookId);
+            }
+        } else {
+            // Redirect to the centralized payment page with the book ID
+            window.location.href = `./payment.html?bookId=${bookId}`;
+        }
+    } catch (err) {
+        console.error('Wallet purchase error:', err);
+        window.location.href = `./payment.html?bookId=${bookId}`;
+    }
 };
 
 // Load purchased books

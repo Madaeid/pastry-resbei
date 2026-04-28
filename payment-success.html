@@ -325,7 +325,7 @@
                 <div class="plan-expiry">ID: ${data.bookId}</div>
             `;
 
-            const featuresList = document.querySelector('.features-list');
+            const featuresList = document.querySelector('.success-features');
             featuresList.innerHTML = `
                 <h3 data-i18n="youNowHaveAccess">You now have access to:</h3>
                 <ul>
@@ -333,6 +333,12 @@
                     <li>Access your purchased books in "My Books"</li>
                 </ul>
             `;
+
+            const btn = document.querySelector('.btn-continue');
+            if (btn) {
+                btn.innerHTML = `<span>📚</span> <span>Go to My Purchased Books</span>`;
+                btn.onclick = () => window.location.href = './index.html?tab=books&subtab=purchased';
+            }
         }
 
         async function verifySession() {

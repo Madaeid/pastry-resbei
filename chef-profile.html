@@ -285,7 +285,6 @@
         .w-100 {
             width: 100% !important;
         }
-
     </style>
 </head>
 
@@ -296,9 +295,10 @@
         </a>
 
         <div id="chefProfileHero" class="profile-hero">
-            <button id="refreshProfileHeroBtn" class="refresh-hero-btn" title="Change Header Photo" style="position: absolute; top: 15px; right: 15px; z-index: 10;">🔄</button>
+            <button id="refreshProfileHeroBtn" class="refresh-hero-btn" title="Change Header Photo"
+                style="position: absolute; top: 15px; right: 15px; z-index: 10;">🔄</button>
             <script>
-                (function() {
+                (function () {
                     const headerImages = [
                         '/new-chef-hero.png',
                         '/premium-chef-hero.png',
@@ -315,23 +315,23 @@
                         '/chef-fire-cooking.png'
                     ];
                     let currentHeroInterval = null;
-                    
+
                     function setRandomHero(manual = false) {
                         const heroEl = document.getElementById('chefProfileHero');
                         if (!heroEl) return;
                         const randomImg = headerImages[Math.floor(Math.random() * headerImages.length)];
                         // We use !important because the initial style block uses it
                         heroEl.style.setProperty('background', `linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${randomImg}') no-repeat center center / cover`, 'important');
-                        
+
                         if (manual && currentHeroInterval) {
                             clearInterval(currentHeroInterval);
                             currentHeroInterval = setInterval(() => setRandomHero(false), 15000);
                         }
                     }
-                    
+
                     const initialImg = headerImages[Math.floor(Math.random() * headerImages.length)];
                     document.write(`<style>#chefProfileHero { transition: background 0.8s ease; background: linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${initialImg}') no-repeat center center / cover !important; }</style>`);
-                    
+
                     document.addEventListener('DOMContentLoaded', () => {
                         const refreshBtn = document.getElementById('refreshProfileHeroBtn');
                         if (refreshBtn) {
@@ -432,6 +432,8 @@
     <div class="profile-nav-tabs">
         <button class="nav-tab active" data-tab="feed">👨‍🍳 Culinary Feed</button>
         <button class="nav-tab" data-tab="recipes">📖 Public Recipes</button>
+        <button class="nav-tab" data-tab="store" id="storeTabBtn">🏪 Store</button>
+        <button class="nav-tab" data-tab="books" id="booksTabBtn">📚 Chef Book</button>
         <button class="nav-tab" data-tab="gallery">🖼️ Photo Gallery</button>
     </div>
 
@@ -465,6 +467,37 @@
         <div id="chefGalleryGrid" class="gallery-grid">
             <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
                 gallery photos...</div>
+        </div>
+    </div>
+
+    <div id="storePanel" class="tab-panel">
+        <div id="chefStoreGrid" class="chef-recipes-grid"
+            style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading store
+                items...</div>
+        </div>
+    </div>
+
+    <div id="booksPanel" class="tab-panel">
+        <!-- Book Sub-Tabs (only for own profile) -->
+        <div id="profileBookSubTabs" class="profile-nav-tabs" style="justify-content: center; margin-bottom: 25px; display: none; background: transparent; border: none; padding: 0;">
+            <button class="nav-tab book-sub-tab active" data-book-sub="my-books" style="font-size: 0.9rem; padding: 8px 20px;">📚 My Books</button>
+            <button class="nav-tab book-sub-tab" data-book-sub="purchased" style="font-size: 0.9rem; padding: 8px 20px;">🛒 Purchased</button>
+        </div>
+
+        <div id="myBooksSection">
+            <div id="chefBooksGrid" class="chef-recipes-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading chef
+                    books...</div>
+            </div>
+        </div>
+
+        <div id="purchasedBooksSection" style="display: none;">
+            <div id="purchasedBooksGrid" class="chef-recipes-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                <!-- Purchased books will be rendered here -->
+            </div>
         </div>
     </div>
     </div>
@@ -599,6 +632,252 @@
             modal.classList.add('show');
         };
 
+        async function loadChefStore(username, isOwnProfile) {
+            const grid = document.getElementById('chefStoreGrid');
+            try {
+                const token = sessionStorage.getItem('authToken');
+                let url = `${API_URL}/store`;
+                let options = {};
+
+                if (isOwnProfile && token) {
+                    url = `${API_URL}/store/my/listings`;
+                    options = { headers: { 'Authorization': `Bearer ${token}` } };
+                }
+
+                const res = await fetch(url, options);
+                const items = await res.json();
+
+                // If not own profile, filter by username
+                const filteredItems = isOwnProfile ? items : items.filter(i => i.seller?.username === username);
+
+                // Update tab count
+                const storeTabBtn = document.getElementById('storeTabBtn');
+                if (storeTabBtn) {
+                    const label = isOwnProfile ? 'My Store' : 'Store';
+                    storeTabBtn.innerHTML = `🏪 ${label} <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px;">${filteredItems.length}</span>`;
+                }
+
+                renderStore(filteredItems, isOwnProfile);
+            } catch (err) {
+                console.error('Error loading store:', err);
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">Failed to load store items.</div>';
+            }
+        }
+
+        function renderStore(items, isOwnProfile) {
+            const grid = document.getElementById('chefStoreGrid');
+            grid.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">${isOwnProfile ? 'You haven\'t listed any recipes yet.' : 'This chef hasn\'t listed any recipes yet.'}</div>`;
+                return;
+            }
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+
+                const photo = item.photo || 'assets/default-recipe.png';
+                const sellerName = item.seller?.name || chefData?.displayName || 'Chef';
+
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <div style="position: absolute; top: 15px; right: 15px; background: var(--accent-pink); color: white; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(255,107,138,0.3);">$${item.price.toFixed(2)}</div>
+                        <h3 class="recipe-title" style="color: white; font-size: 1.2rem; margin-bottom: 2px; font-weight: 700;">${item.name}</h3>
+                        <p style="font-size: 0.8rem; color: #ccc; margin: 0 0 8px 0;">Seller: ${sellerName}</p>
+                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px;">
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">🏷️ ${item.category}</span>
+                            ${item.salesCount !== undefined ? `<span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">📈 ${item.salesCount} sales</span>` : ''}
+                        </div>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action buy-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>${isOwnProfile ? '⚙️' : '🛒'}</span>
+                                ${isOwnProfile ? 'Edit Listing' : 'Purchase Now'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+
+                card.querySelector('.buy-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    if (isOwnProfile) {
+                        window.location.href = 'index.html#store-manager';
+                    } else {
+                        window.location.href = `index.html?open_recipe=${item.id}`;
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function loadChefBooks(username, isOwnProfile) {
+            const grid = document.getElementById('chefBooksGrid');
+            try {
+                const token = sessionStorage.getItem('authToken');
+                let url = `${API_URL}/books/public/browse`;
+                let options = {};
+
+                if (isOwnProfile && token) {
+                    url = `${API_URL}/books`;
+                    options = { headers: { 'Authorization': `Bearer ${token}` } };
+                }
+
+                const res = await fetch(url, options);
+                const data = await res.json();
+                const books = Array.isArray(data) ? data : (data.books || []);
+
+                // If not own profile, filter by username
+                const filteredBooks = isOwnProfile ? books : books.filter(b => b.author?.username === username);
+
+                // Update tab count
+                const booksTabBtn = document.getElementById('booksTabBtn');
+                if (booksTabBtn) {
+                    const label = isOwnProfile ? 'My Books' : 'Chef Book';
+                    booksTabBtn.innerHTML = `📚 ${label} <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px;">${filteredBooks.length}</span>`;
+                }
+
+                // Show sub-tabs if own profile
+                const subTabs = document.getElementById('profileBookSubTabs');
+                if (subTabs) {
+                    subTabs.style.display = isOwnProfile ? 'flex' : 'none';
+                    if (isOwnProfile) initBookSubTabs();
+                }
+
+                if (isOwnProfile) {
+                    loadPurchasedBooks();
+                }
+
+                renderBooks(filteredBooks, isOwnProfile);
+            } catch (err) {
+                console.error('Error loading books:', err);
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">Failed to load books.</div>';
+            }
+        }
+
+        async function loadPurchasedBooks() {
+            const grid = document.getElementById('purchasedBooksGrid');
+            if (!grid) return;
+            try {
+                const token = sessionStorage.getItem('authToken');
+                if (!token) return;
+
+                const res = await fetch(`${API_URL}/books/purchased`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const books = await res.json();
+                renderBooksInGrid(books, grid);
+            } catch (err) {
+                console.error('Error loading purchased books:', err);
+            }
+        }
+
+        function renderBooksInGrid(books, grid) {
+            grid.innerHTML = '';
+            if (!books || books.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No purchased books found.</div>`;
+                return;
+            }
+            
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+                const photo = book.coverPhoto || book.cover_photo || 'assets/default-book.png';
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${book.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <h3 class="recipe-title" style="color: white; font-size: 1.3rem; margin-bottom: 2px; font-weight: 700;">${book.title}</h3>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action view-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1;">Open Book</button>
+                        </div>
+                    </div>
+                `;
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+                card.querySelector('.view-btn').onclick = () => { window.location.href = `index.html?open_book=${book.id}`; };
+                grid.appendChild(card);
+            });
+        }
+
+        function initBookSubTabs() {
+            const subTabs = document.querySelectorAll('.book-sub-tab');
+            subTabs.forEach(tab => {
+                tab.onclick = () => {
+                    subTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const sub = tab.getAttribute('data-book-sub');
+                    document.getElementById('myBooksSection').style.display = sub === 'my-books' ? 'block' : 'none';
+                    document.getElementById('purchasedBooksSection').style.display = sub === 'purchased' ? 'block' : 'none';
+                };
+            });
+        }
+
+        function renderBooks(books, isOwnProfile) {
+            const grid = document.getElementById('chefBooksGrid');
+            grid.innerHTML = '';
+
+            if (!books || books.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">${isOwnProfile ? 'You haven\'t created any books yet.' : 'This chef hasn\'t published any books yet.'}</div>`;
+                return;
+            }
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+
+                const photo = book.coverPhoto || book.cover_photo || 'assets/default-book.png';
+                const authorName = book.author?.name || chefData?.displayName || 'Chef';
+                const price = parseFloat(book.price) || 0;
+
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${book.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); pointer-events: none;"></div>
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <div style="position: absolute; top: 15px; right: 15px; background: #ffd700; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(255,215,0,0.3);">${price > 0 ? `$${price.toFixed(2)}` : 'FREE'}</div>
+                        <h3 class="recipe-title" style="color: white; font-size: 1.3rem; margin-bottom: 2px; font-weight: 700; font-family: 'Playfair Display', serif;">${book.title}</h3>
+                        <p style="font-size: 0.8rem; color: #ccc; margin: 0 0 8px 0;">By ${authorName}</p>
+                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px;">
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">📖 ${book.recipeCount || book.recipe_count || 0} Recipes</span>
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">🎨 ${book.theme || 'Classic'}</span>
+                        </div>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action view-book-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>${isOwnProfile ? '📝' : '📖'}</span>
+                                ${isOwnProfile ? 'Manage Book' : 'View & Purchase'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+
+                card.querySelector('.view-book-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    if (isOwnProfile) {
+                        window.location.href = 'index.html#book-manager';
+                    } else {
+                        window.location.href = `index.html?open_book=${book.id}`;
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
         function initTabs() {
             const tabs = document.querySelectorAll('.nav-tab');
             tabs.forEach(tab => {
@@ -672,6 +951,14 @@
                 const currentUserUsername = sessionStorage.getItem('currentUser') || 'null';
                 const isOwnProfile = currentUserUsername !== 'null' && currentUserUsername === chefData.username;
 
+                // Update tab labels if own profile
+                if (isOwnProfile) {
+                    const storeTabBtn = document.getElementById('storeTabBtn');
+                    const booksTabBtn = document.getElementById('booksTabBtn');
+                    if (storeTabBtn) storeTabBtn.innerHTML = '🏪 My Store';
+                    if (booksTabBtn) booksTabBtn.innerHTML = '📚 My Books';
+                }
+
                 if (isOwnProfile) {
                     const postBox = document.getElementById('ownProfilePostBox');
                     postBox.style.display = 'block';
@@ -739,7 +1026,11 @@
                 // 3. Load Gallery
                 renderGallery(chefData.gallery || []);
 
-                // 4. Handle direct post link
+                // 4. Load Store & Books
+                loadChefStore(username, isOwnProfile);
+                loadChefBooks(username, isOwnProfile);
+
+                // 5. Handle direct post link
                 const postId = urlParams.get('post');
                 if (postId && Array.isArray(recipes)) {
                     const sharedPost = recipes.find(r => r.id === postId || r._id === postId);
