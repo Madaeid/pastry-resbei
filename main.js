@@ -3830,68 +3830,165 @@ function showPurchaseModal(recipe) {
                 <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
                 <span style="color: var(--text-secondary); font-size: 0.9rem;">by ${recipe.seller.name}</span>
             </div>
-            <div id="priceBoxBtn" style="background: linear-gradient(135deg, rgba(255,107,138,0.1), rgba(255,154,86,0.1)); border: 1px solid rgba(255,107,138,0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px; cursor: pointer; transition: all 0.3s ease; text-align: center;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 8px 20px rgba(255,107,138,0.15)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+            <div style="background: linear-gradient(135deg, rgba(255,107,138,0.1), rgba(255,154,86,0.1)); border: 1px solid rgba(255,107,138,0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: center;">
                 <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Recipe Price</div>
                 <div style="font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, var(--accent-pink), var(--accent-orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$${recipe.price.toFixed(2)}</div>
             </div>
             <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
                 <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">🔒 Purchase this recipe to unlock the full ingredients, instructions, and chef's notes.</p>
             </div>
-            <button class="btn btn-primary" id="confirmPurchaseBtn" data-recipe-id="${recipe.id}" style="width: 100%; padding: 14px; font-size: 1.1rem; border-radius: 14px; font-weight: 700;">
-                💳 Purchase for $${recipe.price.toFixed(2)}
+            
+            <!-- Payment Method Selection -->
+            <div style="margin-bottom: 12px;">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 10px; text-align: center; font-weight: 600;">Choose Payment Method</p>
+            </div>
+            
+            <!-- Wallet Option -->
+            <button class="btn" id="walletPurchaseBtn" data-recipe-id="${recipe.id}" style="width: 100%; padding: 14px 16px; font-size: 1rem; border-radius: 14px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; transition: all 0.3s ease;">
+                <span style="font-size: 1.2rem;">💰</span>
+                <span>Pay with Wallet</span>
+                <span id="walletBalanceTag" style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Loading...</span>
+            </button>
+            <p id="walletInsufficientMsg" style="display: none; text-align: center; font-size: 0.78rem; color: #ef4444; margin: -4px 0 10px;">⚠️ Insufficient wallet balance. Deposit funds in your wallet first.</p>
+            
+            <!-- Stripe Option -->
+            <button class="btn" id="stripePurchaseBtn" data-recipe-id="${recipe.id}" style="width: 100%; padding: 14px 16px; font-size: 1rem; border-radius: 14px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s ease;">
+                <span style="font-size: 1.2rem;">💳</span>
+                <span>Pay with Stripe</span>
+                <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Visa / Card</span>
             </button>
         </div>
     `;
 
     modal.classList.add('show');
 
-    // Attach purchase handlers
-    document.getElementById('confirmPurchaseBtn').addEventListener('click', async () => {
-        await purchaseRecipe(recipe.id);
+    // Fetch wallet balance and update the wallet button
+    fetchAndUpdateWalletBtn(recipe.price, 'walletPurchaseBtn', 'walletBalanceTag', 'walletInsufficientMsg');
+
+    // Attach wallet purchase handler
+    document.getElementById('walletPurchaseBtn').addEventListener('click', async () => {
+        await purchaseRecipe(recipe.id, 'wallet');
     });
-    document.getElementById('priceBoxBtn').addEventListener('click', async () => {
-        await purchaseRecipe(recipe.id);
+    
+    // Attach Stripe purchase handler
+    document.getElementById('stripePurchaseBtn').addEventListener('click', async () => {
+        await purchaseRecipe(recipe.id, 'stripe');
     });
 }
 
-async function purchaseRecipe(id) {
+// Helper: Fetch wallet balance and update button state
+async function fetchAndUpdateWalletBtn(price, btnId, balanceTagId, insufficientMsgId) {
+    const token = sessionStorage.getItem('authToken');
+    const btn = document.getElementById(btnId);
+    const balanceTag = document.getElementById(balanceTagId);
+    const insufficientMsg = document.getElementById(insufficientMsgId);
+    if (!token || !btn) return;
+
+    try {
+        const response = await fetch(`${API_URL}/wallet/balance`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const balance = data.balance || 0;
+            if (balanceTag) balanceTag.textContent = `$${balance.toFixed(2)}`;
+            
+            if (balance < price) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                if (insufficientMsg) insufficientMsg.style.display = 'block';
+            }
+        } else {
+            if (balanceTag) balanceTag.textContent = '$0.00';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        }
+    } catch (err) {
+        console.error('Wallet balance fetch error:', err);
+        if (balanceTag) balanceTag.textContent = 'N/A';
+    }
+}
+
+async function purchaseRecipe(id, method = 'wallet') {
     const token = sessionStorage.getItem('authToken');
     if (!token) {
         showNotification('❌ Please log in to purchase.', 'error');
         return;
     }
 
-    const btn = document.getElementById('confirmPurchaseBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+    // Determine which button to show loading on
+    const walletBtn = document.getElementById('walletPurchaseBtn');
+    const stripeBtn = document.getElementById('stripePurchaseBtn');
+    const activeBtn = method === 'stripe' ? stripeBtn : walletBtn;
+    const originalContent = activeBtn ? activeBtn.innerHTML : '';
+
+    if (activeBtn) {
+        activeBtn.disabled = true;
+        activeBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
     }
 
     try {
-        const response = await fetch(`/api/store/${id}/purchase`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-            showNotification(data.message || 'Recipe purchased successfully!', 'success');
-            const modal = document.getElementById('storeRecipeViewModal');
-            if (modal) modal.style.display = 'none';
-            if (typeof viewStoreRecipe === 'function') {
-                viewStoreRecipe(id);
+        if (method === 'stripe') {
+            // Create Stripe checkout session
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+            const response = await fetch(`${API_URL}/store/create-checkout-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    recipeId: id,
+                    successUrl: `${baseUrl}/payment-success.html?type=recipe&recipe_id=${id}`,
+                    cancelUrl: `${baseUrl}/index.html`
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.url) {
+                window.location.href = data.url;
+                return;
+            } else {
+                throw new Error(data.error || 'Failed to create checkout session');
             }
         } else {
-            // Fallback to payment page if insufficient funds or other error
-            window.location.href = `./payment.html?recipeId=${id}`;
+            // Wallet purchase
+            const response = await fetch(`/api/store/${id}/purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showNotification(data.message || 'Recipe purchased successfully! 🎉', 'success');
+                // Close purchase modal
+                const purchaseModal = document.getElementById('storePurchaseModal');
+                if (purchaseModal) purchaseModal.classList.remove('show');
+                // Reload the recipe view
+                if (typeof viewStoreRecipe === 'function') {
+                    viewStoreRecipe(id);
+                }
+            } else {
+                showNotification(data.error || '❌ Purchase failed.', 'error');
+                if (activeBtn) {
+                    activeBtn.disabled = false;
+                    activeBtn.innerHTML = originalContent;
+                }
+            }
         }
     } catch (err) {
-        console.error('Wallet purchase error:', err);
-        window.location.href = `./payment.html?recipeId=${id}`;
+        console.error('Purchase error:', err);
+        showNotification(err.message || '❌ Purchase failed.', 'error');
+        if (activeBtn) {
+            activeBtn.disabled = false;
+            activeBtn.innerHTML = originalContent;
+        }
     }
 }
 
@@ -5010,11 +5107,20 @@ async function viewPublicBook(bookId) {
             actionHtml = '<div style="padding: 12px 20px; background: rgba(16,185,129,0.1); border-radius: 12px; text-align: center; color: #10b981; font-weight: 600;">✅ You own this book</div>';
         } else {
             actionHtml = `
-                <button id="purchaseBookBtn" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1.05rem; border-radius: 14px;" onclick="purchaseBook(${bookId})">
-                    <span class="btn-icon">🛒</span>
-                    <span>Purchase for $${priceVal.toFixed(2)}</span>
+                <div style="margin-bottom: 10px;">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 10px; text-align: center; font-weight: 600;">Choose Payment Method</p>
+                </div>
+                <button id="bookWalletBtn" class="btn" style="width: 100%; padding: 14px 16px; font-size: 1rem; border-radius: 14px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; transition: all 0.3s ease;" onclick="purchaseBook(${bookId}, 'wallet')">
+                    <span style="font-size: 1.2rem;">💰</span>
+                    <span>Pay with Wallet</span>
+                    <span id="bookWalletBalanceTag" style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Loading...</span>
                 </button>
-                <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">Uses wallet balance. Redirects if funds are low.</p>
+                <p id="bookWalletInsufficientMsg" style="display: none; text-align: center; font-size: 0.78rem; color: #ef4444; margin: -4px 0 10px;">⚠️ Insufficient wallet balance. Deposit funds in your wallet first.</p>
+                <button id="bookStripeBtn" class="btn" style="width: 100%; padding: 14px 16px; font-size: 1rem; border-radius: 14px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s ease;" onclick="purchaseBook(${bookId}, 'stripe')">
+                    <span style="font-size: 1.2rem;">💳</span>
+                    <span>Pay with Stripe</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">Visa / Card</span>
+                </button>
             `;
         }
 
@@ -5091,6 +5197,11 @@ async function viewPublicBook(bookId) {
             };
         });
 
+        // Fetch wallet balance for book purchase buttons
+        if (!data.isOwner && !data.hasPurchased && priceVal > 0) {
+            fetchAndUpdateWalletBtn(priceVal, 'bookWalletBtn', 'bookWalletBalanceTag', 'bookWalletInsufficientMsg');
+        }
+
     } catch (err) {
         console.error('View public book error:', err);
         body.innerHTML = '<p style="text-align:center;padding:40px;color:var(--text-secondary)">Failed to load book.</p>';
@@ -5098,36 +5209,77 @@ async function viewPublicBook(bookId) {
 }
 
 // Purchase a book
-window.purchaseBook = async function (bookId) {
+window.purchaseBook = async function (bookId, method = 'wallet') {
     const token = sessionStorage.getItem('authToken');
     if (!token) { showNotification('Please log in', 'error'); return; }
 
-    const btn = document.getElementById('purchaseBookBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="loading-spinner"></span> Processing...'; }
+    const walletBtn = document.getElementById('bookWalletBtn');
+    const stripeBtn = document.getElementById('bookStripeBtn');
+    const activeBtn = method === 'stripe' ? stripeBtn : walletBtn;
+    const originalContent = activeBtn ? activeBtn.innerHTML : '';
+
+    if (activeBtn) {
+        activeBtn.disabled = true;
+        activeBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+    }
 
     try {
-        const response = await fetch(`/api/books/public/${bookId}/purchase`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.success) {
-            showNotification(data.message || 'Book purchased successfully!', 'success');
-            if (typeof viewPublicBook === 'function') {
-                viewPublicBook(bookId);
+        if (method === 'stripe') {
+            // Create Stripe checkout session for book
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+            const response = await fetch(`${API_URL}/books/create-checkout-session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    bookId: bookId,
+                    successUrl: `${baseUrl}/payment-success.html?type=book&book_id=${bookId}`,
+                    cancelUrl: `${baseUrl}/index.html`
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.url) {
+                window.location.href = data.url;
+                return;
+            } else {
+                throw new Error(data.error || 'Failed to create checkout session');
             }
         } else {
-            // Redirect to the centralized payment page with the book ID
-            window.location.href = `./payment.html?bookId=${bookId}`;
+            // Wallet purchase
+            const response = await fetch(`/api/books/public/${bookId}/purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                showNotification(data.message || 'Book purchased successfully! 🎉', 'success');
+                if (typeof viewPublicBook === 'function') {
+                    viewPublicBook(bookId);
+                }
+            } else {
+                showNotification(data.error || data.message || '❌ Purchase failed.', 'error');
+                if (activeBtn) {
+                    activeBtn.disabled = false;
+                    activeBtn.innerHTML = originalContent;
+                }
+            }
         }
     } catch (err) {
-        console.error('Wallet purchase error:', err);
-        window.location.href = `./payment.html?bookId=${bookId}`;
+        console.error('Purchase error:', err);
+        showNotification(err.message || '❌ Purchase failed.', 'error');
+        if (activeBtn) {
+            activeBtn.disabled = false;
+            activeBtn.innerHTML = originalContent;
+        }
     }
 };
 

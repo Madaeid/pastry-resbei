@@ -131,7 +131,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
-        // Verify password
+        // Verify password (OAuth users may not have a password_hash)
+        if (!user.password_hash) {
+            const provider = user.auth_provider || 'OAuth';
+            return res.status(401).json({ error: `This account uses ${provider} sign-in. Please use the ${provider} button to log in.` });
+        }
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid username or password' });

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 // Load environment variables
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -89,6 +89,34 @@ async function runMigrations() {
             }
         } catch (migErr) {
             console.log('Migration note (shared_from_store_id):', migErr.message);
+        }
+
+        // Migration: Fix reset_code_expiry type from TIMESTAMP to BIGINT (stores epoch ms)
+        try {
+            const expiryTypeCheck = await db.query(`
+                SELECT data_type FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'reset_code_expiry'
+            `);
+            if (expiryTypeCheck.rows.length > 0 && expiryTypeCheck.rows[0].data_type !== 'bigint') {
+                await db.query(`ALTER TABLE users ALTER COLUMN reset_code_expiry TYPE BIGINT USING EXTRACT(EPOCH FROM reset_code_expiry)::BIGINT * 1000`);
+                console.log('✅ reset_code_expiry column converted to BIGINT');
+            }
+        } catch (migErr) {
+            console.log('Migration note (reset_code_expiry):', migErr.message);
+        }
+
+        // Migration: Make password_hash nullable for OAuth users
+        try {
+            const passNullCheck = await db.query(`
+                SELECT is_nullable FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'password_hash'
+            `);
+            if (passNullCheck.rows.length > 0 && passNullCheck.rows[0].is_nullable === 'NO') {
+                await db.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
+                console.log('✅ password_hash made nullable for OAuth users');
+            }
+        } catch (migErr) {
+            console.log('Migration note (password_hash):', migErr.message);
         }
     } catch (err) {
         console.error('Migration error:', err.message);

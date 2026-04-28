@@ -31,7 +31,7 @@ async function initDB() {
                     email TEXT UNIQUE NOT NULL,
                     phone TEXT,
                     birthday TEXT,
-                    password_hash TEXT NOT NULL,
+                    password_hash TEXT,
                     is_admin INTEGER DEFAULT 0,
                     is_public TEXT DEFAULT 'all',
                     allowed_viewers JSON DEFAULT '[]',
@@ -42,7 +42,7 @@ async function initDB() {
                     apple_id TEXT UNIQUE,
                     auth_provider TEXT DEFAULT 'local',
                     reset_code TEXT,
-                    reset_code_expiry TIMESTAMP,
+                    reset_code_expiry BIGINT,
                     reset_method TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -50,7 +50,40 @@ async function initDB() {
             `);
             console.log('✅ Users table created');
 
-            // 2. Recipes Table
+            // 2. Store/Marketplace Tables (must be created before recipes due to FK dependency)
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS store_recipes (
+                    id SERIAL PRIMARY KEY,
+                    seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    category TEXT,
+                    difficulty TEXT,
+                    prep_time INTEGER DEFAULT 0,
+                    cook_time INTEGER DEFAULT 0,
+                    photo TEXT,
+                    video TEXT,
+                    ingredients TEXT,
+                    instructions TEXT,
+                    notes TEXT,
+                    price DECIMAL(10,2) NOT NULL,
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS store_purchases (
+                    id SERIAL PRIMARY KEY,
+                    buyer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    store_recipe_id INTEGER REFERENCES store_recipes(id) ON DELETE CASCADE,
+                    price_paid DECIMAL(10,2) NOT NULL,
+                    stripe_session_id TEXT,
+                    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+            console.log('✅ Store tables created');
+
+            // 3. Recipes Table (after store_recipes due to shared_from_store_id FK)
             await client.query(`
                 CREATE TABLE IF NOT EXISTS recipes (
                     id SERIAL PRIMARY KEY,
@@ -76,7 +109,7 @@ async function initDB() {
             `);
             console.log('✅ Recipes table created');
 
-            // 3. CVs Table
+            // 4. CVs Table
             await client.query(`
                 CREATE TABLE IF NOT EXISTS cvs (
                     id SERIAL PRIMARY KEY,
@@ -102,7 +135,7 @@ async function initDB() {
             `);
             console.log('✅ CVs table created');
 
-            // 4. Social Features Tables
+            // 5. Social Features Tables
             await client.query(`
                 CREATE TABLE IF NOT EXISTS recipe_likes (
                     id SERIAL PRIMARY KEY,
@@ -145,39 +178,6 @@ async function initDB() {
                 );
             `);
             console.log('✅ Social tables created (Likes, Comments, Shares, Follows)');
-
-            // 5. Store/Marketplace Tables
-            await client.query(`
-                CREATE TABLE IF NOT EXISTS store_recipes (
-                    id SERIAL PRIMARY KEY,
-                    seller_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                    name TEXT NOT NULL,
-                    description TEXT,
-                    category TEXT,
-                    difficulty TEXT,
-                    prep_time INTEGER DEFAULT 0,
-                    cook_time INTEGER DEFAULT 0,
-                    photo TEXT,
-                    video TEXT,
-                    ingredients TEXT,
-                    instructions TEXT,
-                    notes TEXT,
-                    price DECIMAL(10,2) NOT NULL,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                );
-
-                CREATE TABLE IF NOT EXISTS store_purchases (
-                    id SERIAL PRIMARY KEY,
-                    buyer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                    store_recipe_id INTEGER REFERENCES store_recipes(id) ON DELETE CASCADE,
-                    price_paid DECIMAL(10,2) NOT NULL,
-                    stripe_session_id TEXT,
-                    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                );
-            `);
-            console.log('✅ Store tables created');
 
             // 6. Subscriptions & Transactions
             await client.query(`

@@ -862,7 +862,8 @@ async function handleStripeCheckout(e) {
         // Improved URL construction to support subpath deployments (GitHub Pages) and local dev
         const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
 
-        const source = urlParams.get('source');
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        const source = currentUrlParams.get('source');
 
         // Check if we are purchasing a recipe or a plan
         let endpoint = '/subscriptions/create-checkout-session';
