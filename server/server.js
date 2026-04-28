@@ -62,9 +62,33 @@ async function runMigrations() {
                 await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
                 console.log('✅ allowed_viewers column added');
             }
+
+            // Add reset_method column if it doesn't exist
+            const resetMethodCheck = await db.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'reset_method'
+            `);
+            if (resetMethodCheck.rows.length === 0) {
+                await db.query(`ALTER TABLE users ADD COLUMN reset_method TEXT`);
+                console.log('✅ reset_method column added');
+            }
         } catch (migErr) {
             // Migration may fail if already done or table doesn't exist yet
             console.log('Migration note:', migErr.message);
+        }
+
+        // Migration: Add shared_from_store_id column to recipes
+        try {
+            const storeIdCheck = await db.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'recipes' AND column_name = 'shared_from_store_id'
+            `);
+            if (storeIdCheck.rows.length === 0) {
+                await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_store_id INTEGER REFERENCES store_recipes(id) ON DELETE SET NULL`);
+                console.log('✅ shared_from_store_id column added to recipes');
+            }
+        } catch (migErr) {
+            console.log('Migration note (shared_from_store_id):', migErr.message);
         }
     } catch (err) {
         console.error('Migration error:', err.message);

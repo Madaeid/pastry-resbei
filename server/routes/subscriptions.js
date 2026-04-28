@@ -111,7 +111,7 @@ router.get('/status', authenticateToken, async (req, res) => {
             plan: subscription.plan,
             status: 'active',
             endDate: subscription.end_date,
-            autoRenew: subscription.auto_renew === 1,
+            autoRenew: !!subscription.auto_renew,
             message: `Premium ${PLANS[subscription.plan]?.name || 'Plan'}`
         });
 
@@ -137,8 +137,8 @@ router.get('/details', authenticateToken, async (req, res) => {
             status: subscription.status,
             startDate: subscription.start_date,
             endDate: subscription.end_date,
-            autoRenew: subscription.auto_renew === 1,
-            grantedByAdmin: subscription.granted_by_admin === 1,
+            autoRenew: !!subscription.auto_renew,
+            grantedByAdmin: !!subscription.granted_by_admin,
             paymentMethod: subscription.payment_last4 ? {
                 last4: subscription.payment_last4,
                 brand: subscription.payment_brand,
@@ -205,7 +205,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                     payment_brand = $5,
                     payment_expiry = $6,
                     auto_renew = $7,
-                    granted_by_admin = 0,
+                    granted_by_admin = FALSE,
                     cancelled_at = NULL,
                     updated_at = $8
                 WHERE user_id = $9
@@ -216,7 +216,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                plan !== 'lifetime' ? 1 : 0,
+                plan !== 'lifetime',
                 new Date().toISOString(),
                 req.user.userId
             ]);
@@ -233,7 +233,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                plan !== 'lifetime' ? 1 : 0
+                plan !== 'lifetime'
             ]);
         }
 
@@ -281,7 +281,7 @@ router.post('/cancel', authenticateToken, async (req, res) => {
         await db.query(`
             UPDATE subscriptions SET
                 status = 'cancelled',
-                auto_renew = 0,
+                auto_renew = FALSE,
                 cancelled_at = $1,
                 updated_at = $2
             WHERE user_id = $3
@@ -455,7 +455,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
                     auto_renew = $4,
                     stripe_session_id = $5,
                     stripe_customer_id = $6,
-                    granted_by_admin = 0,
+                    granted_by_admin = FALSE,
                     cancelled_at = NULL,
                     updated_at = $7
                 WHERE user_id = $8
@@ -463,7 +463,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
                 planId,
                 startDate.toISOString(),
                 endDate.toISOString(),
-                planId !== 'lifetime' ? 1 : 0,
+                planId !== 'lifetime',
                 sessionId,
                 session.customer || null,
                 new Date().toISOString(),
@@ -478,7 +478,7 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
                 planId,
                 startDate.toISOString(),
                 endDate.toISOString(),
-                planId !== 'lifetime' ? 1 : 0,
+                planId !== 'lifetime',
                 sessionId,
                 session.customer || null
             ]);
@@ -679,7 +679,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                                 auto_renew = $4,
                                 stripe_session_id = $5,
                                 stripe_customer_id = $6,
-                                granted_by_admin = 0,
+                                granted_by_admin = FALSE,
                                 cancelled_at = NULL,
                                 updated_at = $7
                             WHERE user_id = $8
@@ -687,7 +687,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             planId,
                             startDate.toISOString(),
                             endDate.toISOString(),
-                            planId !== 'lifetime' ? 1 : 0,
+                            planId !== 'lifetime',
                             session.id,
                             session.customer || null,
                             new Date().toISOString(),
@@ -702,7 +702,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             planId,
                             startDate.toISOString(),
                             endDate.toISOString(),
-                            planId !== 'lifetime' ? 1 : 0,
+                            planId !== 'lifetime',
                             session.id,
                             session.customer || null
                         ]);

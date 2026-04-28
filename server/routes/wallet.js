@@ -318,15 +318,15 @@ router.post('/purchase', authenticateToken, async (req, res) => {
                 await db.query(`
                     UPDATE subscriptions SET
                         plan = $1, status = 'active', start_date = $2, end_date = $3,
-                        auto_renew = $4, updated_at = NOW(), granted_by_admin = 0,
+                        auto_renew = $4, updated_at = NOW(), granted_by_admin = FALSE,
                         cancelled_at = NULL, stripe_session_id = NULL
                     WHERE user_id = $5
-                `, [planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime' ? 1 : 0, userId]);
+                `, [planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime', userId]);
             } else {
                 await db.query(`
                     INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew)
                     VALUES ($1, $2, 'active', $3, $4, $5)
-                `, [userId, planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime' ? 1 : 0]);
+                `, [userId, planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime']);
             }
 
             // Also add to transactions table for unified history

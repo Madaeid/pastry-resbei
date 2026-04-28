@@ -43,6 +43,7 @@ async function initDB() {
                     auth_provider TEXT DEFAULT 'local',
                     reset_code TEXT,
                     reset_code_expiry TIMESTAMP,
+                    reset_method TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -67,6 +68,7 @@ async function initDB() {
                     video TEXT,
                     visibility TEXT DEFAULT 'private',
                     shared_from_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL,
+                    shared_from_store_id INTEGER REFERENCES store_recipes(id) ON DELETE SET NULL,
                     shared_notes TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
