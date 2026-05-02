@@ -9,6 +9,7 @@ import { getCategoryEmoji, getDifficultyText } from './recipe-utils.js';
 import { showNotification } from './ui-utils.js';
 import { loadBooks, viewPublicBook } from './books.js';
 import { setupStoreListeners, loadStoreRecipes, viewStoreRecipe } from './store.js';
+import { initScanner, openScanner } from './ingredient-scanner.js';
 
 // Free tier limits
 const FREE_RECIPE_LIMIT = 10;
@@ -324,6 +325,9 @@ async function initApp() {
 
     // Setup Store Marketplace listeners
     setupStoreListeners();
+
+    // Initialize AI Ingredient Scanner
+    initScanner();
 
     // Initialize Home User Search
     initHomeUserSearch();
@@ -666,6 +670,14 @@ function setupEventListeners() {
         premiumBadge.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent opening edit profile
             showPremiumProfileModal();
+        });
+    }
+
+    // Sidebar AI Scanner Button
+    const sidebarScannerBtn = document.getElementById('sidebarScannerBtn');
+    if (sidebarScannerBtn) {
+        sidebarScannerBtn.addEventListener('click', () => {
+            openScanner('add');
         });
     }
 
