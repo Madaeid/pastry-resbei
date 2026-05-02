@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 // Store Routes - Recipe Marketplace
 import express from 'express';
 import { getDatabase } from '../database/db.js';
@@ -162,7 +163,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // ===== Create Store Recipe =====
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
+        let { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'store');
+        if (video) video = await uploadMedia(video, 'store');
 
         if (!name || !price || price <= 0) {
             return res.status(400).json({ error: 'Recipe name and a valid price are required' });
@@ -192,7 +195,9 @@ router.put('/:id', authenticateToken, async (req, res) => {
         if (check.rows.length === 0) return res.status(404).json({ error: 'Recipe not found' });
         if (check.rows[0].seller_id !== req.user.userId) return res.status(403).json({ error: 'Unauthorized' });
 
-        const { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
+        let { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'store');
+        if (video) video = await uploadMedia(video, 'store');
 
         await db.query(`
             UPDATE store_recipes SET

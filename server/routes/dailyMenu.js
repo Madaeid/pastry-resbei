@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 
 // Daily Menu Routes
 import express from 'express';
@@ -244,7 +245,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 router.post('/:menuId/items', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, photo, recipeId, ingredients, instructions } = req.body;
+        let { name, photo, recipeId, ingredients, instructions } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'daily_menu');
 
         // Verify menu ownership
         const menuResult = await db.query(`
@@ -333,7 +335,8 @@ router.post('/:menuId/items', authenticateToken, async (req, res) => {
 router.put('/items/:itemId', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, photo, orderIndex } = req.body;
+        let { name, photo, orderIndex } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'daily_menu');
 
         // Verify item belongs to user's menu
         const itemResult = await db.query(`

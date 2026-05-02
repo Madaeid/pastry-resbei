@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 
 // Books Routes — Chef Book Portfolio Feature
 import express from 'express';
@@ -51,7 +52,8 @@ router.get('/', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { title, description, cover_photo, theme, price } = req.body;
+        let { title, description, cover_photo, theme, price } = req.body;
+        if (cover_photo) cover_photo = await uploadMedia(cover_photo, 'books');
         const premium = await isPremiumUser(db, req.user.userId);
 
         // Free user limit: 1 book
@@ -125,7 +127,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { title, description, cover_photo, theme, price, is_public } = req.body;
+        let { title, description, cover_photo, theme, price, is_public } = req.body;
+        if (cover_photo) cover_photo = await uploadMedia(cover_photo, 'books');
 
         // Verify ownership
         const bookResult = await db.query('SELECT * FROM books WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);

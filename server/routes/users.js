@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 
 // User Routes
 import express from 'express';
@@ -186,7 +187,9 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // ===== Update User Profile =====
 router.put('/profile', authenticateToken, async (req, res) => {
     try {
-        const { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile, isPublic, allowedViewers } = req.body;
+        let { displayName, email, phone, phoneNumber, password, newUsername, profilePicture, gallery, cvFile, isPublic, allowedViewers } = req.body;
+        if (profilePicture) profilePicture = await uploadMedia(profilePicture, 'users');
+        if (cvFile) cvFile = await uploadMedia(cvFile, 'users');
         const db = getDatabase();
         const userId = req.user.userId;
 

@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -38,7 +39,8 @@ router.get('/', authenticateToken, async (req, res) => {
 // Save CV
 router.post('/', authenticateToken, async (req, res) => {
     try {
-        const { fullName, dob, phone, email, address, summary, skills, languages, education, experience, certifications, photo } = req.body;
+        let { fullName, dob, phone, email, address, summary, skills, languages, education, experience, certifications, photo } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'cvs');
         const db = getDatabase();
         const userId = req.user.userId;
 

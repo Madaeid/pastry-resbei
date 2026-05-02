@@ -1,3 +1,4 @@
+import { uploadMedia } from '../utils/cloudinary.js';
 
 // Recipe Routes
 import express from 'express';
@@ -333,7 +334,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
+        let { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'recipes');
+        if (video) video = await uploadMedia(video, 'recipes');
 
         // Validation
         if (!name || !category || !ingredients || !instructions) {
@@ -419,7 +422,9 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        const { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
+        let { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
+        if (photo) photo = await uploadMedia(photo, 'recipes');
+        if (video) video = await uploadMedia(video, 'recipes');
 
         // Check premium status
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);

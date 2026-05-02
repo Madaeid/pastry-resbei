@@ -8,10 +8,12 @@
         "start": "node server.js",
         "dev": "nodemon server.js",
         "init-db": "node database/init_pg.js",
-        "migrate-pg": "node database/migrate_to_pg.js"
+        "migrate-pg": "node database/migrate_to_pg.js",
+        "migrate-media": "node database/migrate_media.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
+        "cloudinary": "^2.10.0",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",
         "express": "^4.21.0",
