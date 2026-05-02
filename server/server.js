@@ -77,8 +77,19 @@ async function runMigrations() {
             console.log('Migration note:', migErr.message);
         }
 
-        // Migration: Add shared_from_store_id column to recipes
+        // Migration: Add sharing columns to recipes
         try {
+            // Check for shared_from_id
+            const fromIdCheck = await db.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'recipes' AND column_name = 'shared_from_id'
+            `);
+            if (fromIdCheck.rows.length === 0) {
+                await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL`);
+                console.log('✅ shared_from_id column added to recipes');
+            }
+
+            // Check for shared_from_store_id
             const storeIdCheck = await db.query(`
                 SELECT column_name FROM information_schema.columns 
                 WHERE table_name = 'recipes' AND column_name = 'shared_from_store_id'
@@ -87,8 +98,28 @@ async function runMigrations() {
                 await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_store_id INTEGER REFERENCES store_recipes(id) ON DELETE SET NULL`);
                 console.log('✅ shared_from_store_id column added to recipes');
             }
+
+            // Check for shared_notes
+            const notesCheck = await db.query(`
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_name = 'recipes' AND column_name = 'shared_notes'
+            `);
+            if (notesCheck.rows.length === 0) {
+                await db.query(`ALTER TABLE recipes ADD COLUMN shared_notes TEXT`);
+                console.log('✅ shared_notes column added to recipes');
+            }
+            
+            // Ensure recipe_shares table exists
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS recipe_shares (
+                    id SERIAL PRIMARY KEY,
+                    recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
+                    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
         } catch (migErr) {
-            console.log('Migration note (shared_from_store_id):', migErr.message);
+            console.log('Migration note (sharing columns):', migErr.message);
         }
 
         // Migration: Fix reset_code_expiry type from TIMESTAMP to BIGINT (stores epoch ms)
@@ -137,8 +168,8 @@ app.use(cors({
 }));
 
 // Body parser
-app.use(express.json({ limit: '10mb' })); // Allow large base64 images
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100mb' })); // Allow large base64 videos and images
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Auth rate limiter (stricter)
 const authLimiter = rateLimit({
@@ -153,7 +184,7 @@ app.use('/api/auth', authLimiter);
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 1000, // Limit each IP to 1000 requests per windowMs
     message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);

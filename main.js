@@ -148,10 +148,10 @@ async function initApp() {
             addRecipeVideoInput.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    // 5MB Limit for videos to prevent storage issues
-                    const maxSize = 5 * 1024 * 1024;
+                    // 50MB Limit for videos to support larger sharing
+                    const maxSize = 50 * 1024 * 1024;
                     if (file.size > maxSize) {
-                        showNotification('❌ Video file is too large! Please choose a file under 5MB.', 'error');
+                        showNotification('❌ Video file is too large! Please choose a file under 50MB.', 'error');
                         addRecipeVideoInput.value = '';
                         return;
                     }
@@ -2085,7 +2085,6 @@ function createRecipeCard(recipe, isPublicFeed = false) {
             <div class="overlay-actions">
                 <button class="btn-overlay-action" data-action="view" title="View Post">👁️</button>
                 <button class="btn-overlay-action" data-action="menu" title="Add to Menu">📅</button>
-                <button class="btn-overlay-action" data-action="share" title="Share Recipe">🔗</button>
                 <button class="btn-overlay-action" data-action="pdf" title="Save PDF">📄</button>
                 ${!isPublicFeed ? `<button class="btn-overlay-action btn-delete" data-action="delete" title="Delete Recipe">🗑️</button>` : ''}
             </div>
@@ -2106,10 +2105,7 @@ function createRecipeCard(recipe, isPublicFeed = false) {
         e.stopPropagation(); // Prevent card click if any
         saveRecipeAsPdf(recipe);
     });
-    card.querySelector('[data-action="share"]').addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleShareRecipe(recipe);
-    });
+
 
     if (!isPublicFeed) {
         card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
@@ -2268,10 +2264,10 @@ function viewRecipe(idOrRecipe, isPublic = false) {
                ${isReshare ? `<span style="background: rgba(255,107,138,0.1); color: var(--accent-pink); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔁 Shared from ${source.author?.name || source.authorUsername || 'another chef'}</span>` : ''}
            </div>
            <div style="display: flex; gap: 8px;">
-               <button class="btn btn-secondary" id="modalShareRecipe" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 12px; display: flex; align-items: center; gap: 5px;">
-                    <span>🔗</span> Share
+               <button class="btn btn-primary" id="modalAddToMenu" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 12px; display: flex; align-items: center; gap: 5px;">
+                    <span>📅</span> Add to Menu
                </button>
-               ${!isPublic ? `<button class="btn btn-primary" id="modalSavePdf" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
+               ${!isPublic ? `<button class="btn btn-secondary" id="modalSavePdf" style="padding: 0.5rem 1rem; font-size: 0.9rem;">
                     <span class="btn-icon">📄</span> Save as PDF
                </button>` : ''}
            </div>
@@ -2360,10 +2356,10 @@ function viewRecipe(idOrRecipe, isPublic = false) {
         savePdfBtn.addEventListener('click', () => saveRecipeAsPdf(recipe));
     }
 
-    // Add event listener for modal share button
-    const modalShareBtn = document.getElementById('modalShareRecipe');
-    if (modalShareBtn) {
-        modalShareBtn.addEventListener('click', () => handleShareRecipe(recipe));
+    // Add event listener for modal add to menu button
+    const modalMenuBtn = document.getElementById('modalAddToMenu');
+    if (modalMenuBtn) {
+        modalMenuBtn.addEventListener('click', () => openDayPickerModal(recipe));
     }
 
     // Comment Submission in modal
@@ -2499,6 +2495,13 @@ function viewRecipe(idOrRecipe, isPublic = false) {
 
 // Expose to window for social-ui.js
 window.viewRecipe = viewRecipe;
+window.toggleLike = toggleLike;
+window.submitComment = submitComment;
+window.sharePost = sharePost;
+window.editComment = editPostComment;
+window.deleteComment = deletePostComment;
+window.editPost = editPost;
+window.deletePost = deleteRecipe;
 
 // Delete Recipe
 async function deleteRecipe(id) {
@@ -2664,12 +2667,13 @@ async function sharePost(id, initialNotes = '') {
         if (response.ok) {
             showNotification('✅ Post shared to your feed!', 'success');
             // Immediate UI feedback: if on home feed, reload it
-            if (document.getElementById('home').classList.contains('active')) {
+            const homeTab = document.getElementById('home');
+            if (homeTab && homeTab.classList.contains('active')) {
                 await loadHomeFeed();
             }
         } else {
-            const data = await response.json();
-            showNotification(data.error || '❌ Failed to share post', 'error');
+            const errorData = await response.json();
+            showNotification(`❌ ${errorData.error || 'Failed to share post.'}`, 'error');
         }
     } catch (err) {
         console.error('Share error:', err);
@@ -4005,8 +4009,8 @@ function showFullStoreRecipe(recipe) {
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                 <h2 style="margin: 0 0 8px; flex: 1;">${recipe.name}</h2>
-                <button id="shareStoreRecipeBtn" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <span>🔗</span> Share
+                <button id="addToMenuStoreRecipeBtn" class="btn btn-primary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span>📅</span> Add to Menu
                 </button>
             </div>
 
@@ -4038,11 +4042,11 @@ function showFullStoreRecipe(recipe) {
         </div>
     `;
 
-    // Attach share handler
-    const shareBtn = document.getElementById('shareStoreRecipeBtn');
-    if (shareBtn) {
-        shareBtn.addEventListener('click', () => {
-            handleShareRecipe(recipe);
+    // Attach add to menu handler
+    const menuBtn = document.getElementById('addToMenuStoreRecipeBtn');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', () => {
+            openDayPickerModal(recipe);
         });
     }
 
@@ -4230,6 +4234,14 @@ function initQuickPost() {
         quickPostVideoInput.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
+                // 50MB Limit for quick post videos
+                const maxSize = 50 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    showNotification('❌ Video file is too large! Please choose a file under 50MB.', 'error');
+                    quickPostVideoInput.value = '';
+                    return;
+                }
+
                 if (qpVideoPreview.src) URL.revokeObjectURL(qpVideoPreview.src);
                 qpVideoPreview.src = URL.createObjectURL(file);
                 qpVideoPreview.style.display = 'block';
@@ -5145,7 +5157,10 @@ async function viewPublicBook(bookId) {
                     <div class="recipe-expand" style="display: none; padding: 16px 20px; margin: -10px 0 10px; background: rgba(198,123,75,0.04); border-radius: 0 0 14px 14px; border: 1px solid rgba(255,255,255,0.06); border-top: none;">
                         ${r.ingredients ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">🧂 Ingredients</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; margin-bottom: 12px;">${r.ingredients}</p>` : ''}
                         ${r.instructions ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">📝 Instructions</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; margin-bottom: 12px;">${r.instructions}</p>` : ''}
-                        ${r.notes ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">💡 Chef's Notes</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap;">${r.notes}</p>` : ''}
+                        ${r.notes ? `<h4 style="color: var(--accent-orange); margin-bottom: 6px;">💡 Chef's Notes</h4><p style="font-size: 0.9rem; color: var(--text-secondary); white-space: pre-wrap; margin-bottom: 12px;">${r.notes}</p>` : ''}
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 10px; border-radius: 10px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="event.stopPropagation(); window.openDayPickerModal(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+                            <span>📅</span> Add to Menu
+                        </button>
                     </div>
                 `;
             });

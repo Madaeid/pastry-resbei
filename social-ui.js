@@ -185,6 +185,7 @@ export function createPostCard(post) {
                     <div class="author-name-row">
                         <span class="author-display-name">${authorName}</span>
                         ${isPremium ? '<span class="premium-star" title="Premium Chef">💎</span>' : ''}
+                        ${post.sharedFrom ? '<span style="font-size: 0.75rem; color: var(--accent-pink); margin-left: 5px; background: rgba(255,107,138,0.1); padding: 2px 8px; border-radius: 10px; font-weight: 600;">RESHARED</span>' : ''}
                     </div>
                     <span class="post-time">${timeAgo}</span>
                 </div>

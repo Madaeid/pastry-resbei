@@ -656,26 +656,49 @@ router.post('/:id/share', authenticateToken, async (req, res) => {
         
         const orig = origResult.rows[0];
 
-        // Create the new reshare post
-        // IMPORTANT: We copy the photo and video from the original to the reshare 
-        // to ensure it shows up in the feed, even if it's a reshare of a reshare.
+        // If it's already a shared post, we link to the original source to avoid deep chains
+        // This ensures the shared content always points to the actual recipe/post
+        const effectiveOrigId = orig.shared_from_id || orig.id;
+        const effectiveStoreId = orig.shared_from_store_id || (isStoreRecipe ? orig.id : null);
+        const isFromStore = !!effectiveStoreId;
+
+        // Use the original recipe's metadata for the new share
+        // But the name should reflect it's a reshare
+        const reshareName = orig.name ? (orig.name.startsWith('Reshare of') ? orig.name : `Reshare of ${orig.name}`) : 'Reshare of Recipe';
+
         const reshareResult = await db.query(`
             INSERT INTO recipes (
-                user_id, name, category, ingredients, instructions, photo, video, visibility, shared_from_id, shared_from_store_id, shared_notes
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                user_id, 
+                name, 
+                category, 
+                prep_time, 
+                cook_time, 
+                servings, 
+                difficulty, 
+                ingredients, 
+                instructions, 
+                photo, 
+                video, 
+                shared_from_id,
+                shared_from_store_id,
+                is_public
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
             RETURNING id
         `, [
             req.user.userId,
-            orig.name,
-            orig.category || 'Other',
-            orig.ingredients || 'N/A',
+            reshareName,
+            orig.category || 'Social',
+            orig.prep_time || 0,
+            orig.cook_time || 0,
+            orig.servings || 1,
+            orig.difficulty || 'Medium',
+            orig.ingredients || '',
             notes || 'Shared this post!',
             orig.photo || null,
             orig.video || null,
-            'public',
-            isStoreRecipe ? null : orig.id,
-            isStoreRecipe ? orig.id : null,
-            notes || null
+            isFromStore ? null : effectiveOrigId,
+            effectiveStoreId
         ]);
 
         // Record the share action
@@ -686,7 +709,10 @@ router.post('/:id/share', authenticateToken, async (req, res) => {
         res.json({ success: true, newPostId: reshareResult.rows[0].id });
     } catch (error) {
         console.error('Share error:', error);
-        res.status(500).json({ error: 'Failed to record share' });
+        res.status(500).json({ 
+            error: 'Failed to record share', 
+            details: error.message 
+        });
     }
 });
 

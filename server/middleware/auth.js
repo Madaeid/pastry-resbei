@@ -14,16 +14,25 @@ export function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'Access token required' });
     }
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        if (err.name === 'TokenExpiredError') {
-            return res.status(401).json({ error: 'Token expired' });
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            console.error('JWT Verification Error:', err.message);
+            if (err.name === 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Token expired' });
+            }
+            return res.status(403).json({ error: 'Invalid token' });
         }
-        return res.status(403).json({ error: 'Invalid token' });
-    }
+        
+        req.user = user;
+        
+        // Validate that userId is a valid number if needed
+        if (isNaN(parseInt(req.user.userId))) {
+            console.error('Invalid userId in token payload:', req.user.userId);
+            return res.status(403).json({ error: 'Invalid token payload' });
+        }
+        
+        next();
+    });
 }
 
 // Optional Authentication Middleware

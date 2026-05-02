@@ -68,7 +68,7 @@ export function createPublicRecipeCard(recipe) {
 
             <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
                 <button class="btn-overlay-action view-btn" style="background: var(--accent-pink); color: white; border: none; padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">View Detail</button>
-                <button class="btn-overlay-action share-btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer; font-weight: 600;" title="Share Recipe">🔗 Share</button>
+                <button class="btn-overlay-action menu-btn" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 15px; font-size: 0.75rem; cursor: pointer; font-weight: 600;" title="Add to Daily Menu">📅 Add to Menu</button>
             </div>
         </div>
     `;
@@ -88,20 +88,14 @@ export function createPublicRecipeCard(recipe) {
     viewBtn.onclick = handleView;
     card.onclick = handleView;
 
-    // Share logic
-    const shareBtn = card.querySelector('.share-btn');
-    shareBtn.onclick = (e) => {
+    // Add to Menu logic
+    const menuBtn = card.querySelector('.menu-btn');
+    menuBtn.onclick = (e) => {
         e.stopPropagation();
-        if (typeof window.handleShareRecipe === 'function') {
-            window.handleShareRecipe(recipe);
+        if (typeof window.openDayPickerModal === 'function') {
+            window.openDayPickerModal(recipe);
         } else {
-            // Fallback if handleShareRecipe not available
-            const url = `${window.location.origin}/chef-profile.html?username=${recipe.author?.username || recipe.authorUsername}&post=${recipe.id}`;
-            if (navigator.share) {
-                navigator.share({ title: recipe.name, url }).catch(console.error);
-            } else {
-                navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
-            }
+            alert('Please open the main app to add recipes to your menu.');
         }
     };
 

@@ -552,8 +552,8 @@
                 </div>
                 
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                    <button id="modalShareRecipe" class="btn btn-secondary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                        <span>🔗</span> Share
+                    <button id="modalAddToMenu" class="btn btn-primary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                        <span>📅</span> Add to Menu
                     </button>
                 </div>
                 
@@ -612,19 +612,15 @@
                 ` : ''}
             `;
 
-            // Attach share listener
-            const shareBtn = modal.querySelector('#modalShareRecipe');
-            if (shareBtn) {
-                shareBtn.onclick = () => {
-                    // Reuse handleShareRecipe logic (it should be global or we define a simple version)
-                    const url = `${window.location.origin}/chef-profile.html?username=${source.author?.username || recipe.authorUsername || chefData?.username}&post=${recipe.id}`;
-                    if (navigator.share) {
-                        navigator.share({
-                            title: `Chef Book: ${source.name || recipe.name}`,
-                            url: url
-                        });
+            // Attach add to menu listener
+            const menuBtn = modal.querySelector('#modalAddToMenu');
+            if (menuBtn) {
+                menuBtn.onclick = () => {
+                    if (typeof window.openDayPickerModal === 'function') {
+                        window.openDayPickerModal(recipe);
                     } else {
-                        navigator.clipboard.writeText(url).then(() => alert('Link copied to clipboard!'));
+                        // Fallback: Redirect to home with open_recipe param
+                        window.location.href = `index.html?open_recipe=${recipe.id}`;
                     }
                 };
             }
@@ -1215,6 +1211,12 @@
             videoInput.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
+                    const maxSize = 50 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        showNotification('❌ Video file is too large! Please choose a file under 50MB.', 'error');
+                        videoInput.value = '';
+                        return;
+                    }
                     videoPreview.querySelector('video').src = URL.createObjectURL(file);
                     videoPreview.style.display = 'block';
                     photoPreview.style.display = 'none';
