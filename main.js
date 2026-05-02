@@ -1464,9 +1464,9 @@ function initHomeUserSearch() {
 
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim().toLowerCase();
-        
+
         clearTimeout(searchTimeout);
-        
+
         if (query.length < 1) {
             dropdown.style.display = 'none';
             return;
@@ -1477,7 +1477,7 @@ function initHomeUserSearch() {
                 // Fetch users matching query
                 const response = await fetch(`${API_URL}/users/public?search=${encodeURIComponent(query)}`);
                 if (!response.ok) throw new Error('Search failed');
-                
+
                 const users = await response.json();
                 renderHomeSearchResults(users, dropdown);
             } catch (err) {
@@ -1508,10 +1508,10 @@ function renderHomeSearchResults(users, dropdown) {
         dropdown.innerHTML = users.slice(0, 8).map(user => `
             <div class="search-result-item" onclick="window.location.href='./chef-profile.html?username=${user.username}'">
                 <div class="search-result-avatar">
-                    ${user.profilePicture 
-                        ? `<img src="${user.profilePicture}" alt="${user.displayName}">` 
-                        : `<span>${(user.displayName || user.username).charAt(0).toUpperCase()}</span>`
-                    }
+                    ${user.profilePicture
+                ? `<img src="${user.profilePicture}" alt="${user.displayName}">`
+                : `<span>${(user.displayName || user.username).charAt(0).toUpperCase()}</span>`
+            }
                 </div>
                 <div class="search-result-info">
                     <div class="search-result-name">${user.displayName || user.username}</div>
@@ -3873,7 +3873,7 @@ function showPurchaseModal(recipe) {
     document.getElementById('walletPurchaseBtn').addEventListener('click', async () => {
         await purchaseRecipe(recipe.id, 'wallet');
     });
-    
+
     // Attach Stripe purchase handler
     document.getElementById('stripePurchaseBtn').addEventListener('click', async () => {
         await purchaseRecipe(recipe.id, 'stripe');
@@ -3896,7 +3896,7 @@ async function fetchAndUpdateWalletBtn(price, btnId, balanceTagId, insufficientM
             const data = await response.json();
             const balance = data.balance || 0;
             if (balanceTag) balanceTag.textContent = `$${balance.toFixed(2)}`;
-            
+
             if (balance < price) {
                 btn.disabled = true;
                 btn.style.opacity = '0.5';
@@ -3966,9 +3966,9 @@ async function purchaseRecipe(id, method = 'wallet') {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
                 showNotification(data.message || 'Recipe purchased successfully! 🎉', 'success');
                 // Close purchase modal
@@ -5272,9 +5272,9 @@ window.purchaseBook = async function (bookId, method = 'wallet') {
                     'Authorization': `Bearer ${token}`
                 }
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
                 showNotification(data.message || 'Book purchased successfully! 🎉', 'success');
                 if (typeof viewPublicBook === 'function') {

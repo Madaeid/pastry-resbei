@@ -728,6 +728,9 @@ async function handleWalletPurchase() {
         if (selectedPlan === 'book') {
             apiEndpoint = `${API_URL}/books/public/${pendingBookId}/purchase`;
             body = {}; // book purchase doesn't take body
+        } else if (selectedPlan === 'recipe') {
+            apiEndpoint = `${API_URL}/store/${pendingRecipeId}/purchase`;
+            body = {}; // store recipe purchase doesn't take body
         }
 
         const response = await fetch(apiEndpoint, {

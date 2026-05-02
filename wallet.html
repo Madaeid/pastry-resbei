@@ -659,15 +659,28 @@
 
         /* Success animation */
         @keyframes successPulse {
-            0% { transform: scale(0.8); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .success-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: rgba(0, 0, 0, 0.8);
             z-index: 9998;
             align-items: center;
@@ -816,7 +829,8 @@
                                 <div class="name" id="recipientName"></div>
                                 <div class="username" id="recipientUsername"></div>
                             </div>
-                            <button class="remove-recipient" id="removeRecipient" title="Change recipient">&times;</button>
+                            <button class="remove-recipient" id="removeRecipient"
+                                title="Change recipient">&times;</button>
                         </div>
                     </div>
 
@@ -876,8 +890,8 @@
                 <!-- Card Info (Simulated) -->
                 <label class="wallet-input-label">Card Information</label>
                 <div class="card-inputs-row" style="margin-bottom: 18px">
-                    <input type="text" class="wallet-input" id="depositCardNumber"
-                        placeholder="4242 4242 4242 4242" maxlength="19">
+                    <input type="text" class="wallet-input" id="depositCardNumber" placeholder="4242 4242 4242 4242"
+                        maxlength="19">
                     <input type="text" class="wallet-input" id="depositCardExpiry" placeholder="MM/YY" maxlength="5">
                     <input type="text" class="wallet-input" id="depositCardCvv" placeholder="CVC" maxlength="4">
                 </div>

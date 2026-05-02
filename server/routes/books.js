@@ -480,12 +480,26 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
             [bookPrice, req.user.userId]
         );
 
-        // Credit seller wallet
+        // Credit seller wallet (80%)
+        const sellerCut = bookPrice * 0.8;
+        const adminCut = bookPrice - sellerCut; // Remaining 20%
+        
         await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [book.user_id]);
         await db.query(
             'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
-            [bookPrice, book.user_id]
+            [sellerCut, book.user_id]
         );
+
+        // Credit admin wallet (20%)
+        const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+        const adminId = adminResult.rows[0]?.id;
+        if (adminId) {
+            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+            await db.query(
+                'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+                [adminCut, adminId]
+            );
+        }
 
         // Record purchase
         await db.query(
@@ -498,8 +512,16 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
         await db.query(
             `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
              VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
-            [req.user.userId, book.user_id, bookPrice, `Book Purchase: "${book.title}"`, refId]
+            [req.user.userId, book.user_id, sellerCut, `Book Purchase (Seller Cut): "${book.title}"`, refId + '-S']
         );
+        
+        if (adminId) {
+            await db.query(
+                `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                 VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
+                [req.user.userId, adminId, adminCut, `Book Purchase (Platform Fee): "${book.title}"`, refId + '-A']
+            );
+        }
 
         // Get updated balance
         const newBalResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);

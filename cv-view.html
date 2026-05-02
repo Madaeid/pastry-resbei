@@ -199,7 +199,7 @@
                             picEl.src = profile.profilePicture;
                             picEl.style.display = 'block';
                             iconEl.style.display = 'none';
-                            
+
                             // Also update local storage to keep in sync
                             if (localUser) {
                                 localUser.profilePicture = profile.profilePicture;
@@ -207,7 +207,7 @@
                             }
                         }
                         if (profile.displayName && nameEl) {
-                             nameEl.textContent = profile.displayName;
+                            nameEl.textContent = profile.displayName;
                         }
                     }
                 } catch (err) {

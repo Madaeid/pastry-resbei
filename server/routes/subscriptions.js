@@ -598,15 +598,31 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         ]);
 
                         if (sellerId) {
-                            // Credit seller wallet
+                            const sellerCut = pricePaid * 0.8;
+                            const adminCut = pricePaid - sellerCut;
+                            
+                            // Credit seller wallet (80%)
                             await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
-                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [pricePaid, sellerId]);
+                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
                             
                             // Record seller side transaction
                             await db.query(`
                                 INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                 VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
-                            `, [null, sellerId, pricePaid, `Stripe Sale: "${recipe?.name || recipeId}"`, `STRIPE-REC-${session.id}`]);
+                            `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${recipe?.name || recipeId}"`, `STRIPE-REC-S-${session.id}`]);
+
+                            // Credit admin wallet (20%)
+                            const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminId = adminResult.rows[0]?.id;
+                            if (adminId) {
+                                await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+                                await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+                                
+                                await db.query(`
+                                    INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                                    VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
+                                `, [null, adminId, adminCut, `Stripe Sale (Platform Fee): "${recipe?.name || recipeId}"`, `STRIPE-REC-A-${session.id}`]);
+                            }
                         }
 
                         console.log(`Recipe purchase fulfilled via webhook. Buyer: ${userId}, Seller: ${sellerId}, Recipe: ${recipeId}`);
@@ -643,15 +659,31 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         ]);
 
                         if (sellerId) {
-                            // Credit seller wallet
+                            const sellerCut = pricePaid * 0.8;
+                            const adminCut = pricePaid - sellerCut;
+                            
+                            // Credit seller wallet (80%)
                             await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
-                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [pricePaid, sellerId]);
+                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
                             
                             // Record seller side transaction
                             await db.query(`
                                 INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                 VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
-                            `, [null, sellerId, pricePaid, `Stripe Sale: "${book?.title || bookId}"`, `STRIPE-BOOK-${session.id}`]);
+                            `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${book?.title || bookId}"`, `STRIPE-BOOK-S-${session.id}`]);
+
+                            // Credit admin wallet (20%)
+                            const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminId = adminResult.rows[0]?.id;
+                            if (adminId) {
+                                await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+                                await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+                                
+                                await db.query(`
+                                    INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                                    VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
+                                `, [null, adminId, adminCut, `Stripe Sale (Platform Fee): "${book?.title || bookId}"`, `STRIPE-BOOK-A-${session.id}`]);
+                            }
                         }
 
                         console.log(`Book purchase fulfilled via webhook. Buyer: ${userId}, Seller: ${sellerId}, Book: ${bookId}`);

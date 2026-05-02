@@ -79,10 +79,13 @@
                 </label>
                 <input type="file" id="photoInput" accept="image/*" style="display: none;">
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Click image to upload photo (Max 2MB)</p>
-                
+
                 <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-                     <input type="checkbox" id="syncToProfile" checked style="width: 18px; height: 18px; cursor: pointer;">
-                     <label for="syncToProfile" style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">Use as site-wide profile photo</label>
+                    <input type="checkbox" id="syncToProfile" checked
+                        style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="syncToProfile"
+                        style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">Use as site-wide
+                        profile photo</label>
                 </div>
             </div>
 
@@ -237,7 +240,7 @@
                             picEl.src = profile.profilePicture;
                             picEl.style.display = 'block';
                             iconEl.style.display = 'none';
-                            
+
                             // Also update local storage to keep in sync
                             if (localUser) {
                                 localUser.profilePicture = profile.profilePicture;
@@ -245,7 +248,7 @@
                             }
                         }
                         if (profile.displayName && nameEl) {
-                             nameEl.textContent = profile.displayName;
+                            nameEl.textContent = profile.displayName;
                         }
                     }
                 } catch (err) {

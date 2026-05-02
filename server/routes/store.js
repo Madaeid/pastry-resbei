@@ -283,9 +283,20 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
         // Deduct from buyer
         await db.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [recipePrice, req.user.userId]);
 
-        // Credit seller
+        // Credit seller (80%)
+        const sellerCut = recipePrice * 0.8;
+        const adminCut = recipePrice - sellerCut; // Remaining 20%
+        
         await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [recipe.seller_id]);
-        await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [recipePrice, recipe.seller_id]);
+        await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
+
+        // Credit admin (20%)
+        const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+        const adminId = adminResult.rows[0]?.id;
+        if (adminId) {
+            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+        }
 
         // Record purchase
         await db.query(
@@ -298,8 +309,16 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
         await db.query(
             `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
              VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
-            [req.user.userId, recipe.seller_id, recipePrice, `Recipe Purchase: "${recipe.name}"`, refId]
+            [req.user.userId, recipe.seller_id, sellerCut, `Recipe Purchase (Seller Cut): "${recipe.name}"`, refId + '-S']
         );
+        
+        if (adminId) {
+            await db.query(
+                `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                 VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                [req.user.userId, adminId, adminCut, `Recipe Purchase (Platform Fee): "${recipe.name}"`, refId + '-A']
+            );
+        }
 
         res.json({
             success: true,
