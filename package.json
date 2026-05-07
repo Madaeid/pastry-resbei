@@ -10,11 +10,15 @@
     "server:dev": "nodemon server/server.js",
     "test": "vitest run",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "compress:images": "node scripts/compress-images.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.11",
+    "sharp": "^0.33.0",
+    "typescript": "^5.7.0",
     "supertest": "^7.2.2",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^0.21.1",

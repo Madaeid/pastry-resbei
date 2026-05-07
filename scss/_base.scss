@@ -1,0 +1,56 @@
+// ============================================
+// Chef Book — Base / Reset Styles
+// ============================================
+@use 'variables' as *;
+
+// ─── Universal Reset ─────────────────────────
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+// ─── Body ────────────────────────────────────
+body {
+    font-family: $font-body;
+    background: var(--body-bg);
+    min-height: 100vh;
+    color: var(--text-primary);
+    transition: background $ease-default, color $ease-default;
+}
+
+// ─── Headings ────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+    font-family: $font-heading;
+    color: var(--text-primary);
+}
+
+// ─── Links ───────────────────────────────────
+a {
+    color: $brand-copper;
+    text-decoration: none;
+    transition: color $ease-default;
+
+    &:hover {
+        color: $brand-amber;
+    }
+}
+
+// ─── Images ──────────────────────────────────
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+// ─── Focus Visible ───────────────────────────
+:focus-visible {
+    outline: 2px solid $brand-copper;
+    outline-offset: 2px;
+}
+
+// ─── Selection ───────────────────────────────
+::selection {
+    background: rgba($brand-copper, 0.3);
+    color: $text-primary;
+}

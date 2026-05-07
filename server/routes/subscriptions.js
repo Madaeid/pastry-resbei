@@ -30,6 +30,16 @@ const PLANS = {
         period: 'year',
         durationDays: 365,
         displayPrice: '$20.00/year'
+    },
+    lifetime: {
+        id: 'lifetime',
+        name: 'Lifetime',
+        price: 50.00,
+        originalPrice: 100.00,
+        discount: 50,
+        period: 'lifetime',
+        durationDays: 36500,
+        displayPrice: '$50.00 once'
     }
 };
 
@@ -211,7 +221,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                (plan !== 'lifetime') ? 1 : 0,
+                plan !== 'lifetime' ? 1 : 0,
                 new Date().toISOString(),
                 req.user.userId
             ]);
@@ -228,7 +238,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                (plan !== 'lifetime') ? 1 : 0
+                plan !== 'lifetime' ? 1 : 0
             ]);
         }
 
@@ -276,7 +286,7 @@ router.post('/cancel', authenticateToken, async (req, res) => {
         await db.query(`
             UPDATE subscriptions SET
                 status = 'cancelled',
-                auto_renew = 0,
+                auto_renew = FALSE,
                 cancelled_at = $1,
                 updated_at = $2
             WHERE user_id = $3
@@ -513,28 +523,31 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
             try {
                 const db = getDatabase();
+                const client = await db.connect();
+                try {
+                    await client.query('BEGIN');
 
                 if (type === 'recipe_purchase') {
                     const recipeId = session.metadata.recipeId;
 
                     // Check if already processed
-                    const existing = await db.query(
+                    const existing = await client.query(
                         'SELECT id FROM store_purchases WHERE stripe_session_id = $1',
                         [session.id]
                     );
 
                     if (existing.rows.length === 0) {
-                        const recipeResult = await db.query('SELECT seller_id, price, name FROM store_recipes WHERE id = $1', [recipeId]);
+                        const recipeResult = await client.query('SELECT seller_id, price, name FROM store_recipes WHERE id = $1', [recipeId]);
                         const recipe = recipeResult.rows[0];
                         const pricePaid = recipe?.price || 0;
                         const sellerId = recipe?.seller_id;
 
-                        await db.query(`
+                        await client.query(`
                             INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid, stripe_session_id)
                             VALUES ($1, $2, $3, $4)
                         `, [userId, recipeId, pricePaid, session.id]);
 
-                        await db.query(`
+                        await client.query(`
                             INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
                             VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
                         `, [
@@ -550,23 +563,23 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             const adminCut = pricePaid - sellerCut;
                             
                             // Credit seller wallet (80%)
-                            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
-                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
+                            await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
+                            await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
                             
                             // Record seller side transaction
-                            await db.query(`
+                            await client.query(`
                                 INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                 VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
                             `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${recipe?.name || recipeId}"`, `STRIPE-REC-S-${session.id}`]);
 
                             // Credit admin wallet (20%)
-                            const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
                             const adminId = adminResult.rows[0]?.id;
                             if (adminId) {
-                                await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
-                                await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+                                await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+                                await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
                                 
-                                await db.query(`
+                                await client.query(`
                                     INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                     VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
                                 `, [null, adminId, adminCut, `Stripe Sale (Platform Fee): "${recipe?.name || recipeId}"`, `STRIPE-REC-A-${session.id}`]);
@@ -579,23 +592,23 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                     const bookId = session.metadata.bookId;
 
                     // Check if already processed
-                    const existing = await db.query(
+                    const existing = await client.query(
                         'SELECT id FROM book_purchases WHERE stripe_session_id = $1',
                         [session.id]
                     );
 
                     if (existing.rows.length === 0) {
-                        const bookResult = await db.query('SELECT user_id, price, title FROM books WHERE id = $1', [bookId]);
+                        const bookResult = await client.query('SELECT user_id, price, title FROM books WHERE id = $1', [bookId]);
                         const book = bookResult.rows[0];
                         const pricePaid = book?.price || 0;
                         const sellerId = book?.user_id;
 
-                        await db.query(`
+                        await client.query(`
                             INSERT INTO book_purchases (buyer_id, book_id, price_paid, stripe_session_id)
                             VALUES ($1, $2, $3, $4)
                         `, [userId, bookId, pricePaid, session.id]);
 
-                        await db.query(`
+                        await client.query(`
                             INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
                             VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
                         `, [
@@ -611,23 +624,23 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             const adminCut = pricePaid - sellerCut;
                             
                             // Credit seller wallet (80%)
-                            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
-                            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
+                            await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [sellerId]);
+                            await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, sellerId]);
                             
                             // Record seller side transaction
-                            await db.query(`
+                            await client.query(`
                                 INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                 VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
                             `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${book?.title || bookId}"`, `STRIPE-BOOK-S-${session.id}`]);
 
                             // Credit admin wallet (20%)
-                            const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
                             const adminId = adminResult.rows[0]?.id;
                             if (adminId) {
-                                await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
-                                await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+                                await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+                                await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
                                 
-                                await db.query(`
+                                await client.query(`
                                     INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                                     VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)
                                 `, [null, adminId, adminCut, `Stripe Sale (Platform Fee): "${book?.title || bookId}"`, `STRIPE-BOOK-A-${session.id}`]);
@@ -647,16 +660,24 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                         PLANS[planId].price,
                         'stripe',
                         session.id,
-                        session.customer || null
+                        session.customer || null,
+                        client
                     );
                     
                     console.log(`Subscription created/updated via webhook for user ${userId} - Plan: ${planId}`);
-                    console.log(`Subscription created/updated via webhook for user ${userId} - Plan: ${planId}`);
                 }
-            } catch (dbError) {
-                console.error('Database error in webhook:', dbError);
+                
+                await client.query('COMMIT');
+            } catch (err) {
+                await client.query('ROLLBACK');
+                throw err;
+            } finally {
+                client.release();
             }
-            break;
+        } catch (dbError) {
+            console.error('Database error in webhook:', dbError);
+        }
+        break;
         }
 
 

@@ -1,0 +1,136 @@
+// ============================================
+// Chef Book — Form Styles
+// ============================================
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ─── Form Group ──────────────────────────────
+.form-group {
+    margin-bottom: $sp-md;
+
+    label {
+        display: block;
+        margin-bottom: $sp-xs;
+        font-weight: $fw-semibold;
+        color: var(--text-secondary);
+        font-size: $fs-sm;
+    }
+
+    input,
+    select,
+    textarea {
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--border-glow);
+        border-radius: $radius-md;
+        padding: $sp-sm $sp-md;
+        color: var(--text-primary);
+        font-family: $font-body;
+        font-size: $fs-base;
+        @include smooth-transition;
+
+        &:focus {
+            border-color: $brand-copper;
+            box-shadow: 0 0 0 3px rgba($brand-copper, 0.15);
+            outline: none;
+        }
+
+        &::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+    }
+
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    select {
+        cursor: pointer;
+    }
+}
+
+// ─── Search Input ────────────────────────────
+.search-input {
+    background: var(--input-bg);
+    border: 1px solid var(--border-glow);
+    border-radius: $radius-pill;
+    padding: $sp-sm $sp-md;
+    color: var(--text-primary);
+    font-size: $fs-sm;
+    @include smooth-transition;
+
+    &:focus {
+        border-color: $brand-copper;
+        box-shadow: 0 0 0 3px rgba($brand-copper, 0.15);
+        outline: none;
+    }
+
+    &::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.5;
+    }
+}
+
+// ─── Cover Upload Preview ────────────────────
+.cover-preview {
+    border: 2px dashed var(--border-glow);
+    border-radius: $radius-lg;
+    padding: $sp-xl;
+    text-align: center;
+    cursor: pointer;
+    @include smooth-transition;
+    background: var(--input-bg);
+
+    &:hover {
+        border-color: $brand-copper;
+        background: rgba($brand-copper, 0.05);
+    }
+
+    &.has-image {
+        padding: 0;
+        border-style: solid;
+
+        img {
+            width: 100%;
+            border-radius: $radius-lg;
+        }
+    }
+}
+
+// ─── Form Actions Row ────────────────────────
+.form-actions {
+    display: flex;
+    gap: $sp-md;
+    margin-top: $sp-lg;
+}
+
+// ─── Light theme form overrides ──────────────
+.form-group input,
+.form-group select,
+.form-group textarea,
+.search-input {
+    @include light-theme {
+        background: var(--input-bg);
+        color: var(--text-primary);
+        border-color: rgba($brand-copper, 0.2);
+    }
+}
+
+.form-group input,
+.form-group textarea,
+.search-input {
+    @include light-theme {
+        &::placeholder {
+            color: rgba($light-text-primary, 0.4);
+        }
+    }
+}
+
+.form-group select option {
+    @include light-theme {
+        background: #ffffff;
+        color: var(--text-primary);
+    }
+}

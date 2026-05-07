@@ -13,19 +13,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="cv-style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        // Immediate theme initialization
-        (function () {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
-        })();
-        // Auth check
-        if (!sessionStorage.getItem('currentUser')) {
-            window.location.replace('./auth.html');
-        }
-    </script>
+    <script type="module" src="./services/app-guard.ts"></script>
 </head>
 
 <body>

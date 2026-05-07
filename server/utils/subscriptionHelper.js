@@ -26,8 +26,8 @@ export const PLANS = {
  * Fulfills a subscription purchase by updating the database and recording the transaction.
  * Works for both Stripe and Wallet payments.
  */
-export async function fulfillSubscription(userId, planId, amount, paymentMethod = 'wallet', stripeSessionId = null, stripeCustomerId = null) {
-    const db = getDatabase();
+export async function fulfillSubscription(userId, planId, amount, paymentMethod = 'wallet', stripeSessionId = null, stripeCustomerId = null, client = null) {
+    const db = client || getDatabase();
     const plan = PLANS[planId];
     
     if (!plan) {
@@ -52,7 +52,7 @@ export async function fulfillSubscription(userId, planId, amount, paymentMethod 
                 auto_renew = $4,
                 stripe_session_id = $5,
                 stripe_customer_id = $6,
-                granted_by_admin = 0,
+                granted_by_admin = FALSE,
                 cancelled_at = NULL,
                 updated_at = NOW()
             WHERE user_id = $7

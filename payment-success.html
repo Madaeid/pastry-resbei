@@ -295,18 +295,6 @@
             console.log('Subscription saved to localStorage for user:', currentUser);
         }
 
-        async function verifySession() {
-            if (!sessionId) {
-                showError('No session ID found. Please try again.');
-                return;
-            }
-
-            const token = getAuthToken();
-            if (!token) {
-                setTimeout(() => window.location.href = './payment.html', 3000);
-            }
-        }
-
         function showBookSuccess(data) {
             loadingState.classList.remove('active');
             readyState.classList.remove('hidden');

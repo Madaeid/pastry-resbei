@@ -1,0 +1,80 @@
+// ============================================
+// Chef Book — Modal Styles
+// ============================================
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ─── Modal Overlay ───────────────────────────
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: $z-modal;
+    @include flex-center;
+    padding: $sp-md;
+
+    &.show {
+        display: flex;
+    }
+}
+
+// ─── Modal Content ───────────────────────────
+.modal-content {
+    background: var(--modal-bg);
+    border: 1px solid var(--border-glow);
+    border-radius: $radius-2xl;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: $sp-xl;
+    position: relative;
+    @include custom-scrollbar;
+
+    @include light-theme {
+        background: var(--form-bg);
+        border-color: rgba($brand-copper, 0.15);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 0 30px rgba($brand-copper, 0.05);
+    }
+}
+
+// ─── Modal Sizes ─────────────────────────────
+.modal-sm { max-width: 480px; }
+.modal-md { max-width: 640px; }
+.modal-lg { max-width: 800px; }
+.modal-xl { max-width: 1000px; }
+
+// ─── Modal Close Button ──────────────────────
+.modal-close {
+    position: absolute;
+    top: $sp-md;
+    right: $sp-md;
+    width: 36px;
+    height: 36px;
+    border-radius: $radius-round;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: $fs-lg;
+    cursor: pointer;
+    @include flex-center;
+    @include smooth-transition;
+
+    &:hover {
+        background: rgba($color-danger, 0.15);
+        border-color: rgba($color-danger, 0.3);
+        color: $color-danger;
+    }
+}
+
+// ─── Modal Header ────────────────────────────
+.modal-header {
+    margin-bottom: $sp-lg;
+
+    h2 {
+        font-family: $font-heading;
+        font-size: $fs-xl;
+        color: var(--text-primary);
+    }
+}

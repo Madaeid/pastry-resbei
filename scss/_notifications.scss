@@ -1,0 +1,49 @@
+// ============================================
+// Chef Book — Notification Styles
+// ============================================
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.notification {
+    position: fixed;
+    bottom: $sp-lg;
+    right: $sp-lg;
+    padding: $sp-md $sp-lg;
+    border-radius: $radius-lg;
+    font-family: $font-ui;
+    font-weight: $fw-semibold;
+    font-size: $fs-sm;
+    display: flex;
+    align-items: center;
+    gap: $sp-sm;
+    z-index: $z-modal + 1;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    max-width: 400px;
+    box-shadow: $shadow-lg;
+
+    &.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    &.success {
+        background: rgba($color-success, 0.15);
+        border: 1px solid rgba($color-success, 0.3);
+        color: $color-success;
+        backdrop-filter: blur(10px);
+    }
+
+    &.error {
+        background: rgba($color-danger, 0.15);
+        border: 1px solid rgba($color-danger, 0.3);
+        color: $color-danger;
+        backdrop-filter: blur(10px);
+    }
+}
+
+.notification-icon {
+    font-size: $fs-md;
+    flex-shrink: 0;
+}

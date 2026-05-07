@@ -1,0 +1,45 @@
+// ============================================
+// Chef Book — Main SCSS Entry Point
+// ============================================
+// This file orchestrates all partials.
+// Import order matters:
+//   1. Variables & Mixins (no output)
+//   2. Root CSS custom properties
+//   3. Reset & base styles
+//   4. Animations
+//   5. Component partials
+//   6. Legacy style.css (temporary — remove after
+//      full migration of component partials)
+// ============================================
+
+// ─── 1. Foundation (no CSS output) ──────────
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ─── 2. CSS Custom Properties ───────────────
+@use 'root';
+
+// ─── 3. Base / Reset ────────────────────────
+@use 'base';
+
+// ─── 4. Shared Animations ───────────────────
+@use 'animations';
+
+// ─── 5. Component Partials ──────────────────
+@use 'buttons';
+@use 'forms';
+@use 'modals';
+@use 'notifications';
+
+// ─── 6. Legacy CSS (temporary bridge) ───────
+// The original style.css is still loaded via
+// <link> tags and JS imports. The partials above
+// demonstrate the new SCSS architecture.
+//
+// As you migrate sections from style.css into
+// proper SCSS partials, remove them from the
+// original file and add the partial here.
+//
+// DO NOT @use 'style.css' here — it would
+// duplicate all the rules already loaded by
+// the existing HTML/JS imports.

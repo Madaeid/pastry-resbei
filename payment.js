@@ -29,6 +29,17 @@ const PLANS = {
         durationDays: 365,
         displayPrice: '$20.00/year',
         originalDisplayPrice: '$40.00/year'
+    },
+    lifetime: {
+        id: 'lifetime',
+        name: 'Lifetime',
+        price: 50.00,
+        originalPrice: 100.00,
+        discount: 50,
+        period: 'lifetime',
+        durationDays: 36500,
+        displayPrice: '$50.00 once',
+        originalDisplayPrice: '$100.00 once'
     }
 };
 
@@ -293,7 +304,7 @@ function initPaymentPage() {
 
     // Check for pending recipe purchase
     checkPendingRecipe();
-    
+
     // Check for pending book purchase
     checkPendingBook();
 
@@ -768,10 +779,35 @@ async function handleWalletPurchase() {
                 successModal.style.display = 'flex';
             }
 
+            // Local fallback update for immediate UI response
+            const subscriptions = JSON.parse(localStorage.getItem('pastrySubscriptions') || '{}');
+            const currentUser = getCurrentUser();
+            const plan = PLANS[selectedPlan];
+
+            if (currentUser && plan) {
+                subscriptions[currentUser] = {
+                    plan: selectedPlan,
+                    status: 'active',
+                    endDate: new Date(Date.now() + plan.durationDays * 24 * 60 * 60 * 1000).toISOString(),
+                    autoRenew: false, // Wallet payments don't auto-renew
+                    syncedAt: new Date().toISOString()
+                };
+                localStorage.setItem('pastrySubscriptions', JSON.stringify(subscriptions));
+            }
+
             // Sync with server and update display
             await syncSubscriptionFromServer();
             updateSubscriptionDisplay();
+
             showNotification('Purchase successful! 🎉', 'success');
+
+            // Auto-close modal after a delay if success modal doesn't show
+            if (!successModal) {
+                setTimeout(() => {
+                    document.getElementById('paymentModal').style.display = 'none';
+                    window.location.href = './index.html';
+                }, 2000);
+            }
         } else {
             throw new Error(data.error || 'Purchase failed');
         }
@@ -1251,7 +1287,6 @@ async function syncSubscriptionFromServer() {
         return false;
     }
 }
-
 // ===== Export Functions =====
 export { isPremium, getSubscriptionStatus, getSubscription, PLANS, isUserPremium, grantPremiumToUser, revokePremiumFromUser, syncSubscriptionFromServer, saveSubscription };
 

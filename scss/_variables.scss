@@ -1,0 +1,124 @@
+// ============================================
+// Chef Book — Design Token Variables (SCSS)
+// ============================================
+// All colors, fonts, spacing, shadows, and radii
+// are defined here. Import this file into every
+// partial so the tokens are always available.
+// ============================================
+
+// ─── Brand Colors ────────────────────────────
+$brand-copper:   #C67B4B;   // Burnt Copper (primary accent)
+$brand-amber:    #D4A55A;   // Warm Amber
+$brand-walnut:   #8B5E3C;   // Deep Walnut
+$brand-sage:     #8B9E6B;   // Sage Green (herbs)
+
+// ─── Primary Gradient ────────────────────────
+$primary-gradient: linear-gradient(135deg, $brand-copper 0%, $brand-walnut 50%, $brand-amber 100%);
+
+// ─── Dark Theme (default) ────────────────────
+$dark-bg:        #1a120b;                    // Dark Chocolate
+$card-bg:        rgba(32, 22, 14, 0.95);     // Dark espresso card
+$text-primary:   #F5EDE3;                    // Warm cream text
+$text-secondary: #B8A898;                    // Warm taupe
+$border-glow:    rgba($brand-copper, 0.3);
+$shadow-color:   rgba(0, 0, 0, 0.35);
+$body-bg:        $dark-bg;
+$input-bg:       rgba(40, 28, 18, 0.9);
+$form-bg:        $card-bg;
+$modal-bg:       rgba(26, 18, 11, 0.98);
+$header-bg:      rgba(22, 15, 9, 0.95);
+
+// ─── Light Theme overrides (applied via [data-theme="light"]) ─
+$light-bg:           #FAF6F1;
+$light-card-bg:      rgba(255, 253, 250, 0.95);
+$light-text-primary: #2D1F13;
+$light-text-secondary: rgba(45, 31, 19, 0.65);
+$light-border-glow:  rgba($brand-copper, 0.2);
+$light-shadow-color: rgba(45, 31, 19, 0.08);
+$light-body-bg:      linear-gradient(135deg, #FAF6F1 0%, #F3EDE4 50%, #FFF8F0 100%);
+$light-input-bg:     linear-gradient(145deg, #ffffff, #F8F2EB);
+$light-form-bg:      linear-gradient(145deg, rgba(255, 253, 250, 0.98), rgba(248, 242, 235, 0.98));
+$light-modal-bg:     rgba(255, 253, 250, 0.98);
+$light-header-bg:    linear-gradient(145deg, rgba(255, 253, 250, 0.95), rgba(248, 242, 235, 0.98));
+
+// ─── Semantic / Feedback Colors ──────────────
+$color-success:  #10b981;
+$color-danger:   #ef4444;
+$color-warning:  #fbbf24;
+$color-info:     #60a5fa;
+$color-premium:  #FFD700;
+$color-teal:     #4db6ac;
+
+// ─── Typography ──────────────────────────────
+$font-body:      'Outfit', 'Inter', sans-serif;
+$font-heading:   'Playfair Display', serif;
+$font-ui:        'Poppins', sans-serif;
+
+// ─── Font Sizes (fluid scale) ────────────────
+$fs-xs:   0.75rem;
+$fs-sm:   0.85rem;
+$fs-base: 1rem;
+$fs-md:   1.1rem;
+$fs-lg:   1.4rem;
+$fs-xl:   2rem;
+$fs-2xl:  3rem;
+$fs-hero: clamp(2rem, 6vw, 3.5rem);
+
+// ─── Font Weights ────────────────────────────
+$fw-normal:    400;
+$fw-medium:    500;
+$fw-semibold:  600;
+$fw-bold:      700;
+$fw-extrabold: 800;
+$fw-black:     900;
+
+// ─── Spacing ─────────────────────────────────
+$sp-xs:  4px;
+$sp-sm:  8px;
+$sp-md:  16px;
+$sp-lg:  24px;
+$sp-xl:  40px;
+$sp-2xl: 60px;
+
+// ─── Border Radii ────────────────────────────
+$radius-sm:    8px;
+$radius-md:    12px;
+$radius-lg:    16px;
+$radius-xl:    20px;
+$radius-2xl:   24px;
+$radius-3xl:   30px;
+$radius-pill:  50px;
+$radius-round: 50%;
+
+// ─── Shadows ─────────────────────────────────
+$shadow-sm:    0 2px 8px rgba(0, 0, 0, 0.15);
+$shadow-md:    0 5px 20px rgba(0, 0, 0, 0.2);
+$shadow-lg:    0 10px 40px rgba(0, 0, 0, 0.3);
+$shadow-xl:    0 30px 60px rgba(0, 0, 0, 0.4);
+$shadow-glow:  0 0 80px rgba($brand-copper, 0.3);
+$shadow-card:  0 10px 40px $shadow-color, 0 0 30px rgba($brand-copper, 0.1);
+
+// ─── Transitions ─────────────────────────────
+$ease-default:  0.3s ease;
+$ease-smooth:   0.3s cubic-bezier(0.4, 0, 0.2, 1);
+$ease-bounce:   0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+// ─── Z-Index Scale ───────────────────────────
+$z-base:     1;
+$z-dropdown: 100;
+$z-sticky:   200;
+$z-overlay:  900;
+$z-sidebar:  1000;
+$z-modal:    9999;
+
+// ─── Layout ──────────────────────────────────
+$sidebar-width:     260px;
+$sidebar-width-mob: 280px;
+$mobile-topbar-h:   60px;
+$max-content-width:  1400px;
+
+// ─── Particles / Decoration ──────────────────
+$particle-opacity:    0.6;
+$particle-opacity-lt: 0.2;
+$orb-opacity:         0.25;
+$orb-opacity-lt:      0.2;

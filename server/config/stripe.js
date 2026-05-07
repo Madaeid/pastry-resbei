@@ -50,6 +50,18 @@ const PLANS = {
         displayPrice: '$20.00/year',
         stripeMode: 'subscription',
         stripePriceId: STRIPE_PRICES.yearly
+    },
+    lifetime: {
+        id: 'lifetime',
+        name: 'Lifetime',
+        price: 50.00,
+        originalPrice: 100.00,
+        discount: 50,
+        period: 'lifetime',
+        durationDays: 36500,
+        displayPrice: '$50.00 once',
+        stripeMode: 'payment',
+        stripePriceId: STRIPE_PRICES.lifetime
     }
 };
 
@@ -64,10 +76,10 @@ async function createCheckoutSession(userId, userEmail, planId, successUrl, canc
         payment_method_types: ['card'],
         customer_email: userEmail,
         mode: plan.stripeMode,
-        success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl,
         metadata: {
-            userId: userId,
+            userId: userId.toString(),
             planId: planId
         }
     };

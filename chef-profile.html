@@ -300,19 +300,19 @@
             <script>
                 (function () {
                     const headerImages = [
-                        '/new-chef-hero.png',
-                        '/premium-chef-hero.png',
-                        '/hero-chef.png',
-                        '/hero-chef-premium.png',
-                        '/my-chef-hero.png',
-                        '/another-chef-premium.png',
-                        '/new-premium-hero.png',
-                        '/chef-hero.png',
-                        '/master-chef-header.png',
-                        '/artisan-pastry-chef.png',
-                        '/modern-chef-studio.png',
-                        '/chef-rooftop-garden.png',
-                        '/chef-fire-cooking.png'
+                        '/new-chef-hero.webp',
+                        '/premium-chef-hero.webp',
+                        '/hero-chef.webp',
+                        '/hero-chef-premium.webp',
+                        '/my-chef-hero.webp',
+                        '/another-chef-premium.webp',
+                        '/new-premium-hero.webp',
+                        '/chef-hero.webp',
+                        '/master-chef-header.webp',
+                        '/artisan-pastry-chef.webp',
+                        '/modern-chef-studio.webp',
+                        '/chef-rooftop-garden.webp',
+                        '/chef-fire-cooking.webp'
                     ];
                     let currentHeroInterval = null;
 
@@ -342,7 +342,7 @@
                 })();
             </script>
             <div class="hero-avatar">
-                <img id="chefPic" src="assets/default-avatar.png" alt="Chef">
+                <img id="chefPic" src="/assets/default-avatar.png" alt="Chef">
             </div>
             <div class="hero-info">
                 <div class="hero-name-row">
@@ -387,7 +387,7 @@
     <div id="ownProfilePostBox"
         style="display: none; margin-bottom: 40px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 25px;">
         <div style="display: flex; gap: 15px;">
-            <img id="postUserAvatar" src="assets/default-avatar.png" alt="👤"
+            <img id="postUserAvatar" src="/assets/default-avatar.png" alt="👤"
                 style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink);">
             <div style="flex: 1;">
                 <textarea id="quickPostText" placeholder="What are you baking today?"
@@ -678,7 +678,7 @@
                 card.className = 'recipe-card public-recipe-card';
                 card.style.height = '350px';
 
-                const photo = item.photo || 'assets/default-recipe.png';
+                const photo = item.photo || '/assets/default-recipe.png';
                 const sellerName = item.seller?.name || chefData?.displayName || 'Chef';
 
                 card.innerHTML = `
@@ -790,7 +790,7 @@
                 const card = document.createElement('div');
                 card.className = 'recipe-card public-recipe-card';
                 card.style.height = '350px';
-                const photo = book.coverPhoto || book.cover_photo || 'assets/default-book.png';
+                const photo = book.coverPhoto || book.cover_photo || '/assets/default-book.png';
                 card.innerHTML = `
                     <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
                         <img src="${photo}" alt="${book.title}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -836,7 +836,7 @@
                 card.className = 'recipe-card public-recipe-card';
                 card.style.height = '350px';
 
-                const photo = book.coverPhoto || book.cover_photo || 'assets/default-book.png';
+                const photo = book.coverPhoto || book.cover_photo || '/assets/default-book.png';
                 const authorName = book.author?.name || chefData?.displayName || 'Chef';
                 const price = parseFloat(book.price) || 0;
 

@@ -18,19 +18,7 @@
 
 
 
-    <script>
-        // Immediate theme initialization to prevent flash
-        (function () {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
-        })();
-        // Immediate auth check to prevent unauthenticated access
-        if (!sessionStorage.getItem('currentUser')) {
-            window.location.replace('./auth.html');
-        }
-    </script>
+    <script type="module" src="./services/app-guard.ts"></script>
 </head>
 
 <body>
@@ -153,10 +141,12 @@
                 <span class="sidebar-link-text" data-i18n="calculator">Calculator</span>
             </a>
 
-            <button class="sidebar-link" id="sidebarScannerBtn" style="border: 1px solid rgba(102, 126, 234, 0.2); background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(180, 122, 234, 0.04));">
+            <button class="sidebar-link" id="sidebarScannerBtn"
+                style="border: 1px solid rgba(102, 126, 234, 0.2); background: linear-gradient(135deg, rgba(102, 126, 234, 0.06), rgba(180, 122, 234, 0.04));">
                 <span class="sidebar-link-icon">🤖</span>
                 <span class="sidebar-link-text">AI Scanner</span>
-                <span style="font-size: 0.6rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2px 6px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px;">💎</span>
+                <span
+                    style="font-size: 0.6rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 2px 6px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px;">💎</span>
             </button>
 
             <a href="./cv-view.html" id="myCvBtn" class="sidebar-link">
@@ -212,24 +202,24 @@
                     <span class="hero-badge-icon">✨</span>
                     <span class="hero-badge-text">Featured Chef</span>
                 </div>
-                <img id="heroChefImg" class="hero-image" src="/fruit-spread-header.png" alt="Premium Chef" />
+                <img id="heroChefImg" class="hero-image" src="/fruit-spread-header.webp" alt="Premium Chef" />
                 <script>
                     (function () {
                         const heroImages = [
-                            '/new-chef-hero.png',
-                            '/premium-chef-hero.png',
-                            '/hero-chef.png',
-                            '/hero-chef-premium.png',
-                            '/my-chef-hero.png',
-                            '/another-chef-premium.png',
-                            '/new-premium-hero.png',
-                            '/chef-hero.png',
-                            '/master-chef-header.png',
-                            '/artisan-pastry-chef.png',
-                            '/modern-chef-studio.png',
-                            '/chef-rooftop-garden.png',
-                            '/chef-fire-cooking.png',
-                            '/fruit-spread-header.png'
+                            '/new-chef-hero.webp',
+                            '/premium-chef-hero.webp',
+                            '/hero-chef.webp',
+                            '/hero-chef-premium.webp',
+                            '/my-chef-hero.webp',
+                            '/another-chef-premium.webp',
+                            '/new-premium-hero.webp',
+                            '/chef-hero.webp',
+                            '/master-chef-header.webp',
+                            '/artisan-pastry-chef.webp',
+                            '/modern-chef-studio.webp',
+                            '/chef-rooftop-garden.webp',
+                            '/chef-fire-cooking.webp',
+                            '/fruit-spread-header.webp'
                         ];
                         const randomImg = heroImages[Math.floor(Math.random() * heroImages.length)];
                         document.getElementById('heroChefImg').src = randomImg;

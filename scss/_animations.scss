@@ -1,0 +1,114 @@
+// ============================================
+// Chef Book — Shared Keyframe Animations
+// ============================================
+@use 'variables' as *;
+
+// ─── Fade In Up ──────────────────────────────
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Bounce In ───────────────────────────────
+@keyframes bounceIn {
+    0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+    60%  { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+// ─── Gradient Shift ──────────────────────────
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% center; }
+    50%      { background-position: 100% center; }
+}
+
+// ─── Float Particle ──────────────────────────
+@keyframes floatParticle {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.3; }
+    25%      { transform: translate(30px, -40px) rotate(90deg); opacity: 0.6; }
+    50%      { transform: translate(-20px, -80px) rotate(180deg); opacity: 0.4; }
+    75%      { transform: translate(40px, -40px) rotate(270deg); opacity: 0.7; }
+}
+
+// ─── Orb Pulse ───────────────────────────────
+@keyframes orbPulse {
+    0%   { transform: scale(1); opacity: 0.3; }
+    100% { transform: scale(1.2); opacity: 0.5; }
+}
+
+// ─── Header Glow ─────────────────────────────
+@keyframes headerGlow {
+    0%   { opacity: 0.6; transform: translateX(-50%) scale(1); }
+    100% { opacity: 1;   transform: translateX(-50%) scale(1.1); }
+}
+
+// ─── Icon Pulse ──────────────────────────────
+@keyframes iconPulse {
+    0%   { box-shadow: $shadow-xl, 0 0 80px rgba($brand-copper, 0.2); }
+    100% { box-shadow: $shadow-xl, 0 0 100px rgba($brand-copper, 0.5); }
+}
+
+// ─── Cupcake Wiggle ──────────────────────────
+@keyframes cupcakeWiggle {
+    0%, 100% { transform: rotate(-5deg) scale(1); }
+    50%      { transform: rotate(5deg) scale(1.1); }
+}
+
+// ─── Ring Rotate ─────────────────────────────
+@keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+// ─── Skeleton Shimmer ────────────────────────
+@keyframes skeletonShimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+// ─── Hero-specific Keyframes ─────────────────
+@keyframes heroGradientShift {
+    0%, 100% { background-position: 0% center; }
+    50%      { background-position: 100% center; }
+}
+
+@keyframes heroFadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroScaleIn {
+    from { opacity: 0; transform: scale(0.9) translateX(50px); }
+    to   { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+// ─── Bounce Icon ─────────────────────────────
+@keyframes bounceIcon {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+}
+
+// ─── Pulse Icon ──────────────────────────────
+@keyframes pulseIcon {
+    from { transform: scale(1);   filter: drop-shadow(0 0 2px rgba($color-premium, 0.4)); }
+    to   { transform: scale(1.2); filter: drop-shadow(0 0 8px rgba($color-premium, 0.8)); }
+}
+
+// ─── Swipe Glow ──────────────────────────────
+@keyframes swipeGlow {
+    0%  { left: -100%; }
+    20% { left: 200%; }
+    100%{ left: 200%; }
+}
+
+// ─── Empty Bounce ────────────────────────────
+@keyframes emptyBounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+}
+
+// ─── Rotate Ring ─────────────────────────────
+@keyframes rotateRing {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -1557,7 +1557,7 @@ body {
 }
 
 .modal-section ul li::before {
-    content: 'Ã¢â‚¬Â¢';
+    content: '•';
     color: var(--accent-pink);
     font-size: 1.2rem;
 }
@@ -1686,7 +1686,7 @@ footer {
 }
 
 .recipe-checkbox:checked::after {
-    content: 'Ã¢Å“â€';
+    content: '✔';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -4113,12 +4113,12 @@ footer {
 }
 
 .premium-lock::after {
-    content: 'Ã°Å¸â€â€™';
+    content: '🔒';
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 2rem;
+    font-size: 1.2rem;
     z-index: 10;
 }
 
@@ -6166,7 +6166,7 @@ footer {
 }
 
 .day-cover-preview.has-cover::after {
-    content: 'Ã°Å¸â€œÂ· Click to change photo';
+    content: '📷 Click to change photo';
     position: absolute;
     bottom: 0;
     left: 0;

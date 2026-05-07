@@ -11,19 +11,7 @@
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script>
-        // Immediate theme initialization to prevent flash
-        (function () {
-            const savedTheme = localStorage.getItem('theme');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
-            document.documentElement.setAttribute('data-theme', theme);
-        })();
-        // Immediate auth check to prevent unauthenticated access
-        if (!sessionStorage.getItem('currentUser')) {
-            window.location.replace('./auth.html');
-        }
-    </script>
+    <script type="module" src="./services/app-guard.ts"></script>
 </head>
 
 <body>

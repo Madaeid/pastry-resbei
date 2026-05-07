@@ -1,0 +1,96 @@
+// ============================================
+// Chef Book — Button Styles
+// ============================================
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ─── Primary Button ──────────────────────────
+.btn {
+    @include btn-base;
+    padding: $sp-sm $sp-md;
+    font-size: $fs-base;
+}
+
+.btn-primary {
+    background: $primary-gradient;
+    color: white;
+    box-shadow: 0 10px 25px rgba($brand-copper, 0.4);
+
+    &:hover {
+        box-shadow: 0 15px 35px rgba($brand-copper, 0.5);
+        transform: translateY(-2px);
+    }
+}
+
+// ─── Secondary Button ────────────────────────
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-glow);
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: $brand-copper;
+        color: var(--text-primary);
+    }
+
+    @include light-theme {
+        background: rgba(255, 255, 255, 0.9);
+        border-color: rgba($brand-copper, 0.3);
+    }
+}
+
+// ─── Header Action Button ────────────────────
+.btn-header-action {
+    @include btn-base;
+    padding: 14px 28px;
+    background: $primary-gradient;
+    color: white;
+    border-radius: $radius-sm;
+    font-size: $fs-md;
+    box-shadow: 0 10px 25px rgba($brand-copper, 0.4);
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transition: left 0.5s ease;
+    }
+
+    &:hover::before {
+        left: 100%;
+    }
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba($brand-copper, 0.5);
+    }
+}
+
+// ─── Logout Button ───────────────────────────
+.btn-logout {
+    @include btn-base;
+    background: rgba($color-danger, 0.08);
+    color: $color-danger;
+    border: 1px solid rgba($color-danger, 0.15);
+    border-radius: $radius-pill;
+    padding: 6px 20px;
+    font-size: $fs-xs;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    &:hover {
+        background: rgba($color-danger, 0.15);
+        border-color: rgba($color-danger, 0.3);
+        transform: translateY(-1px);
+        box-shadow: $shadow-sm;
+    }
+}

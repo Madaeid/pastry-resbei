@@ -306,8 +306,8 @@ router.post('/users/:id/grant-premium', async (req, res) => {
                     status = 'active',
                     start_date = $2,
                     end_date = $3,
-                    granted_by_admin = 1,
-                    auto_renew = 0,
+                    granted_by_admin = TRUE,
+                    auto_renew = FALSE,
                     cancelled_at = NULL,
                     updated_at = NOW()
                 WHERE user_id = $4
@@ -315,7 +315,7 @@ router.post('/users/:id/grant-premium', async (req, res) => {
         } else {
             await db.query(`
                 INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, granted_by_admin, auto_renew)
-                VALUES ($1, $2, 'active', $3, $4, 1, 0)
+                VALUES ($1, $2, 'active', $3, $4, TRUE, FALSE)
             `, [userId, plan, startDate.toISOString(), endDate.toISOString()]);
         }
 

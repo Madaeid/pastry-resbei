@@ -1,0 +1,50 @@
+// ============================================
+// Chef Book — CSS Custom Properties (runtime)
+// ============================================
+// These CSS variables are used throughout the
+// existing HTML/JS for runtime theme switching.
+// They bridge the SCSS build-time tokens with
+// the runtime [data-theme] toggle.
+// ============================================
+@use 'variables' as *;
+
+:root {
+    // Brand
+    --primary-gradient: #{$primary-gradient};
+    --accent-pink:      #{$brand-copper};
+    --accent-orange:    #{$brand-amber};
+    --accent-purple:    #{$brand-walnut};
+    --accent-sage:      #{$brand-sage};
+
+    // Dark theme surfaces
+    --dark-bg:          #{$dark-bg};
+    --card-bg:          #{$card-bg};
+    --text-primary:     #{$text-primary};
+    --text-secondary:   #{$text-secondary};
+    --border-glow:      #{$border-glow};
+    --shadow-color:     #{$shadow-color};
+    --body-bg:          #{$body-bg};
+    --input-bg:         #{$input-bg};
+    --form-bg:          #{$form-bg};
+    --modal-bg:         #{$modal-bg};
+    --header-bg:        #{$header-bg};
+    --particle-opacity: #{$particle-opacity};
+    --orb-opacity:      #{$orb-opacity};
+}
+
+// ─── Light Theme override ────────────────────
+[data-theme="light"] {
+    --dark-bg:          #{$light-bg};
+    --card-bg:          #{$light-card-bg};
+    --text-primary:     #{$light-text-primary};
+    --text-secondary:   #{$light-text-secondary};
+    --border-glow:      #{$light-border-glow};
+    --shadow-color:     #{$light-shadow-color};
+    --body-bg:          #{$light-body-bg};
+    --input-bg:         #{$light-input-bg};
+    --form-bg:          #{$light-form-bg};
+    --modal-bg:         #{$light-modal-bg};
+    --header-bg:        #{$light-header-bg};
+    --particle-opacity: #{$particle-opacity-lt};
+    --orb-opacity:      #{$orb-opacity-lt};
+}

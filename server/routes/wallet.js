@@ -2,6 +2,7 @@
 import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { fulfillSubscription } from '../utils/subscriptionHelper.js';
 
 const router = express.Router();
 
@@ -40,8 +41,9 @@ async function ensureWalletTables() {
 ensureWalletTables();
 
 // Helper: get or create wallet for a user
-async function getOrCreateWallet(db, userId) {
-    let result = await db.query('SELECT * FROM wallet_balances WHERE user_id = $1', [userId]);
+async function getOrCreateWallet(db, userId, forUpdate = false) {
+    const lockClause = forUpdate ? ' FOR UPDATE' : '';
+    let result = await db.query(`SELECT * FROM wallet_balances WHERE user_id = $1${lockClause}`, [userId]);
     if (result.rows.length === 0) {
         result = await db.query(
             'INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0.00) RETURNING *',
@@ -79,30 +81,41 @@ router.post('/deposit', authenticateToken, async (req, res) => {
         }
 
         const db = getDatabase();
-        const wallet = await getOrCreateWallet(db, req.user.userId);
+        const client = await db.connect();
+        
+        try {
+            await client.query('BEGIN');
+            const wallet = await getOrCreateWallet(client, req.user.userId, true);
 
-        const newBalance = parseFloat(wallet.balance) + depositAmount;
-        const referenceId = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const newBalance = parseFloat(wallet.balance) + depositAmount;
+            const referenceId = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
-        // Update balance
-        await db.query(
-            'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-            [newBalance, req.user.userId]
-        );
+            // Update balance
+            await client.query(
+                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
+                [newBalance, req.user.userId]
+            );
 
-        // Record transaction
-        await db.query(
-            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
-             VALUES (NULL, $1, 'deposit', $2, $3, 'completed', $4)`,
-            [req.user.userId, depositAmount, `Deposit via ${cardBrand || 'Card'} ending ${cardLast4 || '****'}`, referenceId]
-        );
+            // Record transaction
+            await client.query(
+                `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                 VALUES (NULL, $1, 'deposit', $2, $3, 'completed', $4)`,
+                [req.user.userId, depositAmount, `Deposit via ${cardBrand || 'Card'} ending ${cardLast4 || '****'}`, referenceId]
+            );
 
-        res.json({
-            success: true,
-            message: `$${depositAmount.toFixed(2)} deposited successfully`,
-            balance: newBalance,
-            referenceId
-        });
+            await client.query('COMMIT');
+            res.json({
+                success: true,
+                message: `$${depositAmount.toFixed(2)} deposited successfully`,
+                balance: newBalance,
+                referenceId
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (error) {
         console.error('Deposit error:', error);
         res.status(500).json({ error: 'Failed to process deposit' });
@@ -130,67 +143,82 @@ router.post('/transfer', authenticateToken, async (req, res) => {
         const db = getDatabase();
         const senderId = req.user.userId;
 
-        // Find recipient
-        const recipientResult = await db.query(
-            'SELECT id, username, display_name, profile_picture FROM users WHERE LOWER(username) = LOWER($1)',
-            [recipientUsername.trim()]
-        );
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
 
-        if (recipientResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Recipient account not found' });
-        }
+            // Find recipient
+            const recipientResult = await client.query(
+                'SELECT id, username, display_name, profile_picture FROM users WHERE LOWER(username) = LOWER($1)',
+                [recipientUsername.trim()]
+            );
 
-        const recipient = recipientResult.rows[0];
-
-        if (recipient.id === senderId) {
-            return res.status(400).json({ error: 'You cannot send money to yourself' });
-        }
-
-        // Check sender balance
-        const senderWallet = await getOrCreateWallet(db, senderId);
-        if (parseFloat(senderWallet.balance) < transferAmount) {
-            return res.status(400).json({ 
-                error: 'Insufficient funds',
-                balance: parseFloat(senderWallet.balance)
-            });
-        }
-
-        // Get or create recipient wallet
-        const recipientWallet = await getOrCreateWallet(db, recipient.id);
-
-        const referenceId = `TRF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        const senderNewBalance = parseFloat(senderWallet.balance) - transferAmount;
-        const recipientNewBalance = parseFloat(recipientWallet.balance) + transferAmount;
-
-        // Begin pseudo-transaction (update sender, update recipient, record)
-        await db.query(
-            'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-            [senderNewBalance, senderId]
-        );
-
-        await db.query(
-            'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-            [recipientNewBalance, recipient.id]
-        );
-
-        // Record transaction
-        await db.query(
-            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
-             VALUES ($1, $2, 'transfer', $3, $4, 'completed', $5)`,
-            [senderId, recipient.id, transferAmount, note || `Transfer to @${recipient.username}`, referenceId]
-        );
-
-        res.json({
-            success: true,
-            message: `$${transferAmount.toFixed(2)} sent to @${recipient.username}`,
-            balance: senderNewBalance,
-            referenceId,
-            recipient: {
-                username: recipient.username,
-                displayName: recipient.display_name,
-                pic: recipient.profile_picture
+            if (recipientResult.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ error: 'Recipient account not found' });
             }
-        });
+
+            const recipient = recipientResult.rows[0];
+
+            if (recipient.id === senderId) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'You cannot send money to yourself' });
+            }
+
+            // Check sender balance - with FOR UPDATE lock
+            const senderWallet = await getOrCreateWallet(client, senderId, true);
+            if (parseFloat(senderWallet.balance) < transferAmount) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ 
+                    error: 'Insufficient funds',
+                    balance: parseFloat(senderWallet.balance)
+                });
+            }
+
+            // Get or create recipient wallet - with FOR UPDATE lock
+            const recipientWallet = await getOrCreateWallet(client, recipient.id, true);
+
+            const referenceId = `TRF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const senderNewBalance = parseFloat(senderWallet.balance) - transferAmount;
+            const recipientNewBalance = parseFloat(recipientWallet.balance) + transferAmount;
+
+            // Update sender, update recipient, record
+            await client.query(
+                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
+                [senderNewBalance, senderId]
+            );
+
+            await client.query(
+                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
+                [recipientNewBalance, recipient.id]
+            );
+
+            // Record transaction
+            await client.query(
+                `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                 VALUES ($1, $2, 'transfer', $3, $4, 'completed', $5)`,
+                [senderId, recipient.id, transferAmount, note || `Transfer to @${recipient.username}`, referenceId]
+            );
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: `$${transferAmount.toFixed(2)} sent to @${recipient.username}`,
+                balance: senderNewBalance,
+                referenceId,
+                recipient: {
+                    username: recipient.username,
+                    displayName: recipient.display_name,
+                    pic: recipient.profile_picture
+                }
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (error) {
         console.error('Transfer error:', error);
         res.status(500).json({ error: 'Failed to process transfer' });
@@ -263,99 +291,81 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
         const db = getDatabase();
         const userId = req.user.userId;
+        const client = await db.connect();
 
-        // Check user balance
-        const wallet = await getOrCreateWallet(db, userId);
-        if (parseFloat(wallet.balance) < purchaseAmount) {
-            return res.status(400).json({ 
-                error: 'Insufficient funds in wallet',
-                balance: parseFloat(wallet.balance)
-            });
-        }
+        try {
+            await client.query('BEGIN');
 
-        // 1. Deduct from balance
-        const newBalance = parseFloat(wallet.balance) - purchaseAmount;
-        await db.query(
-            'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-            [newBalance, userId]
-        );
-
-        const referenceId = `WLT-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-
-        // 2. Record wallet transaction
-        let note = '';
-        if (type === 'subscription') {
-            note = `Premium Subscription: ${planId}`;
-        } else if (type === 'recipe') {
-            note = `Recipe Purchase: #${recipeId}`;
-        }
-
-        await db.query(
-            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
-             VALUES ($1, NULL, 'purchase', $2, $3, 'completed', $4)`,
-            [userId, purchaseAmount, note, referenceId]
-        );
-
-        // 3. Fulfill the order
-        if (type === 'subscription') {
-            // Find plan details (duplicated from subscriptions.js for simplicity, or we could import them)
-            const PLANS = {
-                monthly: { durationDays: 30 },
-                yearly: { durationDays: 365 }
-            };
-            const plan = PLANS[planId];
-            if (!plan) throw new Error('Invalid plan ID');
-
-            const startDate = new Date();
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + (planId === 'lifetime' ? 36500 : plan.durationDays));
-
-            // Check for existing subscription
-            const existingSubResult = await db.query('SELECT id FROM subscriptions WHERE user_id = $1', [userId]);
-            const existingSub = existingSubResult.rows[0];
-
-            if (existingSub) {
-                await db.query(`
-                    UPDATE subscriptions SET
-                        plan = $1, status = 'active', start_date = $2, end_date = $3,
-                        auto_renew = $4, updated_at = NOW(), granted_by_admin = FALSE,
-                        cancelled_at = NULL, stripe_session_id = NULL
-                    WHERE user_id = $5
-                `, [planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime', userId]);
-            } else {
-                await db.query(`
-                    INSERT INTO subscriptions (user_id, plan, status, start_date, end_date, auto_renew)
-                    VALUES ($1, $2, 'active', $3, $4, $5)
-                `, [userId, planId, startDate.toISOString(), endDate.toISOString(), planId !== 'lifetime']);
+            // Check user balance - with FOR UPDATE lock
+            const wallet = await getOrCreateWallet(client, userId, true);
+            if (parseFloat(wallet.balance) < purchaseAmount) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ 
+                    error: 'Insufficient funds in wallet',
+                    balance: parseFloat(wallet.balance)
+                });
             }
 
-            // Also add to transactions table for unified history
-            await db.query(`
-                INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status)
-                VALUES ($1, $2, 'subscription', $3, $4, 'completed')
-            `, [userId, `TXN-WLT-${Date.now()}`, planId, purchaseAmount]);
+            // 1. Deduct from balance
+            const newBalance = parseFloat(wallet.balance) - purchaseAmount;
+            await client.query(
+                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
+                [newBalance, userId]
+            );
 
-        } else if (type === 'recipe') {
-            // Record purchase
-            await db.query(`
-                INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid)
-                VALUES ($1, $2, $3)
-            `, [userId, recipeId, purchaseAmount]);
+            const referenceId = `WLT-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 
-            // Also add to transactions table
-            await db.query(`
-                INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status)
-                VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed')
-            `, [userId, `TXN-RECIPE-WLT-${Date.now()}`, `Recipe #${recipeId}`, purchaseAmount]);
+            // 2. Record wallet transaction
+            let note = '';
+            if (type === 'subscription') {
+                note = `Premium Subscription: ${planId}`;
+            } else if (type === 'recipe') {
+                note = `Recipe Purchase: #${recipeId}`;
+            }
+
+            await client.query(
+                `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                 VALUES ($1, NULL, 'purchase', $2, $3, 'completed', $4)`,
+                [userId, purchaseAmount, note, referenceId]
+            );
+
+            // 3. Fulfill the order
+            if (type === 'subscription') {
+                // fulfillSubscription uses its own queries, we should pass the client if possible to keep it atomic.
+                // However, fulfillSubscription is an external util. For true atomicity, it should accept a client.
+                await fulfillSubscription(userId, planId, purchaseAmount, 'wallet', null, null, client);
+            } else if (type === 'recipe') {
+                // Record purchase in store_purchases
+                await client.query(`
+                    INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid)
+                    VALUES ($1, $2, $3)
+                `, [userId, recipeId, purchaseAmount]);
+
+                // Also add to transactions table for unified history
+                await client.query(`
+                    INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status)
+                    VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed')
+                `, [userId, `TXN-RECIPE-WLT-${Date.now()}`, `Recipe #${recipeId}`, purchaseAmount]);
+                
+                // Note: Revenue split (80/20) should ideally be handled here too if not already.
+                // But for now, we'll maintain the existing logic structure.
+            }
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                balance: newBalance,
+                referenceId,
+                message: 'Purchase completed successfully using wallet balance'
+            });
+
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
         }
-
-        res.json({
-            success: true,
-            balance: newBalance,
-            referenceId,
-            message: 'Purchase completed successfully using wallet balance'
-        });
-
     } catch (error) {
         console.error('Wallet purchase error:', error);
         res.status(500).json({ error: 'Failed to process wallet purchase' });
