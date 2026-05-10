@@ -24,8 +24,13 @@
 <body>
     <!-- Mobile Top Bar -->
     <div class="mobile-top-bar">
-        <span class="mobile-logo">👨‍🍳</span>
-        <span class="mobile-title">Chef <span>Book</span></span>
+        <a href="#" class="premium-brand-logo">
+            <div class="logo-icon-wrapper">
+                <span class="logo-icon">👨‍🍳</span>
+                <div class="logo-glow"></div>
+            </div>
+            <span class="logo-text">Chef<span>Book</span></span>
+        </a>
     </div>
 
     <!-- Sidebar Toggle Button (Mobile) -->
@@ -40,8 +45,13 @@
     <nav class="sidebar" id="userHeader" style="display: none;">
         <!-- Logo / Brand -->
         <div class="sidebar-brand">
-            <span class="sidebar-logo">👨‍🍳</span>
-            <span class="sidebar-title">Chef <span>Book</span></span>
+            <a href="#" class="premium-brand-logo">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-icon">👨‍🍳</span>
+                    <div class="logo-glow"></div>
+                </div>
+                <span class="logo-text">Chef<span>Book</span></span>
+            </a>
         </div>
 
         <!-- User Profile Section -->
@@ -226,7 +236,6 @@
                     })();
                 </script>
                 <div class="hero-image-overlay"></div>
-                <h1 data-i18n="appTitle" class="hero-title-overlay">Chef <span>Book</span></h1>
                 <button id="refreshHeroBtn" class="refresh-hero-btn" title="Change Header Photo">🔄</button>
                 <div class="hero-image-decoration"></div>
             </div>
@@ -382,17 +391,46 @@
 
     <!-- Store Tab Content -->
     <div id="store" class="tab-content">
-        <div class="recipes-header">
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="storeSearch" class="search-input" data-i18n="searchStore"
-                    placeholder="Search the marketplace...">
+        <div class="recipes-header" style="flex-direction: column; align-items: stretch; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="search-container" style="flex: 1; margin-right: 15px;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="storeSearch" class="search-input" data-i18n="searchStore"
+                        placeholder="Search the marketplace...">
+                </div>
+                <div class="recipes-actions">
+                    <button id="sellRecipeBtn" class="btn btn-primary">
+                        <span class="btn-icon">🏷️</span>
+                        <span data-i18n="sellRecipeBtn">Sell Recipe</span>
+                    </button>
+                </div>
             </div>
-            <div class="recipes-actions">
-                <button id="sellRecipeBtn" class="btn btn-primary">
-                    <span class="btn-icon">🏷️</span>
-                    <span data-i18n="sellRecipeBtn">Sell Recipe</span>
-                </button>
+            
+            <!-- Advanced Filters -->
+            <div class="store-filters" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(198,123,75,0.1);">
+                <span style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Filters:</span>
+                
+                <select id="storePriceFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 120px;">
+                    <option value="all">Any Price</option>
+                    <option value="free">Free</option>
+                    <option value="under5">Under $5</option>
+                    <option value="under15">Under $15</option>
+                    <option value="premium">Premium ($15+)</option>
+                </select>
+                
+                <select id="storeRatingFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 130px;">
+                    <option value="all">Any Rating</option>
+                    <option value="4.5">4.5+ Stars ⭐️</option>
+                    <option value="4">4.0+ Stars ⭐️</option>
+                    <option value="3">3.0+ Stars ⭐️</option>
+                </select>
+
+                <select id="storeSortFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 140px; margin-left: auto;">
+                    <option value="newest">Newest First</option>
+                    <option value="price_low">Price: Low to High</option>
+                    <option value="price_high">Price: High to Low</option>
+                    <option value="sales">Most Popular</option>
+                </select>
             </div>
         </div>
 

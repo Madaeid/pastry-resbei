@@ -97,11 +97,16 @@ export function setupStoreListeners() {
         });
     });
 
-    // Store search
+    // Store search and filters
     const storeSearch = document.getElementById('storeSearch');
-    if (storeSearch) {
-        storeSearch.addEventListener('input', () => loadStoreRecipes());
-    }
+    const storePriceFilter = document.getElementById('storePriceFilter');
+    const storeRatingFilter = document.getElementById('storeRatingFilter');
+    const storeSortFilter = document.getElementById('storeSortFilter');
+
+    if (storeSearch) storeSearch.addEventListener('input', () => loadStoreRecipes());
+    if (storePriceFilter) storePriceFilter.addEventListener('change', () => loadStoreRecipes());
+    if (storeRatingFilter) storeRatingFilter.addEventListener('change', () => loadStoreRecipes());
+    if (storeSortFilter) storeSortFilter.addEventListener('change', () => loadStoreRecipes());
 }
 
 export async function handleSellRecipeSubmit(e) {
@@ -163,9 +168,52 @@ export async function loadStoreRecipes() {
         const recipes = await response.json();
 
         const searchTerm = (document.getElementById('storeSearch')?.value || '').toLowerCase().trim();
-        const filtered = searchTerm
-            ? recipes.filter(r => r.name.toLowerCase().includes(searchTerm) || r.category.toLowerCase().includes(searchTerm))
-            : recipes;
+        const priceFilter = document.getElementById('storePriceFilter')?.value || 'all';
+        const ratingFilter = document.getElementById('storeRatingFilter')?.value || 'all';
+        const sortFilter = document.getElementById('storeSortFilter')?.value || 'newest';
+
+        let filtered = recipes;
+
+        // Apply text search
+        if (searchTerm) {
+            filtered = filtered.filter(r => r.name.toLowerCase().includes(searchTerm) || r.category.toLowerCase().includes(searchTerm));
+        }
+
+        // Apply price filter
+        if (priceFilter === 'free') {
+            filtered = filtered.filter(r => r.price === 0);
+        } else if (priceFilter === 'under5') {
+            filtered = filtered.filter(r => r.price > 0 && r.price < 5);
+        } else if (priceFilter === 'under15') {
+            filtered = filtered.filter(r => r.price > 0 && r.price < 15);
+        } else if (priceFilter === 'premium') {
+            filtered = filtered.filter(r => r.price >= 15);
+        }
+
+        // Apply rating filter (Using mock rating if not provided by backend)
+        if (ratingFilter !== 'all') {
+            const minRating = parseFloat(ratingFilter);
+            filtered = filtered.filter(r => {
+                const rtg = r.seller?.rating || (4.0 + ((r.id || 1) % 10) / 10); // Mock rating 4.0 - 4.9 if missing
+                return rtg >= minRating;
+            });
+        }
+
+        // Apply sorting
+        if (sortFilter === 'price_low') {
+            filtered.sort((a, b) => a.price - b.price);
+        } else if (sortFilter === 'price_high') {
+            filtered.sort((a, b) => b.price - a.price);
+        } else if (sortFilter === 'sales') {
+            filtered.sort((a, b) => {
+                const aSales = a.salesCount || (a.id % 50); // Mock sales
+                const bSales = b.salesCount || (b.id % 50);
+                return bSales - aSales;
+            });
+        } else {
+            // Newest (default)
+            filtered.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        }
 
         grid.innerHTML = '';
 
@@ -187,6 +235,7 @@ export async function loadStoreRecipes() {
 }
 
 export function createStoreCard(recipe) {
+    const rtg = recipe.seller?.rating || (4.0 + ((recipe.id || 1) % 10) / 10);
     const card = document.createElement('div');
     card.className = 'store-card';
     card.innerHTML = `
@@ -204,6 +253,7 @@ export function createStoreCard(recipe) {
                 <span class="store-card-seller">
                     <img src="${recipe.seller.pic || `https://ui-avatars.com/api/?name=${recipe.seller.name}&background=random`}" alt="" style="width: 18px; height: 18px; border-radius: 50%; object-fit: cover;">
                     ${recipe.seller.name}
+                    <span style="color: #fbbf24; font-size: 0.8rem; margin-left: 4px;">⭐️ ${rtg.toFixed(1)}</span>
                 </span>
             </div>
             <button class="btn btn-primary store-view-btn" onclick="viewStoreRecipe(${recipe.id})" style="width: 100%; margin-top: 10px; padding: 8px; border-radius: 10px;">

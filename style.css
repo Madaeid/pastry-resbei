@@ -3134,28 +3134,43 @@ footer {
 }
 
 /* ===== Notifications ===== */
-.notification {
+.notification-container {
     position: fixed;
     bottom: 20px;
     right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 2000;
+    pointer-events: none;
+}
+
+.notification {
+    pointer-events: auto;
     background: rgba(30, 20, 12, 0.95);
     border: 1px solid rgba(198, 123, 75, 0.2);
     border-left: 4px solid var(--accent-pink);
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 15px 20px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
-    transform: translateY(100px);
+    gap: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transform: translateX(120%);
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    min-width: 300px;
+    max-width: 450px;
 }
 
 .notification.show {
-    transform: translateY(0);
+    transform: translateX(0);
     opacity: 1;
+}
+
+.notification.hide {
+    transform: translateX(120%);
+    opacity: 0;
 }
 
 .notification.success {
@@ -3166,14 +3181,64 @@ footer {
     border-left-color: #ef4444;
 }
 
+.notification.info {
+    border-left-color: #3b82f6;
+}
+
+.notification.warning {
+    border-left-color: #f59e0b;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
 .notification-icon {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
 }
 
 .notification-message {
     color: var(--text-primary);
     font-weight: 500;
     font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.notification-action-btn {
+    background: rgba(198, 123, 75, 0.15);
+    color: var(--accent-pink);
+    border: 1px solid rgba(198, 123, 75, 0.3);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.notification-action-btn:hover {
+    background: rgba(198, 123, 75, 0.3);
+    color: #fff;
+}
+
+.notification-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.notification-close-btn:hover {
+    color: var(--text-primary);
 }
 
 /* ===== Payment Page Styles ===== */
