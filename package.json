@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "compress:images": "node scripts/compress-images.mjs",
     "typecheck": "tsc --noEmit",
-    "lint:css": "stylelint \"**/*.css\""
+    "lint:css": "stylelint \"**/*.css\"",
+    "migrate": "node server/database/migrate.js"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

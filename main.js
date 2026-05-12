@@ -10,6 +10,7 @@ import { showNotification } from './ui-utils.js';
 import { loadBooks, viewPublicBook } from './books.js';
 import { setupStoreListeners, loadStoreRecipes, viewStoreRecipe } from './store.js';
 import { initScanner, openScanner } from './ingredient-scanner.js';
+import { initRecipeGenerator, openRecipeGenerator } from './recipe-generator.js';
 
 // Free tier limits
 const FREE_RECIPE_LIMIT = 10;
@@ -328,6 +329,9 @@ async function initApp() {
 
     // Initialize AI Ingredient Scanner
     initScanner();
+
+    // Initialize AI Recipe Generator
+    initRecipeGenerator();
 
     // Initialize Home User Search
     initHomeUserSearch();
@@ -678,6 +682,13 @@ function setupEventListeners() {
     if (sidebarScannerBtn) {
         sidebarScannerBtn.addEventListener('click', () => {
             openScanner('add');
+        });
+    }
+    // Sidebar AI Recipe Generator Button
+    const sidebarRecipeGeneratorBtn = document.getElementById('sidebarRecipeGeneratorBtn');
+    if (sidebarRecipeGeneratorBtn) {
+        sidebarRecipeGeneratorBtn.addEventListener('click', () => {
+            openRecipeGenerator();
         });
     }
 

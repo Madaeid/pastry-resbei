@@ -1,8 +1,13 @@
-import { getDatabase } from './db.js';
+import { getDatabase, closeDatabase } from './db.js';
 
 export async function runMigrations() {
+    const startTime = Date.now();
+    let migrationCount = 0;
+
     try {
         const db = getDatabase();
+
+        console.log('🔄 Running database migrations...');
 
         // Migration: Convert is_public from BOOLEAN to TEXT and add allowed_viewers
         try {
@@ -20,6 +25,7 @@ export async function runMigrations() {
                 `);
                 await db.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
                 console.log('✅ is_public column migrated to TEXT');
+                migrationCount++;
             }
 
             // Add allowed_viewers column if it doesn't exist
@@ -31,6 +37,7 @@ export async function runMigrations() {
             if (viewersCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
                 console.log('✅ allowed_viewers column added');
+                migrationCount++;
             }
 
             // Add reset_method column if it doesn't exist
@@ -41,6 +48,7 @@ export async function runMigrations() {
             if (resetMethodCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE users ADD COLUMN reset_method TEXT`);
                 console.log('✅ reset_method column added');
+                migrationCount++;
             }
         } catch (migErr) {
             // Migration may fail if already done or table doesn't exist yet
@@ -57,6 +65,7 @@ export async function runMigrations() {
             if (fromIdCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL`);
                 console.log('✅ shared_from_id column added to recipes');
+                migrationCount++;
             }
 
             // Check for shared_from_store_id
@@ -67,6 +76,7 @@ export async function runMigrations() {
             if (storeIdCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_store_id INTEGER REFERENCES store_recipes(id) ON DELETE SET NULL`);
                 console.log('✅ shared_from_store_id column added to recipes');
+                migrationCount++;
             }
 
             // Check for shared_notes
@@ -77,6 +87,7 @@ export async function runMigrations() {
             if (notesCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE recipes ADD COLUMN shared_notes TEXT`);
                 console.log('✅ shared_notes column added to recipes');
+                migrationCount++;
             }
 
             // Ensure recipe_shares table exists
@@ -101,6 +112,7 @@ export async function runMigrations() {
             if (expiryTypeCheck.rows.length > 0 && expiryTypeCheck.rows[0].data_type !== 'bigint') {
                 await db.query(`ALTER TABLE users ALTER COLUMN reset_code_expiry TYPE BIGINT USING EXTRACT(EPOCH FROM reset_code_expiry)::BIGINT * 1000`);
                 console.log('✅ reset_code_expiry column converted to BIGINT');
+                migrationCount++;
             }
         } catch (migErr) {
             console.log('Migration note (reset_code_expiry):', migErr.message);
@@ -115,11 +127,39 @@ export async function runMigrations() {
             if (passNullCheck.rows.length > 0 && passNullCheck.rows[0].is_nullable === 'NO') {
                 await db.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
                 console.log('✅ password_hash made nullable for OAuth users');
+                migrationCount++;
             }
         } catch (migErr) {
             console.log('Migration note (password_hash):', migErr.message);
         }
+
+        const elapsed = Date.now() - startTime;
+        if (migrationCount > 0) {
+            console.log(`\n✨ ${migrationCount} migration(s) applied in ${elapsed}ms`);
+        } else {
+            console.log(`\n✅ Database is up to date (checked in ${elapsed}ms)`);
+        }
     } catch (err) {
-        console.error('Migration error:', err.message);
+        console.error('❌ Migration error:', err.message);
+        throw err;
     }
+}
+
+// ===== CLI Entry Point =====
+// Run standalone with: node database/migrate.js
+const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/').replace(/^[a-zA-Z]:/, ''));
+
+if (isDirectRun) {
+    runMigrations()
+        .then(() => {
+            console.log('🏁 Migration complete. Closing database connection...');
+            return closeDatabase();
+        })
+        .then(() => {
+            process.exit(0);
+        })
+        .catch((err) => {
+            console.error('❌ Migration failed:', err.message);
+            process.exit(1);
+        });
 }

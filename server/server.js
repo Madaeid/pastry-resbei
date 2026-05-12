@@ -26,13 +26,9 @@ import booksRoutes from './routes/books.js'; // Chef Book portfolio
 import scannerRoutes from './routes/scanner.js'; // AI Ingredient Scanner (Premium)
 
 import { getDatabase } from './database/db.js';
-import { runMigrations } from './database/migrate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
-// Run migrations on startup
-runMigrations();
 
 // ===== Middleware =====
 
