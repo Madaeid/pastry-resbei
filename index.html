@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="my_recipe_card.css">
     <link rel="stylesheet" href="sidebar.css">
     <link rel="stylesheet" href="recipe-generator.css">
+    <link rel="stylesheet" href="servings-calculator.css">
 
 
 
@@ -213,43 +214,7 @@
     <div class="decorative-orb orb-2"></div>
     <div class="decorative-orb orb-3"></div>
 
-    <!-- Hero Section -->
-    <div class="hero-section">
-        <div class="hero-content">
-            <div class="hero-image-wrapper">
-                <div class="hero-photo-badge">
-                    <span class="hero-badge-icon">✨</span>
-                    <span class="hero-badge-text">Featured Chef</span>
-                </div>
-                <img id="heroChefImg" class="hero-image" src="/fruit-spread-header.webp" alt="Premium Chef" />
-                <script>
-                    (function () {
-                        const heroImages = [
-                            '/new-chef-hero.webp',
-                            '/premium-chef-hero.webp',
-                            '/hero-chef.webp',
-                            '/hero-chef-premium.webp',
-                            '/my-chef-hero.webp',
-                            '/another-chef-premium.webp',
-                            '/new-premium-hero.webp',
-                            '/chef-hero.webp',
-                            '/master-chef-header.webp',
-                            '/artisan-pastry-chef.webp',
-                            '/modern-chef-studio.webp',
-                            '/chef-rooftop-garden.webp',
-                            '/chef-fire-cooking.webp',
-                            '/fruit-spread-header.webp'
-                        ];
-                        const randomImg = heroImages[Math.floor(Math.random() * heroImages.length)];
-                        document.getElementById('heroChefImg').src = randomImg;
-                    })();
-                </script>
-                <div class="hero-image-overlay"></div>
-                <button id="refreshHeroBtn" class="refresh-hero-btn" title="Change Header Photo">🔄</button>
-                <div class="hero-image-decoration"></div>
-            </div>
-        </div>
-    </div>
+
 
 
 

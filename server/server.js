@@ -24,6 +24,7 @@ import storeRoutes from './routes/store.js'; // Store marketplace routes
 import walletRoutes from './routes/wallet.js'; // Wallet & transfers
 import booksRoutes from './routes/books.js'; // Chef Book portfolio
 import scannerRoutes from './routes/scanner.js'; // AI Ingredient Scanner (Premium)
+import nutritionRoutes from './routes/nutrition.js'; // AI Nutritional Analysis
 
 import { getDatabase } from './database/db.js';
 
@@ -75,6 +76,7 @@ app.use('/api/store', storeRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/books', booksRoutes);
 app.use('/api/scanner', scannerRoutes); // AI Ingredient Scanner
+app.use('/api/nutrition', nutritionRoutes); // AI Nutritional Analysis
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

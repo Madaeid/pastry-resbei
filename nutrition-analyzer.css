@@ -1,0 +1,603 @@
+/* Nutrition Analyzer Styles — Premium Glassmorphism Aesthetic */
+
+/* ===== Analyze Trigger Button ===== */
+.nutrition-analyze-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(39, 174, 96, 0.1));
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 20px;
+    color: #2ecc71;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.nutrition-analyze-trigger:hover {
+    background: linear-gradient(135deg, rgba(46, 204, 113, 0.25), rgba(39, 174, 96, 0.2));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.15);
+}
+
+.nutrition-analyze-trigger:active {
+    transform: translateY(0) scale(0.97);
+}
+
+.nutrition-icon {
+    font-size: 1rem;
+}
+
+/* ===== Nutrition Panel ===== */
+.nutrition-panel {
+    margin-top: 12px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(46, 204, 113, 0.15);
+    background: linear-gradient(135deg, rgba(20, 30, 22, 0.6), rgba(15, 25, 18, 0.8));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: nutrition-slide-in 0.5s ease both;
+}
+
+.nutrition-panel.expanded {
+    border-color: rgba(46, 204, 113, 0.3);
+    box-shadow: 0 8px 32px rgba(46, 204, 113, 0.08);
+}
+
+@keyframes nutrition-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        max-height: 2000px;
+    }
+}
+
+/* ===== Summary Bar ===== */
+.nutrition-summary-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    gap: 10px;
+}
+
+.nutrition-summary-bar:hover {
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.nutrition-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nutrition-summary-icon {
+    font-size: 1.1rem;
+}
+
+.nutrition-summary-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.nutrition-health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.health-healthy {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.health-moderate {
+    background: rgba(241, 196, 15, 0.15);
+    color: #f1c40f;
+    border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+.health-indulgent {
+    background: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.nutrition-summary-macros {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.quick-macro {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.quick-macro strong {
+    color: #2ecc71;
+    font-weight: 700;
+}
+
+.quick-macro-sep {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.65rem;
+}
+
+.nutrition-expand-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.nutrition-expand-btn:hover {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+/* ===== Detail Panel ===== */
+.nutrition-detail {
+    padding: 20px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    animation: nutrition-detail-in 0.4s ease;
+}
+
+@keyframes nutrition-detail-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Loading ===== */
+.nutrition-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 30px 0;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+}
+
+.nutrition-loading-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid rgba(46, 204, 113, 0.15);
+    border-top-color: #2ecc71;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Hero Row — Calorie Ring + Macro Bars ===== */
+.nutrition-hero-row {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+.nutrition-calorie-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.calorie-ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 8;
+}
+
+.ring-progress {
+    fill: none;
+    stroke: url(#calorieGradient);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke: #2ecc71;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.calorie-ring-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.calorie-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+    line-height: 1;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.calorie-unit {
+    font-size: 0.7rem;
+    color: #2ecc71;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.calorie-label {
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+}
+
+/* ===== Macro Bars ===== */
+.nutrition-macro-bars {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.macro-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.macro-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.macro-bar-name {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.macro-bar-value {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.macro-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.macro-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    width: 0;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.protein-fill {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+}
+
+.carbs-fill {
+    background: linear-gradient(90deg, #f39c12, #e67e22);
+}
+
+.fat-fill {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.fiber-fill {
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+}
+
+/* ===== Extra Row ===== */
+.nutrition-extra-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nutrition-extra-item {
+    text-align: center;
+}
+
+.extra-label {
+    display: block;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.extra-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ===== Allergens ===== */
+.nutrition-allergens {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.allergens-label {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.allergen-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.allergen-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgba(231, 76, 60, 0.12);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.25);
+}
+
+/* ===== Health Tip ===== */
+.nutrition-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(46, 204, 113, 0.06);
+    border: 1px dashed rgba(46, 204, 113, 0.2);
+    border-radius: 12px;
+    margin-bottom: 14px;
+}
+
+.nutrition-tip .tip-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.nutrition-tip .tip-text {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* ===== Breakdown Table ===== */
+.nutrition-breakdown {
+    margin-bottom: 12px;
+}
+
+.breakdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.breakdown-toggle:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.breakdown-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.3s ease;
+}
+
+.breakdown-list {
+    margin-top: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.breakdown-header-row,
+.breakdown-row,
+.breakdown-total-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 4px;
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    align-items: center;
+}
+
+.breakdown-header-row {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    letter-spacing: 0.5px;
+}
+
+.breakdown-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.8);
+    animation: nutrition-row-in 0.3s ease both;
+}
+
+@keyframes nutrition-row-in {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.breakdown-row:hover {
+    background: rgba(46, 204, 113, 0.05);
+}
+
+.breakdown-total-row {
+    border-top: 2px solid rgba(46, 204, 113, 0.2);
+    background: rgba(46, 204, 113, 0.05);
+    color: white;
+}
+
+.bh-name, .br-name { text-align: left; }
+.bh-cal, .br-cal { text-align: center; color: #2ecc71; }
+.bh-macro, .br-macro { text-align: center; }
+
+.br-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===== Confidence ===== */
+.nutrition-confidence {
+    text-align: center;
+    padding-top: 8px;
+}
+
+.confidence-text {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+}
+
+/* ===== Inline Badge (for recipe cards) ===== */
+.nutrition-inline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.2);
+    white-space: nowrap;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+    .nutrition-hero-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .nutrition-calorie-ring {
+        width: 100px;
+        height: 100px;
+    }
+
+    .calorie-number {
+        font-size: 1.5rem;
+    }
+
+    .nutrition-summary-macros {
+        display: none;
+    }
+
+    .nutrition-summary-bar {
+        padding: 10px 12px;
+    }
+
+    .breakdown-header-row,
+    .breakdown-row,
+    .breakdown-total-row {
+        grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+        font-size: 0.7rem;
+        padding: 6px 8px;
+    }
+
+    .nutrition-extra-row {
+        gap: 6px;
+    }
+
+    .extra-value {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .breakdown-header-row,
+    .breakdown-row,
+    .breakdown-total-row {
+        grid-template-columns: 1.2fr 0.8fr 0.6fr 0.6fr 0.6fr;
+        font-size: 0.65rem;
+        gap: 2px;
+        padding: 5px 6px;
+    }
+}

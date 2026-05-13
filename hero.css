@@ -652,3 +652,40 @@
         right: 15px;
     }
 }
+
+/* Center Logo in Hero Section */
+.hero-center-logo {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    animation: heroScaleIn 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    background: rgba(22, 15, 9, 0.4);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 32px;
+    padding: clamp(15px, 3vw, 30px) clamp(20px, 5vw, 50px);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+.hero-main-logo {
+    width: clamp(250px, 35vw, 450px);
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6));
+    animation: floatLogo 4s ease-in-out infinite alternate;
+}
+
+@keyframes floatLogo {
+    from {
+        transform: translateY(-5px);
+    }
+    to {
+        transform: translateY(5px);
+    }
+}

@@ -11,6 +11,9 @@ import { loadBooks, viewPublicBook } from './books.js';
 import { setupStoreListeners, loadStoreRecipes, viewStoreRecipe } from './store.js';
 import { initScanner, openScanner } from './ingredient-scanner.js';
 import { initRecipeGenerator, openRecipeGenerator } from './recipe-generator.js';
+import { initNutritionAnalyzer } from './nutrition-analyzer.js';
+import './nutrition-analyzer.css';
+import { buildServingsCalculatorHTML, initServingsCalculator } from './servings-calculator.js';
 
 // Free tier limits
 const FREE_RECIPE_LIMIT = 10;
@@ -333,6 +336,9 @@ async function initApp() {
     // Initialize AI Recipe Generator
     initRecipeGenerator();
 
+    // Initialize Nutrition Analyzer
+    initNutritionAnalyzer();
+
     // Initialize Home User Search
     initHomeUserSearch();
 
@@ -542,31 +548,11 @@ function setupEventListeners() {
             }
 
 
-            // Update hero image randomly
-            randomizeHeroImage();
+
         });
     });
 
-    // Refresh Hero Button
-    const refreshHeroBtn = document.getElementById('refreshHeroBtn');
-    if (refreshHeroBtn) {
-        refreshHeroBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            randomizeHeroImage();
-        });
-    }
 
-    // Zoom Hero Image
-    const heroImageWrapper = document.querySelector('.hero-image-wrapper');
-    if (heroImageWrapper) {
-        heroImageWrapper.addEventListener('click', (e) => {
-            if (e.target.closest('#refreshHeroBtn')) return;
-            heroImageWrapper.classList.toggle('zoomed');
-        });
-    }
-
-    // Auto-rotate hero image every 15 seconds
-    setInterval(randomizeHeroImage, 15000);
 
 
 
@@ -2299,7 +2285,7 @@ function viewRecipe(idOrRecipe, isPublic = false) {
                 <span class="meta-icon">🔥</span>
                 Cook: ${source.cookTime || 0} min
             </div>
-            <div class="meta-item">
+            <div class="meta-item servings-meta">
                 <span class="meta-icon">👥</span>
                 ${source.servings || 0} servings
             </div>
@@ -2309,9 +2295,10 @@ function viewRecipe(idOrRecipe, isPublic = false) {
         </div>
         
         ${(source.ingredients && source.ingredients !== 'N/A') ? `
+        ${buildServingsCalculatorHTML(source.servings || 1)}
         <div class="modal-section">
             <h3>🥄 Ingredients</h3>
-            <ul>
+            <ul class="ingredients-list">
                 ${source.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
             </ul>
         </div>
@@ -2355,6 +2342,11 @@ function viewRecipe(idOrRecipe, isPublic = false) {
             ` : ''}
         </div>
     `;
+
+    // Initialize Smart Servings Calculator
+    if (source.ingredients && source.ingredients !== 'N/A') {
+        initServingsCalculator(source.servings || 1, source.ingredients, modalBody);
+    }
 
     // Add event listener for the modal PDF button
     const savePdfBtn = document.getElementById('modalSavePdf');
@@ -3727,50 +3719,7 @@ function initQuickPost() {
     };
 }
 
-/**
- * Randomizes the hero image with a smooth transition
- */
-function randomizeHeroImage() {
-    const heroImg = document.getElementById('heroChefImg');
-    if (!heroImg) return;
 
-    const heroImages = [
-        '/new-chef-hero.webp',
-        '/premium-chef-hero.webp',
-        '/hero-chef.webp',
-        '/hero-chef-premium.webp',
-        '/my-chef-hero.webp',
-        '/another-chef-premium.webp',
-        '/new-premium-hero.webp',
-        '/chef-hero.webp',
-        '/master-chef-header.webp',
-        '/artisan-pastry-chef.webp',
-        '/modern-chef-studio.webp',
-        '/chef-rooftop-garden.webp',
-        '/chef-fire-cooking.webp',
-        '/fruit-spread-header.webp'
-    ];
-
-    // Pick a random image different from current if possible
-    let currentSrc = heroImg.src.split('/').pop();
-    let availableImages = heroImages.filter(img => img.split('/').pop() !== currentSrc);
-    const randomImg = availableImages[Math.floor(Math.random() * availableImages.length)] || heroImages[0];
-
-    // Premium transition
-    heroImg.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-    heroImg.style.transform = 'scale(1.1)';
-    heroImg.style.opacity = '0.3';
-    heroImg.style.filter = 'blur(10px)';
-
-    setTimeout(() => {
-        heroImg.src = randomImg;
-        heroImg.onload = () => {
-            heroImg.style.transform = 'scale(1)';
-            heroImg.style.opacity = '1';
-            heroImg.style.filter = 'blur(0)';
-        };
-    }, 400);
-}
 
 // ===== BOOK TAB FUNCTIONS =====
 let currentBookId = null;
