@@ -414,6 +414,18 @@ router.post('/recipes/clear-all', async (req, res) => {
     }
 });
 
+// ===== Clear All Non-Admin Users =====
+router.post('/users/clear-all-non-admins', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const deleteRes = await db.query("DELETE FROM users WHERE is_admin != 1 AND username != 'admin'");
+        res.json({ success: true, message: `Successfully deleted ${deleteRes.rowCount} users and their associated data.` });
+    } catch (error) {
+        console.error('Clear all users error:', error);
+        res.status(500).json({ error: 'Failed to clear users' });
+    }
+});
+
 // ===== Analytics Dashboard Data =====
 router.get('/analytics', async (req, res) => {
     try {

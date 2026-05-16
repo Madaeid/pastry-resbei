@@ -10,6 +10,8 @@
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="public_card.css">
+    <link rel="stylesheet" href="cv-style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         .profile-container {
             max-width: 1000px;
@@ -376,6 +378,10 @@
                         <button id="shareProfileBtn" class="btn btn-sm"
                             style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                             <span>🔗</span> Share
+                        </button>
+                        <button id="showProfileQrBtn" class="btn btn-sm"
+                            style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <span>📱</span> QR Code
                         </button>
                     </div>
                 </div>
@@ -1370,6 +1376,149 @@
             setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 300); }, 3000);
         }
     </script>
+
+    <!-- QR Code Modal for Chef Profile -->
+    <div class="qr-modal-overlay" id="qrModalOverlay">
+        <button class="qr-modal-close" id="qrModalCloseBtn">&times;</button>
+        <div class="qr-modal-card">
+            <canvas id="qrModalCanvas"></canvas>
+            <h3 id="qrModalName">Chef Profile</h3>
+            <p id="qrModalUrl"></p>
+            <div class="qr-modal-actions">
+                <button type="button" class="btn-qr-action primary" id="qrModalDownloadBtn">
+                    <span>📥</span> Download PNG
+                </button>
+                <button type="button" class="btn-qr-action" id="qrModalCopyBtn">
+                    <span>🔗</span> Copy Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== Profile QR Code (Chef Profile Page) ==========
+        (function initProfileQR() {
+            const qrBtn = document.getElementById('showProfileQrBtn');
+            if (!qrBtn) return;
+
+            qrBtn.addEventListener('click', function () {
+                var urlParams = new URLSearchParams(window.location.search);
+                var username = urlParams.get('username');
+                if (!username) return;
+
+                var profileUrl = window.location.origin + '/chef-profile.html?username=' + encodeURIComponent(username);
+
+                // Generate QR
+                var qr = qrcode(0, 'M');
+                qr.addData(profileUrl);
+                qr.make();
+
+                // Render to modal canvas
+                var canvas = document.getElementById('qrModalCanvas');
+                if (canvas) {
+                    var ctx = canvas.getContext('2d');
+                    var size = 240;
+                    var moduleCount = qr.getModuleCount();
+                    var cellSize = size / moduleCount;
+
+                    canvas.width = size;
+                    canvas.height = size;
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, size, size);
+
+                    ctx.fillStyle = '#1a120b';
+                    for (var row = 0; row < moduleCount; row++) {
+                        for (var col = 0; col < moduleCount; col++) {
+                            if (qr.isDark(row, col)) {
+                                ctx.fillRect(
+                                    Math.round(col * cellSize),
+                                    Math.round(row * cellSize),
+                                    Math.ceil(cellSize),
+                                    Math.ceil(cellSize)
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Set modal text
+                var chefNameEl = document.getElementById('chefName');
+                document.getElementById('qrModalName').textContent =
+                    chefNameEl ? chefNameEl.textContent : 'Chef Profile';
+                document.getElementById('qrModalUrl').textContent = profileUrl;
+
+                // Wire up download
+                document.getElementById('qrModalDownloadBtn').onclick = function () {
+                    var dlQr = qrcode(0, 'M');
+                    dlQr.addData(profileUrl);
+                    dlQr.make();
+
+                    var dlCanvas = document.createElement('canvas');
+                    var dlSize = 600;
+                    var padding = 40;
+                    var totalSize = dlSize + padding * 2;
+                    dlCanvas.width = totalSize;
+                    dlCanvas.height = totalSize + 60;
+
+                    var dlCtx = dlCanvas.getContext('2d');
+                    dlCtx.fillStyle = '#ffffff';
+                    dlCtx.fillRect(0, 0, dlCanvas.width, dlCanvas.height);
+
+                    var mc = dlQr.getModuleCount();
+                    var cs = dlSize / mc;
+                    dlCtx.fillStyle = '#1a120b';
+                    for (var r = 0; r < mc; r++) {
+                        for (var c = 0; c < mc; c++) {
+                            if (dlQr.isDark(r, c)) {
+                                dlCtx.fillRect(
+                                    padding + Math.round(c * cs),
+                                    padding + Math.round(r * cs),
+                                    Math.ceil(cs), Math.ceil(cs)
+                                );
+                            }
+                        }
+                    }
+
+                    dlCtx.fillStyle = '#8B7B6B';
+                    dlCtx.font = '500 16px Poppins, sans-serif';
+                    dlCtx.textAlign = 'center';
+                    dlCtx.fillText('Chef Book — @' + username, totalSize / 2, dlSize + padding + 40);
+
+                    var link = document.createElement('a');
+                    link.download = username + '_chef_qr.png';
+                    link.href = dlCanvas.toDataURL('image/png');
+                    link.click();
+                };
+
+                // Wire up copy link
+                document.getElementById('qrModalCopyBtn').onclick = function () {
+                    navigator.clipboard.writeText(profileUrl).then(function () {
+                        var btn = document.getElementById('qrModalCopyBtn');
+                        var original = btn.innerHTML;
+                        btn.innerHTML = '<span>\u2705</span> Copied!';
+                        setTimeout(function () { btn.innerHTML = original; }, 2000);
+                    });
+                };
+
+                // Show modal
+                document.getElementById('qrModalOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // Close modal
+            document.getElementById('qrModalCloseBtn').onclick = function () {
+                document.getElementById('qrModalOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+            };
+            document.getElementById('qrModalOverlay').onclick = function (e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+        })();
+    </script>
 </body>
 
-</html>
+</html>

@@ -16,31 +16,23 @@
     <!-- Stripe.js -->
     <script src="https://js.stripe.com/v3/"></script>
     <script type="module" src="./services/app-guard.ts"></script>
+    <style>
+        /* Cancel scrollbar visibility for payment page */
+        body {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+    </style>
 </head>
 
 <body>
-    <!-- User Header -->
-    <div class="user-header" id="userHeader">
-        <div class="user-display">
-            <a href="./index.html" class="premium-brand-logo" style="text-decoration: none;">
-                <div class="logo-icon-wrapper">
-                    <span class="logo-icon">👨‍🍳</span>
-                    <div class="logo-glow"></div>
-                </div>
-                <span class="logo-text" style="margin-left: 10px;">Chef<span>Book</span></span>
-            </a>
-            <span class="user-name" id="userName"
-                style="margin-left: 15px; font-weight: 500; font-size: 1rem; color: var(--text-secondary); opacity: 0.8;"></span>
-        </div>
-        <span class="premium-badge" id="premiumBadge" style="display: none;" data-i18n="premiumBadge">💎
-            Premium</span>
-    </div>
     <a href="./index.html" class="btn-back-home">
         <span>🏠</span>
         <span data-i18n="backToApp">Back to App</span>
     </a>
-    </div>
-
     <!-- Floating Particles Background -->
     <div class="particles">
         <div class="particle"></div>

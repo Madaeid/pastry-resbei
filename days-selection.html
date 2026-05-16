@@ -62,6 +62,51 @@
         <div class="days-grid" id="daysGrid">
             <!-- Days will be dynamically inserted here -->
         </div>
+
+        <!-- Shopping List Button -->
+        <div style="text-align: center; margin-top: 35px;">
+            <button class="btn-shopping-list" id="shoppingListBtn">
+                <span>🛒</span>
+                <span>Generate Shopping List</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Shopping List Modal -->
+    <div id="shoppingListModal" class="modal">
+        <div class="modal-content modal-lg">
+            <button class="modal-close" id="closeShoppingListModal">&times;</button>
+            <div class="modal-header" style="text-align: center; margin-bottom: 5px;">
+                <h2>🛒 Weekly Shopping List</h2>
+                <p class="shopping-list-subtitle" id="shoppingListSubtitle">Loading ingredients from your meal plan...</p>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="shopping-filter-tabs" id="shoppingFilterTabs">
+                <button class="shopping-tab active" data-filter="all">📋 All</button>
+            </div>
+
+            <!-- Shopping list container -->
+            <div class="shopping-list-body" id="shoppingListBody">
+                <!-- Categories and items will be rendered here -->
+            </div>
+
+            <!-- Actions -->
+            <div class="shopping-list-actions">
+                <button class="btn btn-secondary" id="shoppingCopyBtn">
+                    <span>📋</span> Copy to Clipboard
+                </button>
+                <button class="btn btn-secondary" id="shoppingExportBtn">
+                    <span>📄</span> Export as Text
+                </button>
+                <button class="btn btn-primary" id="shoppingShareBtn" style="display: none;">
+                    <span>🔗</span> Share
+                </button>
+                <button class="btn btn-secondary" id="shoppingClearChecked">
+                    <span>✅</span> Clear Checked
+                </button>
+            </div>
+        </div>
     </div>
 
     <footer>

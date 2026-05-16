@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="cv-style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <script type="module" src="./services/app-guard.ts"></script>
 </head>
 
@@ -138,6 +139,48 @@
             </button>
             <a href="./cv-edit.html" class="btn-save" style="text-decoration: none; text-align: center;">✏️ Edit CV</a>
             <button type="button" class="btn-cancel" id="deleteCvBtn">🗑️ Delete CV</button>
+        </div>
+
+        <!-- Profile QR Code -->
+        <div class="qr-code-section" id="qrCodeSection" style="display: none;">
+            <div class="qr-card">
+                <div class="qr-canvas-wrapper" id="qrCanvasWrapper" title="Click to enlarge">
+                    <canvas id="qrCanvas"></canvas>
+                </div>
+                <div class="qr-info">
+                    <h3><span>📱</span> My Profile QR Code</h3>
+                    <p>Share this QR code at interviews or events — it links directly to your public chef profile, CV, and portfolio.</p>
+                    <div class="qr-actions">
+                        <button type="button" class="btn-qr-action primary" id="downloadQrBtn">
+                            <span>📥</span> Download PNG
+                        </button>
+                        <button type="button" class="btn-qr-action" id="copyQrLinkBtn">
+                            <span>🔗</span> Copy Link
+                        </button>
+                        <button type="button" class="btn-qr-action" id="enlargeQrBtn">
+                            <span>🔍</span> Enlarge
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal (Full-Screen Preview) -->
+    <div class="qr-modal-overlay" id="qrModalOverlay">
+        <button class="qr-modal-close" id="qrModalCloseBtn">&times;</button>
+        <div class="qr-modal-card">
+            <canvas id="qrModalCanvas"></canvas>
+            <h3 id="qrModalName">Chef Profile</h3>
+            <p id="qrModalUrl"></p>
+            <div class="qr-modal-actions">
+                <button type="button" class="btn-qr-action primary" id="qrModalDownloadBtn">
+                    <span>📥</span> Download PNG
+                </button>
+                <button type="button" class="btn-qr-action" id="qrModalCopyBtn">
+                    <span>🔗</span> Copy Link
+                </button>
+            </div>
         </div>
     </div>
 
@@ -465,6 +508,162 @@
                 btn.classList.remove('pdf-loading');
             }
         });
+
+        // ========== Profile QR Code ==========
+        function generateProfileQR() {
+            const username = currentUser ? currentUser.username : null;
+            if (!username) return;
+
+            const profileUrl = `${window.location.origin}/chef-profile.html?username=${encodeURIComponent(username)}`;
+
+            // Generate QR code using qrcode-generator library
+            const qr = qrcode(0, 'M');
+            qr.addData(profileUrl);
+            qr.make();
+
+            // Render to the inline canvas
+            renderQRToCanvas('qrCanvas', qr, 120);
+
+            // Render to the modal canvas
+            renderQRToCanvas('qrModalCanvas', qr, 240);
+
+            // Set modal text
+            document.getElementById('qrModalName').textContent =
+                document.getElementById('cvFullName').textContent || 'Chef Profile';
+            document.getElementById('qrModalUrl').textContent = profileUrl;
+
+            // Show the QR section
+            document.getElementById('qrCodeSection').style.display = 'block';
+
+            // Wire up actions
+            document.getElementById('downloadQrBtn').onclick = () => downloadQR(profileUrl, username);
+            document.getElementById('qrModalDownloadBtn').onclick = () => downloadQR(profileUrl, username);
+            document.getElementById('copyQrLinkBtn').onclick = () => copyToClipboard(profileUrl, 'copyQrLinkBtn');
+            document.getElementById('qrModalCopyBtn').onclick = () => copyToClipboard(profileUrl, 'qrModalCopyBtn');
+
+            // Enlarge / modal
+            document.getElementById('enlargeQrBtn').onclick = openQRModal;
+            document.getElementById('qrCanvasWrapper').onclick = openQRModal;
+            document.getElementById('qrModalCloseBtn').onclick = closeQRModal;
+            document.getElementById('qrModalOverlay').onclick = function (e) {
+                if (e.target === this) closeQRModal();
+            };
+        }
+
+        function renderQRToCanvas(canvasId, qr, size) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const moduleCount = qr.getModuleCount();
+            const cellSize = size / moduleCount;
+
+            canvas.width = size;
+            canvas.height = size;
+
+            // White background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw QR modules with the brand color
+            ctx.fillStyle = '#1a120b';
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(
+                            Math.round(col * cellSize),
+                            Math.round(row * cellSize),
+                            Math.ceil(cellSize),
+                            Math.ceil(cellSize)
+                        );
+                    }
+                }
+            }
+        }
+
+        function downloadQR(url, username) {
+            // Create a high-res version (600px)
+            const qr = qrcode(0, 'M');
+            qr.addData(url);
+            qr.make();
+
+            const downloadCanvas = document.createElement('canvas');
+            const size = 600;
+            const padding = 40;
+            const totalSize = size + padding * 2;
+            downloadCanvas.width = totalSize;
+            downloadCanvas.height = totalSize + 60; // Extra space for text
+
+            const ctx = downloadCanvas.getContext('2d');
+
+            // Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, downloadCanvas.width, downloadCanvas.height);
+
+            // QR code
+            const moduleCount = qr.getModuleCount();
+            const cellSize = size / moduleCount;
+
+            ctx.fillStyle = '#1a120b';
+            for (let row = 0; row < moduleCount; row++) {
+                for (let col = 0; col < moduleCount; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(
+                            padding + Math.round(col * cellSize),
+                            padding + Math.round(row * cellSize),
+                            Math.ceil(cellSize),
+                            Math.ceil(cellSize)
+                        );
+                    }
+                }
+            }
+
+            // Add brand text below
+            ctx.fillStyle = '#8B7B6B';
+            ctx.font = '500 16px Poppins, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Chef Book — @${username}`, totalSize / 2, size + padding + 40);
+
+            // Download
+            const link = document.createElement('a');
+            link.download = `${username}_chef_qr.png`;
+            link.href = downloadCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function copyToClipboard(text, btnId) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    const original = btn.innerHTML;
+                    btn.innerHTML = '<span>✅</span> Copied!';
+                    setTimeout(() => { btn.innerHTML = original; }, 2000);
+                }
+            });
+        }
+
+        function openQRModal() {
+            document.getElementById('qrModalOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeQRModal() {
+            document.getElementById('qrModalOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Generate QR after CV loads (called from displayCV)
+        const _originalDisplayCV = displayCV;
+        // Patch displayCV to also generate QR
+        window._cvDisplayed = false;
+        const origLoadCV = loadCV;
+        // We trigger QR after loadCV finishes — the displayCV call sets cvDisplay visible
+        const observer = new MutationObserver(() => {
+            if (document.getElementById('cvDisplay').style.display === 'block' && !window._cvDisplayed) {
+                window._cvDisplayed = true;
+                generateProfileQR();
+            }
+        });
+        observer.observe(document.getElementById('cvDisplay'), { attributes: true, attributeFilter: ['style'] });
     </script>
     <script type="module" src="language.js"></script>
 </body>

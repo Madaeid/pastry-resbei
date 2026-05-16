@@ -27,6 +27,7 @@ const searchUsersInput = document.getElementById('searchUsersInput');
 const viewAllRecipesBtn = document.getElementById('viewAllRecipes');
 const exportDataBtn = document.getElementById('exportData');
 const clearAllRecipesBtn = document.getElementById('clearAllRecipes');
+const clearAllUsersBtn = document.getElementById('clearAllUsers');
 const systemInfoBtn = document.getElementById('systemInfo');
 
 // Modal elements
@@ -422,6 +423,23 @@ async function handleClearAllRecipes() {
     );
 }
 
+async function handleClearAllUsers() {
+    showConfirmModal(
+        '🚫',
+        'Delete All Users',
+        'Are you absolutely sure? This will delete EVERY non-admin user and all their data (recipes, CVs, follows, etc.). This cannot be undone!',
+        async () => {
+            try {
+                const res = await adminFetch('/users/clear-all-non-admins', { method: 'POST' });
+                showNotification(res.message);
+                updateDashboardData();
+            } catch (err) {
+                showNotification(err.message, 'error');
+            }
+        }
+    );
+}
+
 function handleSystemInfo() {
     const info = {
         platform: navigator.platform,
@@ -515,6 +533,7 @@ function setupEventListeners() {
     viewAllRecipesBtn.addEventListener('click', handleViewAllRecipes);
     exportDataBtn.addEventListener('click', handleExportData);
     clearAllRecipesBtn.addEventListener('click', handleClearAllRecipes);
+    if (clearAllUsersBtn) clearAllUsersBtn.addEventListener('click', handleClearAllUsers);
     systemInfoBtn.addEventListener('click', handleSystemInfo);
     
     closeConfirmModal.onclick = () => confirmModal.classList.remove('active');

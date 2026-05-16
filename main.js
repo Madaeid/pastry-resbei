@@ -389,6 +389,9 @@ async function initApp() {
         setTimeout(() => typeof viewPublicBook === 'function' && viewPublicBook(openBookId), 500);
     }
 
+    // Initialize kitchen photo rotator
+    initKitchenRotator();
+
     // Expose social functions to window for social-ui.js
     window.editPost = editPost;
     window.deletePost = deleteRecipe;
@@ -398,6 +401,41 @@ async function initApp() {
     window.submitComment = submitComment;
     window.editComment = editPostComment;
     window.deleteComment = deletePostComment;
+}
+
+/**
+ * Initialize Kitchen Photo Rotator
+ */
+function initKitchenRotator() {
+    const kitchenImg = document.getElementById('kitchenRotator');
+    if (!kitchenImg) return;
+
+    // Array of chef, food, and dessert photos
+    const images = [
+        'public/modern-chef-studio.png',
+        'public/fruit-spread-header.png',
+        'public/chef-fire-cooking.png',
+        'public/master-chef-header.png'
+    ];
+    let currentIndex = 0;
+
+    // Preload images to prevent flicker
+    images.forEach(src => {
+        const img = new Image();
+        img.src = src;
+    });
+
+    setInterval(() => {
+        // Fade out
+        kitchenImg.style.opacity = '0';
+
+        setTimeout(() => {
+            currentIndex = (currentIndex + 1) % images.length;
+            kitchenImg.src = images[currentIndex];
+            // Fade in
+            kitchenImg.style.opacity = '1';
+        }, 500); // Wait for fade out to complete
+    }, 3500); // Change image every 3.5 seconds
 }
 
 /**

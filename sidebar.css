@@ -220,13 +220,13 @@
 .premium-badge {
     font-size: 0.75rem;
     padding: 6px 16px;
-    background: linear-gradient(135deg, #FFD700, #FFA500);
-    color: #000;
+    background: transparent;
+    color: #ffffff;
     border-radius: 25px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1px;
-    box-shadow: 0 4px 15px rgba(255, 165, 0, 0.4);
+    box-shadow: none;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -235,7 +235,7 @@
 
 .premium-badge:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 165, 0, 0.6);
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
 
 .user-balance-container {
@@ -668,4 +668,88 @@ body.rtl .sidebar {
         padding-left: 0;
         padding-right: 260px;
     }
+}
+
+/* ===== Light Theme Overrides for Sidebar ===== */
+[data-theme="light"] .sidebar {
+    background: rgba(255, 253, 250, 0.85);
+    border-color: rgba(198, 123, 75, 0.15);
+    box-shadow: 4px 0 30px rgba(45, 31, 19, 0.08);
+}
+
+[data-theme="light"] .sidebar-user {
+    background: rgba(45, 31, 19, 0.03);
+    border-color: rgba(198, 123, 75, 0.1);
+}
+
+[data-theme="light"] .sidebar-user:hover {
+    background: rgba(45, 31, 19, 0.06);
+}
+
+[data-theme="light"] .user-name {
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .user-balance-container {
+    background: rgba(45, 31, 19, 0.05);
+    border-color: rgba(198, 123, 75, 0.1);
+}
+
+[data-theme="light"] .user-balance-container:hover {
+    background: rgba(45, 31, 19, 0.08);
+}
+
+[data-theme="light"] .sidebar-section-label {
+    color: rgba(45, 31, 19, 0.5);
+}
+
+[data-theme="light"] .sidebar-link {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .sidebar-link:hover {
+    background: rgba(198, 123, 75, 0.05);
+    color: var(--text-primary);
+    border-color: rgba(198, 123, 75, 0.1);
+}
+
+[data-theme="light"] .sidebar-link.active {
+    background: linear-gradient(135deg, rgba(198, 123, 75, 0.1), rgba(212, 165, 90, 0.1));
+    color: var(--text-primary);
+    border-color: rgba(198, 123, 75, 0.2);
+    box-shadow: none;
+}
+
+[data-theme="light"] .sidebar-divider {
+    background: linear-gradient(90deg, transparent, rgba(198, 123, 75, 0.15), transparent);
+}
+
+[data-theme="light"] .theme-toggle, 
+[data-theme="light"] .sidebar-bottom .language-toggle {
+    background: rgba(45, 31, 19, 0.03);
+    border-color: rgba(198, 123, 75, 0.1);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"] .theme-toggle:hover, 
+[data-theme="light"] .sidebar-bottom .language-toggle:hover {
+    background: rgba(45, 31, 19, 0.08);
+}
+
+[data-theme="light"] .mobile-top-bar {
+    background: rgba(255, 253, 250, 0.95);
+    border-color: rgba(198, 123, 75, 0.15);
+}
+
+[data-theme="light"] .sidebar-toggle {
+    background: rgba(255, 253, 250, 0.9);
+    border-color: rgba(198, 123, 75, 0.2);
+}
+
+[data-theme="light"] .hamburger-line {
+    background: var(--text-primary);
+}
+
+[data-theme="light"] .premium-badge {
+    color: #000000;
 }
