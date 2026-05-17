@@ -938,9 +938,7 @@
                 const picUrl = chefData.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff&size=150`;
                 document.getElementById('chefPic').src = picUrl;
 
-                if (chefData.isPremium) {
-                    document.getElementById('chefPremiumBadge').style.display = 'inline-block';
-                }
+
 
                 // Show 'Private Profile' badge if admin is viewing a private user
                 if (chefData.isPrivate) {
@@ -956,6 +954,32 @@
                 // Auth check
                 const currentUserUsername = sessionStorage.getItem('currentUser') || 'null';
                 const isOwnProfile = currentUserUsername !== 'null' && currentUserUsername === chefData.username;
+
+                // Customize and display premium/upgrade badge
+                const chefPremiumBadge = document.getElementById('chefPremiumBadge');
+                if (chefPremiumBadge) {
+                    if (chefData.isPremium) {
+                        chefPremiumBadge.style.display = 'inline-block';
+                        chefPremiumBadge.innerHTML = '💎 Premium';
+                        chefPremiumBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff8c00)';
+                        chefPremiumBadge.style.cursor = 'default';
+                        chefPremiumBadge.title = 'Premium Chef';
+                        chefPremiumBadge.onclick = null;
+                    } else if (isOwnProfile) {
+                        // Show upgrade option for own profile if not premium
+                        chefPremiumBadge.style.display = 'inline-block';
+                        chefPremiumBadge.innerHTML = '👑 Upgrade to Premium';
+                        chefPremiumBadge.style.background = 'linear-gradient(135deg, #eab366, #ea7a66)';
+                        chefPremiumBadge.style.color = '#fff';
+                        chefPremiumBadge.style.cursor = 'pointer';
+                        chefPremiumBadge.title = 'Click to upgrade your profile to Premium';
+                        chefPremiumBadge.onclick = () => {
+                            window.location.href = './payment.html?source=chef-profile';
+                        };
+                    } else {
+                        chefPremiumBadge.style.display = 'none';
+                    }
+                }
 
                 // Update tab labels if own profile
                 if (isOwnProfile) {
@@ -1521,4 +1545,4 @@
     </script>
 </body>
 
-</html>
+</html>
