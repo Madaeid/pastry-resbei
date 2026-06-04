@@ -2116,7 +2116,10 @@ function createRecipeCard(recipe, isPublicFeed = false) {
                 <button class="btn-overlay-action" data-action="view" title="View Post">👁️</button>
                 <button class="btn-overlay-action" data-action="menu" title="Add to Menu">📅</button>
                 <button class="btn-overlay-action" data-action="pdf" title="Save PDF">📄</button>
-                ${!isPublicFeed ? `<button class="btn-overlay-action btn-delete" data-action="delete" title="Delete Recipe">🗑️</button>` : ''}
+                ${!isPublicFeed ? `
+                <button class="btn-overlay-action btn-sell" data-action="sell" title="Sell in Store">🏪</button>
+                <button class="btn-overlay-action btn-delete" data-action="delete" title="Delete Recipe">🗑️</button>
+                ` : ''}
             </div>
         </div>
     `;
@@ -2138,6 +2141,14 @@ function createRecipeCard(recipe, isPublicFeed = false) {
 
 
     if (!isPublicFeed) {
+        card.querySelector('[data-action="sell"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (typeof window.openSellRecipeModalWithData === 'function') {
+                window.openSellRecipeModalWithData(recipe);
+            }
+        });
+
         card.querySelector('[data-action="delete"]').addEventListener('click', (e) => {
             e.stopPropagation();
             deleteRecipe(recipe.id);
@@ -3756,11 +3767,5 @@ function initQuickPost() {
         }
     };
 }
-
-
-
-// ===== BOOK TAB FUNCTIONS =====
-let currentBookId = null;
-let currentBookRecipes = [];
 
 window.openDayPickerModal = openDayPickerModal;

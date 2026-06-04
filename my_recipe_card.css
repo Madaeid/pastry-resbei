@@ -121,6 +121,14 @@
     border-color: #ef4444;
 }
 
+.btn-overlay-action.btn-sell:hover {
+    background: #10b981;
+    /* Green for sell/list */
+    color: white;
+    border-color: #10b981;
+}
+
+
 .btn-overlay-action span {
     pointer-events: none;
 }

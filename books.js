@@ -2,8 +2,14 @@ import { showNotification } from './ui-utils.js';
 import { getCurrentUser } from './auth.js';
 import { isPremium } from './payment.js';
 import { jsPDF } from 'jspdf';
+import { getCategoryEmoji, getDifficultyText } from './recipe-utils.js';
+import { fetchAndUpdateWalletBtn } from './store.js';
 
 const BOOK_API = '/api/books';
+
+// Book state — must be declared here (not in main.js) to stay in module scope
+let currentBookId = null;
+let currentBookRecipes = [];
 
 // Theme color map
 const bookThemeColors = {
@@ -21,8 +27,18 @@ export async function loadBooks() {
     const myBooksSection = document.getElementById('myBooksSection');
     if (!grid) return;
 
-    // Show My Books sub-tab, show list view, hide detail
+    // Update sub-tab buttons active state
+    document.querySelectorAll('.book-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.bookTab === 'my-books');
+    });
+
+    // Show My Books sub-tab, hide others, show list view, hide detail
     if (myBooksSection) myBooksSection.style.display = '';
+    const browseBooksSection = document.getElementById('browseBooksSection');
+    const purchasedBooksSection = document.getElementById('purchasedBooksSection');
+    if (browseBooksSection) browseBooksSection.style.display = 'none';
+    if (purchasedBooksSection) purchasedBooksSection.style.display = 'none';
+
     listView.style.display = '';
     detailView.style.display = 'none';
     currentBookId = null;

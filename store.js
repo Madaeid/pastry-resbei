@@ -18,6 +18,19 @@ export function setupStoreListeners() {
 
     if (sellRecipeBtn && sellRecipeModal) {
         sellRecipeBtn.addEventListener('click', () => {
+            if (sellRecipeForm) {
+                sellRecipeForm.reset();
+                delete sellRecipeForm.dataset.prepTime;
+                delete sellRecipeForm.dataset.cookTime;
+                delete sellRecipeForm.dataset.difficulty;
+                delete sellRecipeForm.dataset.video;
+                delete sellRecipeForm.dataset.source;
+            }
+            sellRecipePhoto = null;
+            const preview = document.getElementById('sellRecipePhotoPreview');
+            const placeholder = document.getElementById('sellUploadPlaceholder');
+            if (preview) { preview.style.display = 'none'; preview.src = ''; }
+            if (placeholder) placeholder.style.display = 'block';
             sellRecipeModal.classList.add('show');
         });
     }
@@ -115,6 +128,9 @@ export async function handleSellRecipeSubmit(e) {
     const token = sessionStorage.getItem('authToken');
     if (!token) { showNotification('❌ Please log in.', 'error'); return; }
 
+    const sellRecipeForm = document.getElementById('sellRecipeForm');
+    const source = sellRecipeForm?.dataset.source || '';
+
     const data = {
         name: document.getElementById('sellRecipeName').value.trim(),
         description: document.getElementById('sellRecipeDesc').value.trim(),
@@ -123,7 +139,11 @@ export async function handleSellRecipeSubmit(e) {
         photo: sellRecipePhoto,
         ingredients: document.getElementById('sellRecipeIngredients').value.trim(),
         instructions: document.getElementById('sellRecipeInstructions').value.trim(),
-        notes: document.getElementById('sellRecipeNotes').value.trim()
+        notes: document.getElementById('sellRecipeNotes').value.trim(),
+        difficulty: sellRecipeForm?.dataset.difficulty || 'Medium',
+        prepTime: sellRecipeForm?.dataset.prepTime ? parseInt(sellRecipeForm.dataset.prepTime) : 0,
+        cookTime: sellRecipeForm?.dataset.cookTime ? parseInt(sellRecipeForm.dataset.cookTime) : 0,
+        video: sellRecipeForm?.dataset.video || null
     };
 
     if (!data.name || !data.price || data.price <= 0) {
@@ -143,12 +163,34 @@ export async function handleSellRecipeSubmit(e) {
             showNotification('✅ Recipe listed in the store! 🏷️', 'success');
             document.getElementById('sellRecipeModal').classList.remove('show');
             document.getElementById('sellRecipeForm').reset();
+            if (sellRecipeForm) {
+                delete sellRecipeForm.dataset.prepTime;
+                delete sellRecipeForm.dataset.cookTime;
+                delete sellRecipeForm.dataset.difficulty;
+                delete sellRecipeForm.dataset.video;
+                delete sellRecipeForm.dataset.source;
+            }
             sellRecipePhoto = null;
             const preview = document.getElementById('sellRecipePhotoPreview');
             const placeholder = document.getElementById('sellUploadPlaceholder');
             if (preview) { preview.style.display = 'none'; preview.src = ''; }
             if (placeholder) placeholder.style.display = 'block';
+            
             loadStoreRecipes();
+
+            // Programmatic tab switch if source is my-recipes
+            if (source === 'my-recipes') {
+                const storeTabBtn = document.querySelector('.nav-btn[data-tab="store"]');
+                if (storeTabBtn) {
+                    storeTabBtn.click();
+                    setTimeout(() => {
+                        const myListingsSubTab = document.querySelector('.store-tab-btn[data-store-tab="my-listings"]');
+                        if (myListingsSubTab) {
+                            myListingsSubTab.click();
+                        }
+                    }, 100);
+                }
+            }
         } else {
             showNotification(result.error || '❌ Failed to list recipe.', 'error');
         }
@@ -648,8 +690,60 @@ export async function deleteStoreRecipe(id) {
     }
 }
 
+export function openSellRecipeModalWithData(recipe) {
+    const sellRecipeModal = document.getElementById('sellRecipeModal');
+    const sellRecipeForm = document.getElementById('sellRecipeForm');
+    if (!sellRecipeModal || !sellRecipeForm) return;
+
+    // Reset first to clear previous states
+    sellRecipeForm.reset();
+
+    // Pre-fill fields
+    document.getElementById('sellRecipeName').value = recipe.name || '';
+    
+    const categorySelect = document.getElementById('sellRecipeCategory');
+    if (categorySelect && recipe.category) {
+        categorySelect.value = recipe.category;
+    }
+
+    document.getElementById('sellRecipePrice').value = '5.00'; // Default price
+    document.getElementById('sellRecipeDesc').value = recipe.notes || ''; // Use notes as description fallback
+    document.getElementById('sellRecipeIngredients').value = recipe.ingredients || '';
+    document.getElementById('sellRecipeInstructions').value = recipe.instructions || '';
+    document.getElementById('sellRecipeNotes').value = recipe.notes || '';
+
+    // Save extra data in form's dataset attributes
+    sellRecipeForm.dataset.prepTime = recipe.prepTime || 0;
+    sellRecipeForm.dataset.cookTime = recipe.cookTime || 0;
+    sellRecipeForm.dataset.difficulty = recipe.difficulty || 'Medium';
+    sellRecipeForm.dataset.video = recipe.video || '';
+    sellRecipeForm.dataset.source = 'my-recipes';
+
+    // Handle Photo preview
+    sellRecipePhoto = recipe.photo || null;
+    const preview = document.getElementById('sellRecipePhotoPreview');
+    const placeholder = document.getElementById('sellUploadPlaceholder');
+    if (recipe.photo) {
+        if (preview) {
+            preview.src = recipe.photo;
+            preview.style.display = 'block';
+        }
+        if (placeholder) placeholder.style.display = 'none';
+    } else {
+        if (preview) {
+            preview.style.display = 'none';
+            preview.src = '';
+        }
+        if (placeholder) placeholder.style.display = 'block';
+    }
+
+    // Show the modal
+    sellRecipeModal.classList.add('show');
+}
+
 // Expose store functions globally
 window.viewStoreRecipe = viewStoreRecipe;
 window.deleteStoreRecipe = deleteStoreRecipe;
+window.openSellRecipeModalWithData = openSellRecipeModalWithData;
 
 
