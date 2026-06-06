@@ -1,18 +1,15 @@
-// Analytics Dashboard - Chef Book
+// Analytics Dashboard - Chef Book (Secured)
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAuthToken } from './auth.js';
 import { initLanguage } from './language.js';
 
 const API_URL = '/api';
 
 // ===== XSS Protection =====
-function escapeHtml(str) {
-    if (str == null) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[m]);
 }
 
 // ===== Server-Side Access Control =====
@@ -54,23 +51,19 @@ async function verifyAdminAccess() {
     }
 }
 
-// DOM
+// ===== DOM =====
 const loadingState = document.getElementById('loadingState');
 const dashboardContent = document.getElementById('dashboardContent');
 const logoutBtn = document.getElementById('logoutBtn');
 const themeToggle = document.getElementById('themeToggle');
 
-// Category colors
-const CAT_COLORS = [
-    '#C67B4B', '#D4A55A', '#8B5E3C', '#8B9E6B', '#60a5fa',
-    '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#f87171'
-];
+const CAT_COLORS = ['#C67B4B', '#D4A55A', '#8B5E3C', '#8B9E6B', '#60a5fa', '#a78bfa', '#f472b6', '#34d399', '#fbbf24', '#f87171'];
 
 // ===== Init =====
 async function init() {
     // Verify admin status with server before showing anything
     const isVerified = await verifyAdminAccess();
-    if (!isVerified) return; // Redirect already triggered
+    if (!isVerified) return;
 
     initLanguage();
     setupEvents();
@@ -86,32 +79,25 @@ function setupEvents() {
         localStorage.setItem('theme', next);
         themeToggle.querySelector('.theme-icon').textContent = next === 'dark' ? '🌙' : '☀️';
     });
-    // Set initial icon
     const t = document.documentElement.getAttribute('data-theme');
     themeToggle.querySelector('.theme-icon').textContent = t === 'dark' ? '🌙' : '☀️';
 }
 
-async function adminFetch(endpoint, options = {}) {
+// ===== API Integration =====
+// Reads and parses error details from the server response
+async function adminFetch(endpoint) {
     const token = getAuthToken();
-    const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        ...options.headers
-    };
-
     const res = await fetch(`${API_URL}/admin${endpoint}`, {
-        ...options,
-        headers
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
     });
-
     if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Error ${res.status}`);
     }
-
     return res.json();
 }
 
+// ===== Dashboard Loading =====
 async function loadDashboard() {
     try {
         const [stats, analytics] = await Promise.all([
@@ -130,7 +116,7 @@ async function loadDashboard() {
         dashboardContent.style.display = 'block';
     } catch (err) {
         console.error('Dashboard load error:', err);
-        loadingState.innerHTML = `<p style="color:var(--aa-red)">Failed to load analytics. <button onclick="location.reload()" style="color:var(--aa-accent);background:none;border:none;cursor:pointer;text-decoration:underline;">Retry</button></p>`;
+        loadingState.innerHTML = `<p style="color:var(--aa-red)">Failed to load analytics: ${escapeHTML(err.message)}. <button onclick="location.reload()" style="color:var(--aa-accent);background:none;border:none;cursor:pointer;text-decoration:underline;">Retry</button></p>`;
     }
 }
 
@@ -160,15 +146,23 @@ function renderCategories(cats) {
     if (!cats || cats.length === 0) { container.innerHTML = '<div class="empty-chart">No recipes yet</div>'; return; }
     const max = Math.max(...cats.map(c => c.count));
     const emojiMap = { Cakes:'🎂', Cookies:'🍪', Pastries:'🥐', 'Pies & Tarts':'🥧', Breads:'🍞', Desserts:'🍰', Chocolates:'🍫', Other:'✨' };
-    container.innerHTML = `<div class="cat-bar-wrap">${cats.map((c, i) => {
+
+    container.innerHTML = '';
+    const barWrap = document.createElement('div');
+    barWrap.className = 'cat-bar-wrap';
+
+    cats.forEach((c, i) => {
         const pct = max > 0 ? (c.count / max * 100) : 0;
-        const safeCategory = escapeHtml(c.category);
         const emoji = emojiMap[c.category] || '📋';
-        return `<div class="cat-bar-item">
-            <span class="cat-bar-label">${emoji} ${safeCategory}</span>
+        const item = document.createElement('div');
+        item.className = 'cat-bar-item';
+        item.innerHTML = `
+            <span class="cat-bar-label">${emoji} ${escapeHTML(c.category)}</span>
             <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${CAT_COLORS[i % CAT_COLORS.length]}">${c.count}</div></div>
-        </div>`;
-    }).join('')}</div>`;
+        `;
+        barWrap.appendChild(item);
+    });
+    container.appendChild(barWrap);
 }
 
 function renderSubscriptions(subs) {
@@ -177,7 +171,6 @@ function renderSubscriptions(subs) {
     document.getElementById('subsLifetime').textContent = subs.lifetime;
     document.getElementById('subsAdminGranted').textContent = subs.adminGranted;
 
-    // Simple SVG donut
     const total = subs.monthly + subs.yearly + subs.lifetime + subs.adminGranted;
     const donutEl = document.getElementById('subsDonut');
     if (total === 0) { donutEl.innerHTML = ''; return; }
@@ -219,24 +212,21 @@ function renderStoreWallet(store, wallet) {
 }
 
 function renderUserItem(user, index, showRank = false, showStat = null) {
-    const safeUsername = escapeHtml(user.username);
-    const safeDisplayName = escapeHtml(user.displayName || user.username);
-    const safeProfilePic = escapeHtml(user.profilePic);
-    const avatar = user.profilePic
-        ? `<img class="user-avatar" src="${safeProfilePic}" alt="${safeUsername}">`
-        : `<div class="user-avatar-placeholder">👤</div>`;
     const adminTag = user.isAdmin ? '<span class="admin-tag">ADMIN</span>' : '';
-    const stat = showStat ? `<span class="user-stat">${escapeHtml(showStat)}</span>` : '';
+    const stat = showStat ? `<span class="user-stat">${escapeHTML(showStat)}</span>` : '';
     const rank = showRank ? `<span class="user-rank">${index + 1}</span>` : '';
     const meta = user.joinDate ? new Date(user.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year:'numeric' }) : '';
-    return `<div class="user-item">
-        ${rank} ${avatar}
-        <div class="user-info">
-            <span class="user-name">${safeDisplayName}${adminTag}</span>
-            <span class="user-meta">@${safeUsername} · ${meta}</span>
-        </div>
-        ${stat}
-    </div>`;
+
+    return `
+        <div class="user-item">
+            ${rank}
+            <div class="user-avatar-placeholder">👤</div>
+            <div class="user-info">
+                <span class="user-name">${escapeHTML(user.displayName || user.username)}${adminTag}</span>
+                <span class="user-meta">@${escapeHTML(user.username)} · ${meta}</span>
+            </div>
+            ${stat}
+        </div>`;
 }
 
 function renderTopUsers(users) {
@@ -254,31 +244,32 @@ function renderRecentUsers(users) {
 function renderTransactions(txs) {
     const tbody = document.getElementById('transactionsBody');
     const noTx = document.getElementById('noTransactions');
+    tbody.innerHTML = '';
+
     if (!txs || !txs.length) {
-        tbody.innerHTML = '';
         noTx.style.display = 'block';
         document.getElementById('transactionsTable').style.display = 'none';
         return;
     }
     noTx.style.display = 'none';
     document.getElementById('transactionsTable').style.display = '';
-    tbody.innerHTML = txs.map(tx => {
+
+    txs.forEach(tx => {
         const typeClass = `tx-${tx.type}` in {'tx-subscription':1,'tx-recipe_purchase':1,'tx-cancellation':1} ? `tx-${tx.type}` : 'tx-default';
         const date = tx.date ? new Date(tx.date).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
-        const safeDisplayName = escapeHtml(tx.displayName || tx.username);
-        const safeUsername = escapeHtml(tx.username);
-        const safeType = escapeHtml(tx.type.replace(/_/g, ' '));
-        const safePlan = escapeHtml(tx.plan || '—');
-        const safeStatus = escapeHtml(tx.status);
-        return `<tr>
-            <td><strong>${safeDisplayName}</strong><br><small style="color:var(--aa-text2)">@${safeUsername}</small></td>
-            <td><span class="tx-type ${typeClass}">${safeType}</span></td>
-            <td>${safePlan}</td>
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${escapeHTML(tx.displayName || tx.username)}</strong><br><small style="color:var(--aa-text2)">@${escapeHTML(tx.username)}</small></td>
+            <td><span class="tx-type ${typeClass}">${escapeHTML(tx.type.replace(/_/g, ' '))}</span></td>
+            <td>${escapeHTML(tx.plan || '—')}</td>
             <td class="tx-amount">$${tx.amount.toFixed(2)}</td>
-            <td><span class="tx-status"><span class="tx-status-dot ${safeStatus}"></span>${safeStatus}</span></td>
+            <td><span class="tx-status"><span class="tx-status-dot ${tx.status}"></span>${escapeHTML(tx.status)}</span></td>
             <td>${date}</td>
-        </tr>`;
-    }).join('');
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
+// ===== Start =====
 init();
