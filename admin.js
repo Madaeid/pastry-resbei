@@ -5,6 +5,17 @@ import { initLanguage, t } from './language.js';
 // API Configuration
 const API_URL = '/api';
 
+// ===== XSS Protection =====
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // ===== Server-Side Access Control =====
 // The client-side isAdmin() check is kept as a fast pre-filter,
 // but we MUST verify with the server before showing any admin UI.
@@ -187,6 +198,12 @@ function renderUsersList(usersToRender) {
             const isSelf = user.username === sessionStorage.getItem('currentUser');
             const hasPremium = user.isPremium;
 
+            const safeUsername = escapeHtml(user.username);
+            const safeDisplayName = escapeHtml(user.displayName);
+            const safeEmail = escapeHtml(user.email);
+            const safePhone = escapeHtml(user.phone || 'N/A');
+            const safeBirthday = escapeHtml(user.birthday || 'N/A');
+
             return `
                 <tr class="${user.isAdmin ? 'admin-row' : ''}">
                     <td>
@@ -194,13 +211,13 @@ function renderUsersList(usersToRender) {
                             <span class="user-badge ${user.isAdmin ? 'admin-badge' : 'user-badge-normal'}">
                                 ${user.isAdmin ? '👑' : '👤'}
                             </span>
-                            <strong>${user.username}</strong>
+                            <strong>${safeUsername}</strong>
                         </div>
                     </td>
-                    <td>${user.displayName}</td>
-                    <td>${user.email}</td>
-                    <td>${user.phone || 'N/A'}</td>
-                    <td>${user.birthday || 'N/A'}</td>
+                    <td>${safeDisplayName}</td>
+                    <td>${safeEmail}</td>
+                    <td>${safePhone}</td>
+                    <td>${safeBirthday}</td>
                     <td>
                         <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
                             ${user.isAdmin ? 'Admin' : 'User'}
@@ -389,7 +406,7 @@ if (deleteUserFromModalBtn) {
         showConfirmModal(
             '🗑️',
             'Delete User',
-            `Permanently delete user @${username} and all their recipes?`,
+            `Permanently delete user @${escapeHtml(username)} and all their recipes?`,
             async () => {
                 try {
                     await adminFetch(`/users/${userId}`, { method: 'DELETE' });
@@ -415,8 +432,8 @@ async function handleViewAllRecipes() {
 
         const html = recipes.map(r => `
             <div class="recipe-preview-item" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <strong>${r.name}</strong> (${r.category})<br>
-                <small>By: ${r.userDisplayName} (@${r.username})</small>
+                <strong>${escapeHtml(r.name)}</strong> (${escapeHtml(r.category)})<br>
+                <small>By: ${escapeHtml(r.userDisplayName)} (@${escapeHtml(r.username)})</small>
             </div>
         `).join('');
 
@@ -534,7 +551,7 @@ function showNotification(message, type = 'success') {
     el.className = `notification notification-${type} show`;
     el.innerHTML = `
         <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
-        <span class="notification-message">${message}</span>
+        <span class="notification-message">${escapeHtml(message)}</span>
     `;
     document.body.appendChild(el);
     setTimeout(() => {

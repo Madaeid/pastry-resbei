@@ -4,6 +4,17 @@ import { initLanguage } from './language.js';
 
 const API_URL = '/api';
 
+// ===== XSS Protection =====
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // ===== Server-Side Access Control =====
 // Client-side check is a fast pre-filter; server verification prevents tampering
 if (!isLoggedIn()) window.location.href = './auth.html';
@@ -139,9 +150,10 @@ function renderCategories(cats) {
     const emojiMap = { Cakes:'🎂', Cookies:'🍪', Pastries:'🥐', 'Pies & Tarts':'🥧', Breads:'🍞', Desserts:'🍰', Chocolates:'🍫', Other:'✨' };
     container.innerHTML = `<div class="cat-bar-wrap">${cats.map((c, i) => {
         const pct = max > 0 ? (c.count / max * 100) : 0;
+        const safeCategory = escapeHtml(c.category);
         const emoji = emojiMap[c.category] || '📋';
         return `<div class="cat-bar-item">
-            <span class="cat-bar-label">${emoji} ${c.category}</span>
+            <span class="cat-bar-label">${emoji} ${safeCategory}</span>
             <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${CAT_COLORS[i % CAT_COLORS.length]}">${c.count}</div></div>
         </div>`;
     }).join('')}</div>`;
@@ -195,18 +207,21 @@ function renderStoreWallet(store, wallet) {
 }
 
 function renderUserItem(user, index, showRank = false, showStat = null) {
+    const safeUsername = escapeHtml(user.username);
+    const safeDisplayName = escapeHtml(user.displayName || user.username);
+    const safeProfilePic = escapeHtml(user.profilePic);
     const avatar = user.profilePic
-        ? `<img class="user-avatar" src="${user.profilePic}" alt="${user.username}">`
+        ? `<img class="user-avatar" src="${safeProfilePic}" alt="${safeUsername}">`
         : `<div class="user-avatar-placeholder">👤</div>`;
     const adminTag = user.isAdmin ? '<span class="admin-tag">ADMIN</span>' : '';
-    const stat = showStat ? `<span class="user-stat">${showStat}</span>` : '';
+    const stat = showStat ? `<span class="user-stat">${escapeHtml(showStat)}</span>` : '';
     const rank = showRank ? `<span class="user-rank">${index + 1}</span>` : '';
     const meta = user.joinDate ? new Date(user.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year:'numeric' }) : '';
     return `<div class="user-item">
         ${rank} ${avatar}
         <div class="user-info">
-            <span class="user-name">${user.displayName || user.username}${adminTag}</span>
-            <span class="user-meta">@${user.username} · ${meta}</span>
+            <span class="user-name">${safeDisplayName}${adminTag}</span>
+            <span class="user-meta">@${safeUsername} · ${meta}</span>
         </div>
         ${stat}
     </div>`;
@@ -238,12 +253,17 @@ function renderTransactions(txs) {
     tbody.innerHTML = txs.map(tx => {
         const typeClass = `tx-${tx.type}` in {'tx-subscription':1,'tx-recipe_purchase':1,'tx-cancellation':1} ? `tx-${tx.type}` : 'tx-default';
         const date = tx.date ? new Date(tx.date).toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+        const safeDisplayName = escapeHtml(tx.displayName || tx.username);
+        const safeUsername = escapeHtml(tx.username);
+        const safeType = escapeHtml(tx.type.replace(/_/g, ' '));
+        const safePlan = escapeHtml(tx.plan || '—');
+        const safeStatus = escapeHtml(tx.status);
         return `<tr>
-            <td><strong>${tx.displayName || tx.username}</strong><br><small style="color:var(--aa-text2)">@${tx.username}</small></td>
-            <td><span class="tx-type ${typeClass}">${tx.type.replace(/_/g, ' ')}</span></td>
-            <td>${tx.plan || '—'}</td>
+            <td><strong>${safeDisplayName}</strong><br><small style="color:var(--aa-text2)">@${safeUsername}</small></td>
+            <td><span class="tx-type ${typeClass}">${safeType}</span></td>
+            <td>${safePlan}</td>
             <td class="tx-amount">$${tx.amount.toFixed(2)}</td>
-            <td><span class="tx-status"><span class="tx-status-dot ${tx.status}"></span>${tx.status}</span></td>
+            <td><span class="tx-status"><span class="tx-status-dot ${safeStatus}"></span>${safeStatus}</span></td>
             <td>${date}</td>
         </tr>`;
     }).join('');
