@@ -686,9 +686,9 @@ router.post('/:id/share', authenticateToken, async (req, res) => {
                 video, 
                 shared_from_id,
                 shared_from_store_id,
-                is_public
+                visibility
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'public')
             RETURNING id
         `, [
             req.user.userId,
