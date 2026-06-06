@@ -1,24 +1,20 @@
-// Admin Dashboard Module for Chef Book - Premium Edition
+// Admin Dashboard Module for Chef Book - Premium Edition (Secured)
 import { isLoggedIn, logout, getCurrentUser, isAdmin, getAuthToken } from './auth.js';
 import { initLanguage, t } from './language.js';
 
-// API Configuration
 const API_URL = '/api';
 
 // ===== XSS Protection =====
-function escapeHtml(str) {
-    if (str == null) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+function escapeHTML(str) {
+    if (!str) return 'N/A';
+    return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[m]);
 }
 
 // ===== Server-Side Access Control =====
-// The client-side isAdmin() check is kept as a fast pre-filter,
-// but we MUST verify with the server before showing any admin UI.
+// Client-side isAdmin() is a fast pre-filter;
+// verifyAdminAccess() confirms with the server before showing any UI.
 if (!isLoggedIn()) {
     window.location.href = './auth.html';
 } else if (!isAdmin()) {
@@ -42,7 +38,6 @@ async function verifyAdminAccess() {
         }
         const user = await res.json();
         if (!user.isAdmin) {
-            // Not a real admin — clear the spoofed flag and redirect
             sessionStorage.setItem('isAdmin', 'false');
             window.location.href = './index.html';
             return false;
@@ -104,30 +99,21 @@ let pendingAction = null;
 async function initDashboard() {
     // Verify admin status with server before showing anything
     const isVerified = await verifyAdminAccess();
-    if (!isVerified) return; // Redirect already triggered
+    if (!isVerified) return;
 
     initLanguage();
-    
-    // Set current date
     const today = new Date();
-    currentDateEl.textContent = today.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-    });
-
+    currentDateEl.textContent = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     await updateDashboardData();
     setupEventListeners();
 }
 
 async function updateDashboardData() {
     try {
-        await Promise.all([
-            loadStats(),
-            loadUsers()
-        ]);
+        await Promise.all([loadStats(), loadUsers()]);
     } catch (err) {
         console.error('Failed to update dashboard:', err);
-        showNotification('Failed to sync with server. showing cached data.', 'error');
+        showNotification('Failed to sync with server.', 'error');
     }
 }
 
@@ -140,16 +126,11 @@ async function adminFetch(endpoint, options = {}) {
         ...options.headers
     };
 
-    const response = await fetch(`${API_URL}/admin${endpoint}`, {
-        ...options,
-        headers
-    });
-
+    const response = await fetch(`${API_URL}/admin${endpoint}`, { ...options, headers });
     if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || `Error ${response.status}`);
     }
-
     return response.json();
 }
 
@@ -161,7 +142,7 @@ async function loadStats() {
         totalAdminsEl.textContent = stats.totalAdmins;
         totalRecipesEl.textContent = stats.totalRecipes;
     } catch (err) {
-        console.warn('Backend stats failed, falling back to local');
+        console.warn('Backend stats failed.');
     }
 }
 
@@ -177,113 +158,94 @@ async function loadUsers() {
 }
 
 function renderUsersList(usersToRender) {
+    usersTableBody.innerHTML = '';
     if (usersToRender.length === 0) {
-        usersTableBody.innerHTML = '';
         noUsersEl.style.display = 'block';
         return;
     }
-
     noUsersEl.style.display = 'none';
-    try {
 
-    usersTableBody.innerHTML = usersToRender.map(user => {
-            const joinDate = user.createdAt
-                ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                })
-                : 'Unknown';
+    usersToRender.forEach(user => {
+        const joinDate = user.createdAt
+            ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+            : 'Unknown';
+        const isSelf = user.username === sessionStorage.getItem('currentUser');
+        const hasPremium = user.isPremium;
 
-            const isSelf = user.username === sessionStorage.getItem('currentUser');
-            const hasPremium = user.isPremium;
+        const tr = document.createElement('tr');
+        if (user.isAdmin) tr.classList.add('admin-row');
 
-            const safeUsername = escapeHtml(user.username);
-            const safeDisplayName = escapeHtml(user.displayName);
-            const safeEmail = escapeHtml(user.email);
-            const safePhone = escapeHtml(user.phone || 'N/A');
-            const safeBirthday = escapeHtml(user.birthday || 'N/A');
+        // Build the table row with XSS-safe escaped values
+        tr.innerHTML = `
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="user-badge ${user.isAdmin ? 'admin-badge' : 'user-badge-normal'}">
+                        ${user.isAdmin ? '👑' : '👤'}
+                    </span>
+                    <strong>${escapeHTML(user.username)}</strong>
+                </div>
+            </td>
+            <td>${escapeHTML(user.displayName)}</td>
+            <td>${escapeHTML(user.email)}</td>
+            <td>${escapeHTML(user.phone)}</td>
+            <td>${escapeHTML(user.birthday)}</td>
+            <td>
+                <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
+                    ${user.isAdmin ? 'Admin' : 'User'}
+                </span>
+            </td>
+            <td>
+                <div class="premium-status ${hasPremium ? 'premium-active' : 'premium-inactive'}">
+                    <span class="premium-icon">${hasPremium ? '💎' : '🆓'}</span>
+                    <span class="premium-text" style="font-weight: 500;">${hasPremium ? 'Premium' : 'Free'}</span>
+                    ${!user.isAdmin ? `
+                        <button class="action-btn toggle-premium" data-id="${user.id}" data-premium="${hasPremium}">
+                            ${hasPremium ? '❌' : '✅'}
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+            <td>
+                <span class="visibility-badge ${user.isPublic ? 'vid-public' : 'vid-private'}">
+                    ${!user.isPublic ? '🔒 Private' :
+                      user.visibilityLevel === 'followers' ? '👥 Followers' :
+                      user.visibilityLevel === 'specific' ? '🔑 Specific' :
+                      '🌐 Everyone'}
+                </span>
+            </td>
+            <td>
+                <div style="display: flex; flex-direction: column;">
+                    <strong>${user.recipeCount || 0}</strong>
+                    <span style="font-size: 0.7rem; opacity: 0.6;">recipes</span>
+                </div>
+            </td>
+            <td>${joinDate}</td>
+            <td>
+                <div class="action-buttons">
+                    ${user.username !== 'admin' && !isSelf ? `
+                        <button class="action-btn toggle-admin" data-id="${user.id}" data-is-admin="${user.isAdmin}" title="${user.isAdmin ? 'Remove Admin' : 'Make Admin'}">
+                            ${user.isAdmin ? '⬇️' : '⬆️'}
+                        </button>
+                        <button class="action-btn edit-user" data-id="${user.id}" title="Edit User">✏️</button>
+                        <button class="action-btn delete-user" data-id="${user.id}" title="Delete User">🗑️</button>
+                    ` : `
+                        <span class="protected-label" style="font-size: 0.8rem; opacity: 0.6;">${user.username === 'admin' ? 'System' : 'You'}</span>
+                    `}
+                </div>
+            </td>
+        `;
+        usersTableBody.appendChild(tr);
+    });
 
-            return `
-                <tr class="${user.isAdmin ? 'admin-row' : ''}">
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span class="user-badge ${user.isAdmin ? 'admin-badge' : 'user-badge-normal'}">
-                                ${user.isAdmin ? '👑' : '👤'}
-                            </span>
-                            <strong>${safeUsername}</strong>
-                        </div>
-                    </td>
-                    <td>${safeDisplayName}</td>
-                    <td>${safeEmail}</td>
-                    <td>${safePhone}</td>
-                    <td>${safeBirthday}</td>
-                    <td>
-                        <span class="role-tag ${user.isAdmin ? 'role-admin' : 'role-user'}">
-                            ${user.isAdmin ? 'Admin' : 'User'}
-                        </span>
-                    </td>
-                    <td>
-                        <div class="premium-status ${hasPremium ? 'premium-active' : 'premium-inactive'}">
-                            <span class="premium-icon">${hasPremium ? '💎' : '🆓'}</span>
-                            <span class="premium-text" style="font-weight: 500;">${hasPremium ? 'Premium' : 'Free'}</span>
-                            ${!user.isAdmin ? `
-                                <button class="action-btn toggle-premium" data-id="${user.id}" data-premium="${hasPremium}" title="${hasPremium ? 'Revoke' : 'Grant'}">
-                                    ${hasPremium ? '❌' : '✅'}
-                                </button>
-                            ` : ''}
-                        </div>
-                    </td>
-                    <td>
-                        <span class="visibility-badge ${user.isPublic ? 'vid-public' : 'vid-private'}">
-                            ${!user.isPublic ? '🔒 Private' :
-                              user.visibilityLevel === 'followers' ? '👥 Followers' :
-                              user.visibilityLevel === 'specific' ? '🔑 Specific' :
-                              '🌐 Everyone'}
-                        </span>
-                    </td>
-                    <td>
-                        <div style="display: flex; flex-direction: column;">
-                            <strong>${user.recipeCount || 0}</strong>
-                            <span style="font-size: 0.7rem; opacity: 0.6;">recipes</span>
-                        </div>
-                    </td>
-                    <td>${joinDate}</td>
-                    <td>
-                        <div class="action-buttons">
-                            ${user.username !== 'admin' && !isSelf ? `
-                                <button class="action-btn toggle-admin" data-id="${user.id}" data-is-admin="${user.isAdmin}" title="${user.isAdmin ? 'Remove Admin' : 'Make Admin'}">
-                                    ${user.isAdmin ? '⬇️' : '⬆️'}
-                                </button>
-                                <button class="action-btn edit-user" data-id="${user.id}" title="Edit User">
-                                    ✏️
-                                </button>
-                                <button class="action-btn delete-user" data-id="${user.id}" title="Delete User">
-                                    🗑️
-                                </button>
-                            ` : `
-                                <span class="protected-label" style="font-size: 0.8rem; opacity: 0.6;">${user.username === 'admin' ? 'System' : 'You'}</span>
-                            `}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-
-        setupUserActionButtons();
-    } catch (err) {
-        console.error('Failed to render users:', err);
-        showNotification('Error loading users', 'error');
-    }
+    setupUserActionButtons();
 }
 
+// ===== User Action Buttons =====
 function setupUserActionButtons() {
-    // Toggle admin
     document.querySelectorAll('.toggle-admin').forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.dataset.id;
             const isAdminStatus = btn.dataset.isAdmin === 'true';
-            
             showConfirmModal(
                 isAdminStatus ? '⬇️' : '⬆️',
                 isAdminStatus ? 'Remove Admin' : 'Make Admin',
@@ -293,63 +255,48 @@ function setupUserActionButtons() {
                         const res = await adminFetch(`/users/${userId}/toggle-admin`, { method: 'PATCH' });
                         showNotification(res.message);
                         updateDashboardData();
-                    } catch (err) {
-                        showNotification(err.message, 'error');
-                    }
+                    } catch (err) { showNotification(err.message, 'error'); }
                 }
             );
         });
     });
 
-    // Delete user
     document.querySelectorAll('.delete-user').forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.dataset.id;
-            showConfirmModal(
-                '🗑️',
-                'Delete User',
-                'Permanently delete this user and all their recipes?',
-                async () => {
-                    try {
-                        await adminFetch(`/users/${userId}`, { method: 'DELETE' });
-                        showNotification('User deleted successfully');
-                        updateDashboardData();
-                    } catch (err) {
-                        showNotification(err.message, 'error');
-                    }
-                }
-            );
+            showConfirmModal('🗑️', 'Delete User', 'Permanently delete this user and all their recipes?', async () => {
+                try {
+                    await adminFetch(`/users/${userId}`, { method: 'DELETE' });
+                    showNotification('User deleted successfully');
+                    updateDashboardData();
+                } catch (err) { showNotification(err.message, 'error'); }
+            });
         });
     });
 
-    // Grant/Revoke Premium
     document.querySelectorAll('.toggle-premium').forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.dataset.id;
             const hasPremium = btn.dataset.premium === 'true';
-            
             showConfirmModal(
                 hasPremium ? '❌' : '💎',
                 hasPremium ? 'Revoke Premium' : 'Grant Premium',
-                `${hasPremium ? 'Revoke' : 'Grant'} premium access (1 year)?`,
+                'Modify premium access?',
                 async () => {
                     try {
                         const endpoint = hasPremium ? 'revoke-premium' : 'grant-premium';
-                        const res = await adminFetch(`/users/${userId}/${endpoint}`, { 
+                        const res = await adminFetch(`/users/${userId}/${endpoint}`, {
                             method: 'POST',
                             body: hasPremium ? null : JSON.stringify({ plan: 'yearly' })
                         });
                         showNotification(res.message);
                         updateDashboardData();
-                    } catch (err) {
-                        showNotification(err.message, 'error');
-                    }
+                    } catch (err) { showNotification(err.message, 'error'); }
                 }
             );
         });
     });
 
-    // Edit user
     document.querySelectorAll('.edit-user').forEach(btn => {
         btn.addEventListener('click', () => {
             const userId = btn.dataset.id;
@@ -361,11 +308,13 @@ function setupUserActionButtons() {
 
 // ===== Edit User Logic =====
 function openEditModal(user) {
+    // editUserId stores the numeric ID for API calls (matches HTML id="editUserId")
     document.getElementById('editUserId').value = user.id;
     document.getElementById('displayUsername').value = user.username;
     document.getElementById('editDisplayName').value = user.displayName;
     document.getElementById('editEmail').value = user.email || '';
     document.getElementById('editPassword').value = '';
+    document.getElementById('editIsPublic').checked = user.isPublic !== false && user.isPublic !== 'private';
     editUserModal.classList.add('active');
 }
 
@@ -379,45 +328,31 @@ editUserForm.onsubmit = async (e) => {
     };
 
     try {
-        await adminFetch(`/users/${userId}`, {
-            method: 'PUT',
-            body: JSON.stringify(data)
-        });
+        await adminFetch(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(data) });
         showNotification('User updated successfully');
         editUserModal.classList.remove('active');
         updateDashboardData();
-    } catch (err) {
-        showNotification(err.message, 'error');
-    }
+    } catch (err) { showNotification(err.message, 'error'); }
 };
 
-// ===== Delete User From Modal Logic =====
 const deleteUserFromModalBtn = document.getElementById('deleteUserFromModal');
 if (deleteUserFromModalBtn) {
     deleteUserFromModalBtn.addEventListener('click', () => {
         const userId = document.getElementById('editUserId').value;
         const username = document.getElementById('displayUsername').value;
-
         if (username === 'admin') {
             showNotification('Cannot delete main admin user', 'error');
             return;
         }
 
-        showConfirmModal(
-            '🗑️',
-            'Delete User',
-            `Permanently delete user @${escapeHtml(username)} and all their recipes?`,
-            async () => {
-                try {
-                    await adminFetch(`/users/${userId}`, { method: 'DELETE' });
-                    showNotification('User deleted successfully');
-                    editUserModal.classList.remove('active');
-                    updateDashboardData();
-                } catch (err) {
-                    showNotification(err.message, 'error');
-                }
-            }
-        );
+        showConfirmModal('🗑️', 'Delete User', `Permanently delete user @${escapeHTML(username)}?`, async () => {
+            try {
+                await adminFetch(`/users/${userId}`, { method: 'DELETE' });
+                showNotification('User deleted successfully');
+                editUserModal.classList.remove('active');
+                updateDashboardData();
+            } catch (err) { showNotification(err.message, 'error'); }
+        });
     });
 }
 
@@ -426,28 +361,23 @@ async function handleViewAllRecipes() {
     try {
         const recipes = await adminFetch('/recipes');
         if (recipes.length === 0) {
-            showInfoModal('<h2>No recipes found in the database.</h2>');
+            showInfoModal('<h2>No recipes found.</h2>');
             return;
         }
 
-        const html = recipes.map(r => `
-            <div class="recipe-preview-item" style="padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <strong>${escapeHtml(r.name)}</strong> (${escapeHtml(r.category)})<br>
-                <small>By: ${escapeHtml(r.userDisplayName)} (@${escapeHtml(r.username)})</small>
-            </div>
-        `).join('');
+        // Build DOM elements for XSS safety instead of raw innerHTML
+        infoModalBody.innerHTML = '<h2>📖 System Recipes</h2><div id="secureRecipeContainer" style="max-height:400px; overflow-y:auto;"></div>';
+        const container = document.getElementById('secureRecipeContainer');
 
-        showInfoModal(`
-            <div class="info-content">
-                <h2>📖 System Recipes (${recipes.length})</h2>
-                <div style="max-height: 400px; overflow-y: auto;">
-                    ${html}
-                </div>
-            </div>
-        `);
-    } catch (err) {
-        showNotification(err.message, 'error');
-    }
+        recipes.forEach(r => {
+            const item = document.createElement('div');
+            item.style.padding = '15px';
+            item.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+            item.innerHTML = `<strong>${escapeHTML(r.name)}</strong> (${escapeHTML(r.category)})<br><small>By: ${escapeHTML(r.userDisplayName)} (@${escapeHTML(r.username)})</small>`;
+            container.appendChild(item);
+        });
+        infoModal.classList.add('active');
+    } catch (err) { showNotification(err.message, 'error'); }
 }
 
 async function handleExportData() {
@@ -457,73 +387,43 @@ async function handleExportData() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `chef-book-system-backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `chef-book-backup-${new Date().toISOString().split('T')[0]}.json`;
         a.click();
-    } catch (err) {
-        showNotification(err.message, 'error');
-    }
+    } catch (err) { showNotification(err.message, 'error'); }
 }
 
 async function handleClearAllRecipes() {
-    showConfirmModal(
-        '🗑️',
-        'Clear All Recipes',
-        'Are you absolutely sure? This will delete EVERY recipe from EVERY user in the database. This cannot be undone!',
-        async () => {
-            try {
-                const res = await adminFetch('/recipes/clear-all', { method: 'POST' });
-                showNotification(res.message);
-                updateDashboardData();
-            } catch (err) {
-                showNotification(err.message, 'error');
-            }
-        }
-    );
+    showConfirmModal('🗑️', 'Clear All Recipes', 'Are you absolutely sure? This will delete EVERY recipe from EVERY user!', async () => {
+        try {
+            const res = await adminFetch('/recipes/clear-all', { method: 'POST' });
+            showNotification(res.message);
+            updateDashboardData();
+        } catch (err) { showNotification(err.message, 'error'); }
+    });
 }
 
 async function handleClearAllUsers() {
-    showConfirmModal(
-        '🚫',
-        'Delete All Users',
-        'Are you absolutely sure? This will delete EVERY non-admin user and all their data (recipes, CVs, follows, etc.). This cannot be undone!',
-        async () => {
-            try {
-                const res = await adminFetch('/users/clear-all-non-admins', { method: 'POST' });
-                showNotification(res.message);
-                updateDashboardData();
-            } catch (err) {
-                showNotification(err.message, 'error');
-            }
-        }
-    );
+    showConfirmModal('🗑️', 'Delete All Users', 'This will permanently delete ALL non-admin users and their data!', async () => {
+        try {
+            const res = await adminFetch('/users/clear-all-non-admins', { method: 'POST' });
+            showNotification(res.message);
+            updateDashboardData();
+        } catch (err) { showNotification(err.message, 'error'); }
+    });
 }
 
 function handleSystemInfo() {
-    const info = {
-        platform: navigator.platform,
-        userAgent: navigator.userAgent.split(') ')[0] + ')',
-        screen: `${window.screen.width}x${window.screen.height}`,
-        language: navigator.language,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        dashboardVersion: '2.5.0-premium'
-    };
-
-    showInfoModal(`
-        <div class="info-content">
-            <h2>ℹ️ System Information</h2>
-            <div class="info-grid" style="display: grid; gap: 15px; margin-top: 20px;">
-                <div class="info-item"><strong>Platform:</strong> ${info.platform}</div>
-                <div class="info-item"><strong>Browser:</strong> ${info.userAgent}</div>
-                <div class="info-item"><strong>Resolution:</strong> ${info.screen}</div>
-                <div class="info-item"><strong>Language:</strong> ${info.language}</div>
-                <div class="info-item"><strong>Timezone:</strong> ${info.timeZone}</div>
-                <div class="info-item"><strong>Version:</strong> ${info.dashboardVersion}</div>
-            </div>
-        </div>
-    `);
+    infoModalBody.innerHTML = `
+        <h2>ℹ️ System Information</h2>
+        <div style="display:grid; gap:15px; margin-top:20px;">
+            <div><strong>Platform:</strong> ${escapeHTML(navigator.platform)}</div>
+            <div><strong>Language:</strong> ${escapeHTML(navigator.language)}</div>
+            <div><strong>Version:</strong> 2.5.0-premium (Secured)</div>
+        </div>`;
+    infoModal.classList.add('active');
 }
 
-// ===== Modals =====
+// ===== Modal Helpers =====
 function showConfirmModal(icon, title, message, action) {
     confirmIcon.textContent = icon;
     confirmTitle.textContent = title;
@@ -551,7 +451,7 @@ function showNotification(message, type = 'success') {
     el.className = `notification notification-${type} show`;
     el.innerHTML = `
         <span class="notification-icon">${type === 'success' ? '✅' : '❌'}</span>
-        <span class="notification-message">${escapeHtml(message)}</span>
+        <span class="notification-message">${escapeHTML(message)}</span>
     `;
     document.body.appendChild(el);
     setTimeout(() => {
@@ -564,43 +464,32 @@ function showNotification(message, type = 'success') {
 function setupEventListeners() {
     logoutBtn.addEventListener('click', logout);
     refreshUsersBtn.addEventListener('click', updateDashboardData);
-    
+
     if (searchUsersInput) {
         searchUsersInput.addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase().trim();
-            if (!query) {
-                renderUsersList(currentUsers);
-                return;
-            }
-            
-            const filtered = currentUsers.filter(user => {
-                const username = (user.username || '').toLowerCase();
-                const displayName = (user.displayName || '').toLowerCase();
-                const email = (user.email || '').toLowerCase();
-                
-                return username.includes(query) || 
-                       displayName.includes(query) || 
-                       email.includes(query);
-            });
-            
+            if (!query) { renderUsersList(currentUsers); return; }
+            const filtered = currentUsers.filter(user =>
+                (user.username || '').toLowerCase().includes(query) ||
+                (user.displayName || '').toLowerCase().includes(query) ||
+                (user.email || '').toLowerCase().includes(query)
+            );
             renderUsersList(filtered);
         });
     }
-    
-    // Quick actions
+
     viewAllRecipesBtn.addEventListener('click', handleViewAllRecipes);
     exportDataBtn.addEventListener('click', handleExportData);
     clearAllRecipesBtn.addEventListener('click', handleClearAllRecipes);
     if (clearAllUsersBtn) clearAllUsersBtn.addEventListener('click', handleClearAllUsers);
     systemInfoBtn.addEventListener('click', handleSystemInfo);
-    
+
     closeConfirmModal.onclick = () => confirmModal.classList.remove('active');
     confirmCancel.onclick = () => confirmModal.classList.remove('active');
     closeInfoModal.onclick = () => infoModal.classList.remove('active');
     closeEditUserModal.onclick = () => editUserModal.classList.remove('active');
     cancelEditUser.onclick = () => editUserModal.classList.remove('active');
 
-    // Close on ESC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             confirmModal.classList.remove('active');
@@ -610,4 +499,5 @@ function setupEventListeners() {
     });
 }
 
+// ===== Start =====
 initDashboard();
