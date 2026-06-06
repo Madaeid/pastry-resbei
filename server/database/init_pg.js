@@ -317,6 +317,31 @@ async function initDB() {
             `);
             console.log('✅ Book purchases table created');
 
+            // 10c. Wallet Tables
+            await client.query(`
+                CREATE TABLE IF NOT EXISTS wallet_balances (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                    balance DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+                    currency TEXT NOT NULL DEFAULT 'USD',
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+
+                CREATE TABLE IF NOT EXISTS wallet_transactions (
+                    id SERIAL PRIMARY KEY,
+                    sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                    receiver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+                    type TEXT NOT NULL,
+                    amount DECIMAL(12,2) NOT NULL,
+                    fee DECIMAL(12,2) DEFAULT 0.00,
+                    note TEXT,
+                    status TEXT NOT NULL DEFAULT 'completed',
+                    reference_id TEXT UNIQUE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
+            console.log('✅ Wallet tables created');
+
             // 11. Create Indexes
             await client.query(`
                 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
@@ -329,6 +354,10 @@ async function initDB() {
                 CREATE INDEX IF NOT EXISTS idx_daily_menus_user_date ON daily_menus(user_id, menu_date);
                 CREATE INDEX IF NOT EXISTS idx_books_user_id ON books(user_id);
                 CREATE INDEX IF NOT EXISTS idx_book_recipes_book_id ON book_recipes(book_id);
+                CREATE INDEX IF NOT EXISTS idx_wallet_balances_user ON wallet_balances(user_id);
+                CREATE INDEX IF NOT EXISTS idx_wallet_tx_sender ON wallet_transactions(sender_id);
+                CREATE INDEX IF NOT EXISTS idx_wallet_tx_receiver ON wallet_transactions(receiver_id);
+                CREATE INDEX IF NOT EXISTS idx_wallet_tx_created ON wallet_transactions(created_at DESC);
             `);
             console.log('✅ Performance indexes created');
 

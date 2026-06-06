@@ -27,6 +27,7 @@ import scannerRoutes from './routes/scanner.js'; // AI Ingredient Scanner (Premi
 import nutritionRoutes from './routes/nutrition.js'; // AI Nutritional Analysis
 
 import { getDatabase } from './database/db.js';
+import { runMigrations } from './database/migrate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -107,7 +108,7 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start Server =====
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
     console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║          👨‍🍳 Chef Book API Server 👨‍🍳                    ║
@@ -117,6 +118,14 @@ const server = app.listen(PORT, () => {
 ║  Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}           ║
 ╚════════════════════════════════════════════════════════════╝
     `);
+
+    // Auto-run database migrations on startup
+    try {
+        await runMigrations();
+    } catch (err) {
+        console.error('⚠️ Migration warning:', err.message);
+        // Don't crash the server — migrations are non-destructive checks
+    }
 });
 
 // Handle server errors (like EADDRINUSE)

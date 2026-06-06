@@ -11,6 +11,13 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
+// Validate required environment variables
+if (!process.env.DATABASE_URL) {
+    console.error('❌ FATAL: DATABASE_URL is not set in .env file.');
+    console.error('   Expected format: postgresql://user:password@host:port/database');
+    process.exit(1);
+}
+
 // Create a new pool using the connection string from environment variables
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
