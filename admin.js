@@ -344,7 +344,7 @@ function setupUserActionButtons() {
 
 // ===== Edit User Logic =====
 function openEditModal(user) {
-    document.getElementById('editUsername').value = user.id;
+    document.getElementById('editUserId').value = user.id;
     document.getElementById('displayUsername').value = user.username;
     document.getElementById('editDisplayName').value = user.displayName;
     document.getElementById('editEmail').value = user.email || '';
@@ -354,7 +354,7 @@ function openEditModal(user) {
 
 editUserForm.onsubmit = async (e) => {
     e.preventDefault();
-    const userId = document.getElementById('editUsername').value;
+    const userId = document.getElementById('editUserId').value;
     const data = {
         displayName: document.getElementById('editDisplayName').value,
         email: document.getElementById('editEmail').value,
@@ -378,7 +378,7 @@ editUserForm.onsubmit = async (e) => {
 const deleteUserFromModalBtn = document.getElementById('deleteUserFromModal');
 if (deleteUserFromModalBtn) {
     deleteUserFromModalBtn.addEventListener('click', () => {
-        const userId = document.getElementById('editUsername').value;
+        const userId = document.getElementById('editUserId').value;
         const username = document.getElementById('displayUsername').value;
 
         if (username === 'admin') {
