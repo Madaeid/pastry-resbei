@@ -4,9 +4,44 @@ import { initLanguage } from './language.js';
 
 const API_URL = '/api';
 
-// Auth guard
+// ===== Server-Side Access Control =====
+// Client-side check is a fast pre-filter; server verification prevents tampering
 if (!isLoggedIn()) window.location.href = './auth.html';
 else if (!isAdmin()) window.location.href = './index.html';
+
+// Server-side admin verification — prevents sessionStorage tampering
+async function verifyAdminAccess() {
+    const token = getAuthToken();
+    if (!token) {
+        window.location.href = './auth.html';
+        return false;
+    }
+    try {
+        const res = await fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            window.location.href = './auth.html';
+            return false;
+        }
+        const user = await res.json();
+        if (!user.isAdmin) {
+            sessionStorage.setItem('isAdmin', 'false');
+            window.location.href = './index.html';
+            return false;
+        }
+        // Verified: show admin content, hide loading screen
+        const wrapper = document.getElementById('adminContentWrapper');
+        const verifyScreen = document.getElementById('adminVerifyScreen');
+        if (wrapper) wrapper.style.display = '';
+        if (verifyScreen) verifyScreen.style.display = 'none';
+        return true;
+    } catch (err) {
+        console.error('Admin verification failed:', err);
+        window.location.href = './index.html';
+        return false;
+    }
+}
 
 // DOM
 const loadingState = document.getElementById('loadingState');
@@ -22,6 +57,10 @@ const CAT_COLORS = [
 
 // ===== Init =====
 async function init() {
+    // Verify admin status with server before showing anything
+    const isVerified = await verifyAdminAccess();
+    if (!isVerified) return; // Redirect already triggered
+
     initLanguage();
     setupEvents();
     await loadDashboard();

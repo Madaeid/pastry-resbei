@@ -5,11 +5,48 @@ import { initLanguage, t } from './language.js';
 // API Configuration
 const API_URL = '/api';
 
-// ===== Access Control =====
+// ===== Server-Side Access Control =====
+// The client-side isAdmin() check is kept as a fast pre-filter,
+// but we MUST verify with the server before showing any admin UI.
 if (!isLoggedIn()) {
     window.location.href = './auth.html';
 } else if (!isAdmin()) {
     window.location.href = './index.html';
+}
+
+// Server-side admin verification — prevents sessionStorage tampering
+async function verifyAdminAccess() {
+    const token = getAuthToken();
+    if (!token) {
+        window.location.href = './auth.html';
+        return false;
+    }
+    try {
+        const res = await fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            window.location.href = './auth.html';
+            return false;
+        }
+        const user = await res.json();
+        if (!user.isAdmin) {
+            // Not a real admin — clear the spoofed flag and redirect
+            sessionStorage.setItem('isAdmin', 'false');
+            window.location.href = './index.html';
+            return false;
+        }
+        // Verified: show the admin content, hide the loading screen
+        const wrapper = document.getElementById('adminContentWrapper');
+        const verifyScreen = document.getElementById('adminVerifyScreen');
+        if (wrapper) wrapper.style.display = '';
+        if (verifyScreen) verifyScreen.style.display = 'none';
+        return true;
+    } catch (err) {
+        console.error('Admin verification failed:', err);
+        window.location.href = './index.html';
+        return false;
+    }
 }
 
 // ===== DOM Elements =====
@@ -54,6 +91,10 @@ let pendingAction = null;
 
 // ===== Initialize Dashboard =====
 async function initDashboard() {
+    // Verify admin status with server before showing anything
+    const isVerified = await verifyAdminAccess();
+    if (!isVerified) return; // Redirect already triggered
+
     initLanguage();
     
     // Set current date
