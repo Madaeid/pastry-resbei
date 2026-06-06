@@ -91,12 +91,24 @@ function setupEvents() {
     themeToggle.querySelector('.theme-icon').textContent = t === 'dark' ? '🌙' : '☀️';
 }
 
-async function adminFetch(endpoint) {
+async function adminFetch(endpoint, options = {}) {
     const token = getAuthToken();
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
     const res = await fetch(`${API_URL}/admin${endpoint}`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+        ...options,
+        headers
     });
-    if (!res.ok) throw new Error(`Error ${res.status}`);
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Error ${res.status}`);
+    }
+
     return res.json();
 }
 
