@@ -1,12 +1,13 @@
 # 🧁 Chef Book - Backend API
 
-A Node.js + Express + SQLite backend server for the Chef Book application.
+A Node.js + Express + PostgreSQL backend server for the Chef Book application.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 - Node.js 18+ installed
 - npm or yarn
+- PostgreSQL 14+ installed and running
 
 ### Installation
 
@@ -20,7 +21,7 @@ npm install
 ```bash
 npm run init-db
 ```
-This creates the SQLite database with all tables and a default admin user.
+This initializes the PostgreSQL database with all tables and a default admin user.
 
 3. **Start the server:**
 ```bash
@@ -38,9 +39,8 @@ The server will run at `http://localhost:3001`
 ```
 server/
 ├── database/
-│   ├── db.js           # Database connection module
-│   ├── init.js         # Database initialization script
-│   └── pastry.db       # SQLite database file (created after init)
+│   ├── db.js           # PostgreSQL connection pool module
+│   └── init_pg.js      # PostgreSQL database initialization script
 ├── middleware/
 │   └── auth.js         # JWT authentication middleware
 ├── routes/
@@ -123,7 +123,7 @@ Edit `.env` file:
 PORT=3001
 NODE_ENV=development
 JWT_SECRET=your-secret-key-here
-DATABASE_PATH=./database/pastry.db
+DATABASE_URL=postgresql://user:password@localhost:5432/chefbook
 FRONTEND_URL=http://localhost:5173
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin123
