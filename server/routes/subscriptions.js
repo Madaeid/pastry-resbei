@@ -57,7 +57,7 @@ router.get('/status', authenticateToken, async (req, res) => {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (user?.is_admin === 1) {
+        if (Number(user?.is_admin) === 1) {
             return res.json({
                 isPremium: true,
                 plan: 'lifetime',

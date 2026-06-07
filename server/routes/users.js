@@ -17,7 +17,7 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
         let isRequestingAdmin = false;
         if (req.user) {
             const adminCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
-            isRequestingAdmin = adminCheck.rows[0]?.is_admin === 1;
+            isRequestingAdmin = Number(adminCheck.rows[0]?.is_admin) === 1;
         }
 
         let result;
@@ -41,7 +41,7 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
         // Filter out admins from the list and format
         const chefs = result.rows
             .filter(user => {
-                if (user.username === 'admin' || user.is_admin === 1) return false;
+                if (user.username === 'admin' || Number(user.is_admin) === 1) return false;
                 // For non-admin requesters, also filter private
                 if (!isRequestingAdmin && (user.is_public === false || user.is_public === 'private')) return false;
                 return true;
@@ -73,7 +73,7 @@ router.get('/public/:username', optionalAuthenticateToken, async (req, res) => {
         let isRequestingAdmin = false;
         if (req.user) {
             const adminCheck = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
-            isRequestingAdmin = adminCheck.rows[0]?.is_admin === 1;
+            isRequestingAdmin = Number(adminCheck.rows[0]?.is_admin) === 1;
         }
 
         let result;
@@ -163,7 +163,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
             email: user.email,
             phone: user.phone,
             birthday: user.birthday,
-            isAdmin: user.is_admin === 1,
+            isAdmin: Number(user.is_admin) === 1,
             isPublic: user.is_public || 'all',
             allowedViewers: user.allowed_viewers || [],
             profilePicture: user.profile_picture,
@@ -341,7 +341,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
                 email: updatedUser.email,
                 phone: updatedUser.phone,
                 birthday: updatedUser.birthday,
-                isAdmin: updatedUser.is_admin === 1,
+                isAdmin: Number(updatedUser.is_admin) === 1,
                 isPublic: updatedUser.is_public || 'all',
                 allowedViewers: updatedUser.allowed_viewers || [],
                 profilePicture: updatedUser.profile_picture,

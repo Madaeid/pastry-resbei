@@ -15,7 +15,7 @@ async function requirePremium(req, res, next) {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (user?.is_admin === 1) {
+        if (Number(user?.is_admin) === 1) {
             return next(); // Admins bypass premium check
         }
 

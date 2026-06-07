@@ -127,14 +127,14 @@ router.get('/google/callback', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = generateToken(user.id, user.username, user.is_admin === 1);
+        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
 
         // Send success message to parent window
         res.send(generateSuccessPage('google', {
             username: user.username,
             displayName: user.display_name || user.username,
             email: user.email,
-            isAdmin: user.is_admin === 1
+            isAdmin: Number(user.is_admin) === 1
         }, token));
 
     } catch (error) {
@@ -252,14 +252,14 @@ router.post('/apple/callback', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = generateToken(user.id, user.username, user.is_admin === 1);
+        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
 
         // Send success message to parent window
         res.send(generateSuccessPage('apple', {
             username: user.username,
             displayName: user.display_name || user.username,
             email: user.email,
-            isAdmin: user.is_admin === 1
+            isAdmin: Number(user.is_admin) === 1
         }, token));
 
     } catch (error) {

@@ -67,7 +67,7 @@ router.get('/users', async (req, res) => {
         const formattedUsers = users.map(user => {
             // Check if premium
             let isPremium = false;
-            if (user.is_admin === 1) {
+            if (Number(user.is_admin) === 1) {
                 isPremium = true;
             } else if (user.subscription_status === 'active' && new Date(user.subscription_end_date) > new Date()) {
                 isPremium = true;
@@ -80,7 +80,7 @@ router.get('/users', async (req, res) => {
                 email: user.email,
                 phone: user.phone,
                 birthday: user.birthday,
-                isAdmin: user.is_admin === 1,
+                isAdmin: Number(user.is_admin) === 1,
                 isPremium,
                 isPublic: user.is_public && user.is_public !== 'private' && user.is_public !== 'false',
                 visibilityLevel: user.is_public || 'all',
@@ -127,7 +127,7 @@ router.get('/users/:id', async (req, res) => {
             email: user.email,
             phone: user.phone,
             birthday: user.birthday,
-            isAdmin: user.is_admin === 1,
+            isAdmin: Number(user.is_admin) === 1,
             subscriptionPlan: user.subscription_plan,
             subscriptionStatus: user.subscription_status,
             subscriptionEndDate: user.subscription_end_date,
@@ -258,7 +258,7 @@ router.patch('/users/:id/toggle-admin', async (req, res) => {
             return res.status(400).json({ error: 'Cannot modify main admin user' });
         }
 
-        const newAdminStatus = user.is_admin === 1 ? 0 : 1;
+        const newAdminStatus = Number(user.is_admin) === 1 ? 0 : 1;
         await db.query('UPDATE users SET is_admin = $1, updated_at = NOW() WHERE id = $2', [newAdminStatus, userId]);
 
         res.json({
@@ -493,7 +493,7 @@ router.get('/analytics', async (req, res) => {
                 username: u.username,
                 displayName: u.display_name,
                 profilePic: u.profile_picture,
-                isAdmin: u.is_admin === 1,
+                isAdmin: Number(u.is_admin) === 1,
                 recipeCount: parseInt(u.recipe_count),
                 joinDate: u.created_at
             }));
@@ -563,7 +563,7 @@ router.get('/analytics', async (req, res) => {
                 username: u.username,
                 displayName: u.display_name,
                 profilePic: u.profile_picture,
-                isAdmin: u.is_admin === 1,
+                isAdmin: Number(u.is_admin) === 1,
                 joinDate: u.created_at
             }));
         } catch (err) {

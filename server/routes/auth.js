@@ -142,7 +142,7 @@ router.post('/login', async (req, res) => {
         }
 
         // Generate token
-        const token = generateToken(user.id, user.username, user.is_admin === 1);
+        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
 
         res.json({
             success: true,
@@ -152,7 +152,7 @@ router.post('/login', async (req, res) => {
                 username: user.username,
                 displayName: user.display_name,
                 email: user.email,
-                isAdmin: user.is_admin === 1
+                isAdmin: Number(user.is_admin) === 1
             }
         });
 
@@ -184,7 +184,7 @@ router.get('/me', authenticateToken, async (req, res) => {
             email: user.email,
             phone: user.phone,
             birthday: user.birthday,
-            isAdmin: user.is_admin === 1,
+            isAdmin: Number(user.is_admin) === 1,
             createdAt: user.created_at
         });
 

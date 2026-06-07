@@ -354,7 +354,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const subscription = subResult.rows[0];
 
         // Ensure is_admin is treated correctly as number or boolean from PG
-        const isPremium = (user?.is_admin === 1) || (subscription != null);
+        const isPremium = (Number(user?.is_admin) === 1) || (subscription != null);
 
         if (!isPremium) {
             const countResult = await db.query('SELECT COUNT(*) as count FROM recipes WHERE user_id = $1', [req.user.userId]);
@@ -434,7 +434,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
         `, [req.user.userId]);
         const subscription = subResult.rows[0];
-        const isPremium = (user?.is_admin === 1) || (subscription != null);
+        const isPremium = (Number(user?.is_admin) === 1) || (subscription != null);
 
         // Check if recipe exists and belongs to user
         const existingResult = await db.query('SELECT * FROM recipes WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
