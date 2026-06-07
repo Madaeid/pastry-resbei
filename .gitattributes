@@ -1,0 +1,12 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF line endings for bash scripts (required for Linux/macOS compatibility)
+*.sh text eol=lf
+
+# Keep PowerShell scripts with CRLF for Windows compatibility
+*.ps1 text eol=crlf
+
+# Keep batch files with CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
