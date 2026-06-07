@@ -34,7 +34,7 @@ router.get('/', authenticateToken, async (req, res) => {
                          WHERE c.recipe_id = r.id
                          ORDER BY c.created_at ASC
                      ) comment_data
-                    ), '[]'
+                    ), '[]'::json
                 ) as comments_list
             FROM recipes r
             WHERE r.user_id = $1
@@ -114,7 +114,7 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
                          WHERE c.recipe_id = r.id
                          ORDER BY c.created_at ASC
                      ) comment_data
-                    ), '[]'
+                    ), '[]'::json
                 ) as comments_list
             FROM recipes r
             LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
@@ -238,7 +238,7 @@ router.get('/public/user/:username', async (req, res) => {
                          WHERE c.recipe_id = r.id
                          ORDER BY c.created_at ASC
                      ) comment_data
-                    ), '[]'
+                    ), '[]'::json
                 ) as comments_list
             FROM recipes r
             LEFT JOIN recipes orig_r ON r.shared_from_id = orig_r.id
@@ -456,10 +456,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
                 instructions = $8,
                 notes = $9,
                 photo = $10,
-                video = $14,
-                updated_at = NOW(),
-                visibility = $13
-            WHERE id = $11 AND user_id = $12
+                video = $11,
+                visibility = $12,
+                updated_at = NOW()
+            WHERE id = $13 AND user_id = $14
         `, [
             name || existingRecipe.name,
             category || existingRecipe.category,
@@ -471,10 +471,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
             instructions || existingRecipe.instructions,
             notes !== undefined ? notes : existingRecipe.notes,
             photo !== undefined ? photo : existingRecipe.photo,
-            req.params.id,
-            req.user.userId,
+            video !== undefined ? video : existingRecipe.video,
             (req.body.visibility === 'public') ? 'public' : 'private',
-            video !== undefined ? video : existingRecipe.video
+            req.params.id,
+            req.user.userId
         ]);
 
         const updatedResult = await db.query('SELECT * FROM recipes WHERE id = $1', [req.params.id]);
@@ -730,7 +730,7 @@ router.put('/comments/:commentId', authenticateToken, async (req, res) => {
         const db = getDatabase();
         const checkResult = await db.query('SELECT user_id FROM recipe_comments WHERE id = $1', [req.params.commentId]);
         if (checkResult.rows.length === 0) return res.status(404).json({ error: 'Comment not found' });
-        if (checkResult.rows[0].user_id !== req.user.userId) return res.status(403).json({ error: 'Unauthorized' });
+        if (Number(checkResult.rows[0].user_id) !== Number(req.user.userId)) return res.status(403).json({ error: 'Unauthorized' });
 
         await db.query('UPDATE recipe_comments SET comment_text = $1 WHERE id = $2', [text, req.params.commentId]);
         res.json({ success: true, message: 'Comment updated' });
@@ -753,8 +753,8 @@ router.delete('/comments/:commentId', authenticateToken, async (req, res) => {
 
         if (checkResult.rows.length === 0) return res.status(404).json({ error: 'Comment not found' });
         
-        const isCommentAuthor = checkResult.rows[0].comment_author_id === req.user.userId;
-        const isRecipeAuthor = (checkResult.rows[0].recipe_author_id === req.user.userId);
+        const isCommentAuthor = Number(checkResult.rows[0].comment_author_id) === Number(req.user.userId);
+        const isRecipeAuthor = Number(checkResult.rows[0].recipe_author_id) === Number(req.user.userId);
 
         if (!isCommentAuthor && !isRecipeAuthor) return res.status(403).json({ error: 'Unauthorized' });
 

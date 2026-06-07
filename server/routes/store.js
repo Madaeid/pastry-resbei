@@ -101,7 +101,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         const recipe = recipeResult.rows[0];
 
         // Check if user is the seller
-        const isSeller = recipe.seller_id === req.user.userId;
+        const isSeller = Number(recipe.seller_id) === Number(req.user.userId);
 
         // Check if user has purchased
         let hasPurchased = false;
@@ -193,7 +193,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
         // Verify ownership
         const check = await db.query('SELECT seller_id FROM store_recipes WHERE id = $1', [req.params.id]);
         if (check.rows.length === 0) return res.status(404).json({ error: 'Recipe not found' });
-        if (check.rows[0].seller_id !== req.user.userId) return res.status(403).json({ error: 'Unauthorized' });
+        if (Number(check.rows[0].seller_id) !== Number(req.user.userId)) return res.status(403).json({ error: 'Unauthorized' });
 
         let { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
         if (photo) photo = await uploadMedia(photo, 'store');
@@ -232,7 +232,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         // Verify ownership
         const check = await db.query('SELECT seller_id FROM store_recipes WHERE id = $1', [req.params.id]);
         if (check.rows.length === 0) return res.status(404).json({ error: 'Recipe not found' });
-        if (check.rows[0].seller_id !== req.user.userId) return res.status(403).json({ error: 'Unauthorized' });
+        if (Number(check.rows[0].seller_id) !== Number(req.user.userId)) return res.status(403).json({ error: 'Unauthorized' });
 
         await db.query('DELETE FROM store_recipes WHERE id = $1', [req.params.id]);
         res.json({ success: true, message: 'Recipe removed from store' });
@@ -255,7 +255,7 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
         const recipePrice = parseFloat(recipe.price) || 0;
 
         // Can't buy your own recipe
-        if (recipe.seller_id === req.user.userId) {
+        if (Number(recipe.seller_id) === Number(req.user.userId)) {
             return res.status(400).json({ error: 'You cannot purchase your own recipe' });
         }
 

@@ -65,7 +65,7 @@ export async function requireAdmin(req, res, next) {
         const result = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = result.rows[0];
 
-        if (!user || user.is_admin !== 1) {
+        if (!user || Number(user.is_admin) !== 1) {
             return res.status(403).json({ error: 'Admin access required' });
         }
 
@@ -97,7 +97,7 @@ export async function requirePremium(req, res, next) {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (!subscription && (!user || user.is_admin !== 1)) {
+        if (!subscription && (!user || Number(user.is_admin) !== 1)) {
             return res.status(403).json({ error: 'Premium subscription required' });
         }
 

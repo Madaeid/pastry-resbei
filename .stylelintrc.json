@@ -20,7 +20,7 @@
     "selector-no-vendor-prefix": null,
     "at-rule-no-vendor-prefix": null,
 
-    "color-hex-length": "long",
+    "color-hex-length": "short",
     "color-no-invalid-hex": true,
 
     "declaration-block-no-duplicate-properties": [
