@@ -28,6 +28,7 @@ import nutritionRoutes from './routes/nutrition.js'; // AI Nutritional Analysis
 
 import { getDatabase } from './database/db.js';
 import { runMigrations } from './database/migrate.js';
+import currencyUtils from './utils/currency.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -122,8 +123,11 @@ const server = app.listen(PORT, async () => {
     // Auto-run database migrations on startup
     try {
         await runMigrations();
+        
+        // Initialize exchange rate fetching scheduler
+        currencyUtils.initCurrencyScheduler();
     } catch (err) {
-        console.error('⚠️ Migration warning:', err.message);
+        console.error('⚠️ Startup warning:', err.message);
         // Don't crash the server — migrations are non-destructive checks
     }
 });

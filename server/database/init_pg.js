@@ -339,6 +339,13 @@ async function initDB() {
                     reference_id TEXT UNIQUE,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
+
+                CREATE TABLE IF NOT EXISTS exchange_rates (
+                    id SERIAL PRIMARY KEY,
+                    currency_code TEXT UNIQUE NOT NULL,
+                    rate_to_usd DECIMAL(15,6) NOT NULL,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
             `);
             console.log('✅ Wallet tables created');
 

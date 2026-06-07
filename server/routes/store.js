@@ -3,6 +3,7 @@ import { uploadMedia } from '../utils/cloudinary.js';
 import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import currencyUtils from '../utils/currency.js';
 
 const router = express.Router();
 
@@ -278,29 +279,43 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
         }
 
         // Check buyer wallet balance
-        const walletResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
-        const buyerBalance = parseFloat(walletResult.rows[0]?.balance || 0);
+        const buyerWalletResult = await db.query('SELECT balance, currency FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
+        const buyerBalance = parseFloat(buyerWalletResult.rows[0]?.balance || 0);
+        const buyerCurrency = buyerWalletResult.rows[0]?.currency || 'USD';
 
-        if (buyerBalance < recipePrice) {
-            return res.status(400).json({ error: 'Insufficient wallet balance' });
+        // Get seller's currency (to know what currency the recipe price is in)
+        const sellerWalletResult = await db.query('SELECT currency FROM wallet_balances WHERE user_id = $1', [recipe.seller_id]);
+        const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
+
+        // Convert recipe price to buyer's currency
+        const priceInBuyerCurrency = await currencyUtils.convertCurrency(recipePrice, sellerCurrency, buyerCurrency);
+
+        if (buyerBalance < priceInBuyerCurrency) {
+            return res.status(400).json({ 
+                error: `Insufficient wallet balance. Need ${priceInBuyerCurrency.toFixed(2)} ${buyerCurrency}` 
+            });
         }
 
-        // Deduct from buyer
-        await db.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [recipePrice, req.user.userId]);
+        // Deduct from buyer in their currency
+        await db.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [priceInBuyerCurrency, req.user.userId]);
 
-        // Credit seller (80%)
+        // Credit seller (80%) in their currency
         const sellerCut = recipePrice * 0.8;
         const adminCut = recipePrice - sellerCut; // Remaining 20%
         
-        await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [recipe.seller_id]);
+        await db.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [recipe.seller_id, sellerCurrency]);
         await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
 
-        // Credit admin (20%)
+        // Credit admin (20%) - assume admin ID 1 is main admin, get their currency
         const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
         const adminId = adminResult.rows[0]?.id;
         if (adminId) {
-            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
-            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCut, adminId]);
+            const adminWalletResult = await db.query('SELECT currency FROM wallet_balances WHERE user_id = $1', [adminId]);
+            const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
+            const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+            
+            await db.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
+            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
         }
 
         // Record purchase

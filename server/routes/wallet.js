@@ -3,6 +3,7 @@ import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { fulfillSubscription } from '../utils/subscriptionHelper.js';
+import currencyUtils from '../utils/currency.js';
 
 const router = express.Router();
 
@@ -179,8 +180,21 @@ router.post('/transfer', authenticateToken, async (req, res) => {
             const recipientWallet = await getOrCreateWallet(client, recipient.id, true);
 
             const referenceId = `TRF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            
+            // Handle currency conversion
+            const recipientAmount = await currencyUtils.convertCurrency(
+                transferAmount, 
+                senderWallet.currency, 
+                recipientWallet.currency
+            );
+
             const senderNewBalance = parseFloat(senderWallet.balance) - transferAmount;
-            const recipientNewBalance = parseFloat(recipientWallet.balance) + transferAmount;
+            const recipientNewBalance = parseFloat(recipientWallet.balance) + recipientAmount;
+
+            let finalNote = note || `Transfer to @${recipient.username}`;
+            if (senderWallet.currency !== recipientWallet.currency) {
+                finalNote += ` (Converted from ${transferAmount.toFixed(2)} ${senderWallet.currency} to ${recipientAmount.toFixed(2)} ${recipientWallet.currency})`;
+            }
 
             // Update sender, update recipient, record
             await client.query(
@@ -197,15 +211,16 @@ router.post('/transfer', authenticateToken, async (req, res) => {
             await client.query(
                 `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                  VALUES ($1, $2, 'transfer', $3, $4, 'completed', $5)`,
-                [senderId, recipient.id, transferAmount, note || `Transfer to @${recipient.username}`, referenceId]
+                [senderId, recipient.id, transferAmount, finalNote, referenceId]
             );
 
             await client.query('COMMIT');
 
             res.json({
                 success: true,
-                message: `$${transferAmount.toFixed(2)} sent to @${recipient.username}`,
+                message: `${transferAmount.toFixed(2)} ${senderWallet.currency} sent to @${recipient.username}`,
                 balance: senderNewBalance,
+                currency: senderWallet.currency,
                 referenceId,
                 recipient: {
                     username: recipient.username,
@@ -400,6 +415,61 @@ router.get('/search-users', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Search users error:', error);
         res.status(500).json({ error: 'Failed to search users' });
+    }
+});
+
+// ===== POST /api/wallet/settings/currency — Change base currency =====
+router.post('/settings/currency', authenticateToken, async (req, res) => {
+    try {
+        const { newCurrency } = req.body;
+        if (!newCurrency || newCurrency.length !== 3) {
+            return res.status(400).json({ error: 'Valid 3-letter currency code required' });
+        }
+        
+        const targetCurrency = newCurrency.toUpperCase();
+        const db = getDatabase();
+        const client = await db.connect();
+        
+        try {
+            await client.query('BEGIN');
+            const wallet = await getOrCreateWallet(client, req.user.userId, true);
+            
+            if (wallet.currency === targetCurrency) {
+                await client.query('ROLLBACK');
+                return res.json({ success: true, message: 'Currency already set to ' + targetCurrency });
+            }
+            
+            // Convert current balance
+            const newBalance = await currencyUtils.convertCurrency(
+                parseFloat(wallet.balance), 
+                wallet.currency, 
+                targetCurrency
+            );
+            
+            await client.query(
+                'UPDATE wallet_balances SET balance = $1, currency = $2, updated_at = NOW() WHERE user_id = $3',
+                [newBalance, targetCurrency, req.user.userId]
+            );
+            
+            await client.query('COMMIT');
+            
+            res.json({ 
+                success: true, 
+                message: 'Currency updated successfully', 
+                balance: newBalance, 
+                currency: targetCurrency 
+            });
+            
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+        
+    } catch (error) {
+        console.error('Change currency error:', error);
+        res.status(500).json({ error: 'Failed to change currency' });
     }
 });
 
