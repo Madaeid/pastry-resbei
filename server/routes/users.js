@@ -2,7 +2,7 @@ import { uploadMedia } from '../utils/cloudinary.js';
 
 // User Routes
 import express from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken, optionalAuthenticateToken } from '../middleware/auth.js';
 

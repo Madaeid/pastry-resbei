@@ -260,17 +260,17 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'You cannot purchase your own recipe' });
         }
 
-        // Check if already purchased
-        const existingPurchase = await db.query(
-            'SELECT id FROM store_purchases WHERE buyer_id = $1 AND store_recipe_id = $2',
-            [req.user.userId, req.params.id]
-        );
-        if (existingPurchase.rows.length > 0) {
-            return res.status(400).json({ error: 'You have already purchased this recipe' });
-        }
-
         // If free, just record
         if (recipePrice <= 0) {
+            // Check if already purchased
+            const existingPurchase = await db.query(
+                'SELECT id FROM store_purchases WHERE buyer_id = $1 AND store_recipe_id = $2',
+                [req.user.userId, req.params.id]
+            );
+            if (existingPurchase.rows.length > 0) {
+                return res.status(400).json({ error: 'You have already purchased this recipe' });
+            }
+
             await db.query(
                 'INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid) VALUES ($1, $2, 0)',
                 [req.user.userId, req.params.id]
@@ -278,73 +278,97 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
             return res.json({ success: true, message: `Successfully added "${recipe.name}" to your collection!` });
         }
 
-        // Check buyer wallet balance
-        const buyerWalletResult = await db.query('SELECT balance, currency FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
-        const buyerBalance = parseFloat(buyerWalletResult.rows[0]?.balance || 0);
-        const buyerCurrency = buyerWalletResult.rows[0]?.currency || 'USD';
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
 
-        // Get seller's currency (to know what currency the recipe price is in)
-        const sellerWalletResult = await db.query('SELECT currency FROM wallet_balances WHERE user_id = $1', [recipe.seller_id]);
-        const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
-
-        // Convert recipe price to buyer's currency
-        const priceInBuyerCurrency = await currencyUtils.convertCurrency(recipePrice, sellerCurrency, buyerCurrency);
-
-        if (buyerBalance < priceInBuyerCurrency) {
-            return res.status(400).json({ 
-                error: `Insufficient wallet balance. Need ${priceInBuyerCurrency.toFixed(2)} ${buyerCurrency}` 
-            });
-        }
-
-        // Deduct from buyer in their currency
-        await db.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [priceInBuyerCurrency, req.user.userId]);
-
-        // Credit seller (80%) in their currency
-        const sellerCut = recipePrice * 0.8;
-        const adminCut = recipePrice - sellerCut; // Remaining 20%
-        
-        await db.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [recipe.seller_id, sellerCurrency]);
-        await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
-
-        // Credit admin (20%) - assume admin ID 1 is main admin, get their currency
-        const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
-        const adminId = adminResult.rows[0]?.id;
-        if (adminId) {
-            const adminWalletResult = await db.query('SELECT currency FROM wallet_balances WHERE user_id = $1', [adminId]);
-            const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
-            const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+            // Check buyer wallet balance - WITH FOR UPDATE lock
+            const buyerWalletResult = await client.query('SELECT balance, currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [req.user.userId]);
             
-            await db.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
-            await db.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
-        }
+            // Check if already purchased (INSIDE transaction after lock to prevent race conditions)
+            const existingPurchase = await client.query(
+                'SELECT id FROM store_purchases WHERE buyer_id = $1 AND store_recipe_id = $2',
+                [req.user.userId, req.params.id]
+            );
+            if (existingPurchase.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'You have already purchased this recipe' });
+            }
 
-        // Record purchase
-        await db.query(
-            'INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid) VALUES ($1, $2, $3)',
-            [req.user.userId, req.params.id, recipePrice]
-        );
+            const buyerBalance = parseFloat(buyerWalletResult.rows[0]?.balance || 0);
+            const buyerCurrency = buyerWalletResult.rows[0]?.currency || 'USD';
 
-        // Record transactions
-        const refId = `REC-PUR-${Date.now()}`;
-        await db.query(
-            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
-             VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
-            [req.user.userId, recipe.seller_id, sellerCut, `Recipe Purchase (Seller Cut): "${recipe.name}"`, refId + '-S']
-        );
-        
-        if (adminId) {
-            await db.query(
+            // Get seller's currency
+            const sellerWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [recipe.seller_id]);
+            const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
+
+            // Convert recipe price to buyer's currency
+            const priceInBuyerCurrency = await currencyUtils.convertCurrency(recipePrice, sellerCurrency, buyerCurrency);
+
+            if (buyerBalance < priceInBuyerCurrency) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ 
+                    error: `Insufficient wallet balance. Need ${priceInBuyerCurrency.toFixed(2)} ${buyerCurrency}` 
+                });
+            }
+
+            // Deduct from buyer in their currency
+            await client.query('UPDATE wallet_balances SET balance = balance - $1 WHERE user_id = $2', [priceInBuyerCurrency, req.user.userId]);
+
+            // Credit seller (80%) in their currency
+            const sellerCut = recipePrice * 0.8;
+            const adminCut = recipePrice - sellerCut; // Remaining 20%
+            
+            await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [recipe.seller_id, sellerCurrency]);
+            await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
+
+            // Credit admin (20%) - assume admin ID 1 is main admin, get their currency
+            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+            const adminId = adminResult.rows[0]?.id;
+            if (adminId) {
+                const adminWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [adminId]);
+                const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
+                const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+                
+                await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
+                await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
+            }
+
+            // Record purchase
+            await client.query(
+                'INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid) VALUES ($1, $2, $3)',
+                [req.user.userId, req.params.id, recipePrice]
+            );
+
+            // Record transactions
+            const refId = `REC-PUR-${Date.now()}`;
+            await client.query(
                 `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                  VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
-                [req.user.userId, adminId, adminCut, `Recipe Purchase (Platform Fee): "${recipe.name}"`, refId + '-A']
+                [req.user.userId, recipe.seller_id, sellerCut, `Recipe Purchase (Seller Cut): "${recipe.name}"`, refId + '-S']
             );
-        }
+            
+            if (adminId) {
+                await client.query(
+                    `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                     VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                    [req.user.userId, adminId, adminCut, `Recipe Purchase (Platform Fee): "${recipe.name}"`, refId + '-A']
+                );
+            }
 
-        res.json({
-            success: true,
-            message: `Successfully purchased "${recipe.name}"!`,
-            recipeId: recipe.id
-        });
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: `Successfully purchased "${recipe.name}"!`,
+                recipeId: recipe.id
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (error) {
         console.error('Purchase recipe error:', error);
         res.status(500).json({ error: 'Failed to purchase recipe' });

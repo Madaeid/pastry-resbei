@@ -51,8 +51,12 @@ export async function runMigrations() {
                 migrationCount++;
             }
         } catch (migErr) {
-            // Migration may fail if already done or table doesn't exist yet
-            console.log('Migration note:', migErr.message);
+            if (migErr.code === '42P01') {
+                console.log('⚠️ Skipping users table migration: Table does not exist yet.');
+            } else {
+                console.error('❌ Critical migration error (users table structure):', migErr);
+                throw migErr; // Re-throw to stop execution
+            }
         }
 
         // Migration: Add sharing columns to recipes
@@ -100,7 +104,12 @@ export async function runMigrations() {
                 )
             `);
         } catch (migErr) {
-            console.log('Migration note (sharing columns):', migErr.message);
+            if (migErr.code === '42P01') {
+                console.log('⚠️ Skipping recipes table migration: Table does not exist yet.');
+            } else {
+                console.error('❌ Critical migration error (recipes table sharing columns):', migErr);
+                throw migErr;
+            }
         }
 
         // Migration: Fix reset_code_expiry type from TIMESTAMP to BIGINT (stores epoch ms)
@@ -115,7 +124,12 @@ export async function runMigrations() {
                 migrationCount++;
             }
         } catch (migErr) {
-            console.log('Migration note (reset_code_expiry):', migErr.message);
+            if (migErr.code === '42P01') {
+                console.log('⚠️ Skipping reset_code_expiry migration: users table does not exist yet.');
+            } else {
+                console.error('❌ Critical migration error (reset_code_expiry):', migErr);
+                throw migErr;
+            }
         }
 
         // Migration: Make password_hash nullable for OAuth users
@@ -130,7 +144,12 @@ export async function runMigrations() {
                 migrationCount++;
             }
         } catch (migErr) {
-            console.log('Migration note (password_hash):', migErr.message);
+            if (migErr.code === '42P01') {
+                console.log('⚠️ Skipping password_hash migration: users table does not exist yet.');
+            } else {
+                console.error('❌ Critical migration error (password_hash):', migErr);
+                throw migErr;
+            }
         }
 
         const elapsed = Date.now() - startTime;

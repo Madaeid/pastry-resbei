@@ -438,17 +438,17 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'You cannot purchase your own book' });
         }
 
-        // Check if already purchased
-        const existingPurchase = await db.query(
-            'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
-            [req.user.userId, req.params.id]
-        );
-        if (existingPurchase.rows.length > 0) {
-            return res.status(400).json({ error: 'You have already purchased this book' });
-        }
-
         // If free book, just record purchase
         if (bookPrice === 0) {
+            // Check if already purchased
+            const existingPurchase = await db.query(
+                'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
+                [req.user.userId, req.params.id]
+            );
+            if (existingPurchase.rows.length > 0) {
+                return res.status(400).json({ error: 'You have already purchased this book' });
+            }
+
             await db.query(
                 'INSERT INTO book_purchases (buyer_id, book_id, price_paid) VALUES ($1, $2, 0)',
                 [req.user.userId, req.params.id]
@@ -456,85 +456,108 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
             return res.json({ success: true, message: `"${book.title}" added to your library!` });
         }
 
-        // Check buyer wallet balance
-        let walletResult = await db.query(
-            'SELECT balance FROM wallet_balances WHERE user_id = $1',
-            [req.user.userId]
-        );
-        if (!walletResult.rows[0]) {
-            // Create wallet
-            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [req.user.userId]);
-            walletResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
-        }
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
 
-        const buyerBalance = parseFloat(walletResult.rows[0]?.balance || 0);
-        if (buyerBalance < bookPrice) {
-            return res.status(400).json({
-                error: 'Insufficient funds',
-                balance: buyerBalance,
-                price: bookPrice,
-                message: `You need $${bookPrice.toFixed(2)} but only have $${buyerBalance.toFixed(2)}. Please deposit funds first.`
-            });
-        }
-
-        // Deduct from buyer wallet
-        await db.query(
-            'UPDATE wallet_balances SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2',
-            [bookPrice, req.user.userId]
-        );
-
-        // Credit seller wallet (80%)
-        const sellerCut = bookPrice * 0.8;
-        const adminCut = bookPrice - sellerCut; // Remaining 20%
-        
-        await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [book.user_id]);
-        await db.query(
-            'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
-            [sellerCut, book.user_id]
-        );
-
-        // Credit admin wallet (20%)
-        const adminResult = await db.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
-        const adminId = adminResult.rows[0]?.id;
-        if (adminId) {
-            await db.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
-            await db.query(
-                'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
-                [adminCut, adminId]
+            // 1. Get or Create Wallet and acquire FOR UPDATE lock to prevent race conditions
+            let walletResult = await client.query(
+                'SELECT balance FROM wallet_balances WHERE user_id = $1 FOR UPDATE',
+                [req.user.userId]
             );
-        }
+            
+            if (!walletResult.rows[0]) {
+                await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [req.user.userId]);
+                walletResult = await client.query('SELECT balance FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [req.user.userId]);
+            }
 
-        // Record purchase
-        await db.query(
-            'INSERT INTO book_purchases (buyer_id, book_id, price_paid) VALUES ($1, $2, $3)',
-            [req.user.userId, req.params.id, bookPrice]
-        );
+            // 2. Check existing purchase INSIDE transaction
+            const existingPurchase = await client.query(
+                'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
+                [req.user.userId, req.params.id]
+            );
+            if (existingPurchase.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ error: 'You have already purchased this book' });
+            }
 
-        // Record wallet transactions
-        const refId = `BOOK-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        await db.query(
-            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
-             VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
-            [req.user.userId, book.user_id, sellerCut, `Book Purchase (Seller Cut): "${book.title}"`, refId + '-S']
-        );
-        
-        if (adminId) {
-            await db.query(
+            const buyerBalance = parseFloat(walletResult.rows[0]?.balance || 0);
+            if (buyerBalance < bookPrice) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    error: 'Insufficient funds',
+                    balance: buyerBalance,
+                    price: bookPrice,
+                    message: `You need $${bookPrice.toFixed(2)} but only have $${buyerBalance.toFixed(2)}. Please deposit funds first.`
+                });
+            }
+
+            // Deduct from buyer wallet
+            await client.query(
+                'UPDATE wallet_balances SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2',
+                [bookPrice, req.user.userId]
+            );
+
+            // Credit seller wallet (80%)
+            const sellerCut = bookPrice * 0.8;
+            const adminCut = bookPrice - sellerCut; // Remaining 20%
+            
+            await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [book.user_id]);
+            await client.query(
+                'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+                [sellerCut, book.user_id]
+            );
+
+            // Credit admin wallet (20%)
+            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+            const adminId = adminResult.rows[0]?.id;
+            if (adminId) {
+                await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
+                await client.query(
+                    'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+                    [adminCut, adminId]
+                );
+            }
+
+            // Record purchase
+            await client.query(
+                'INSERT INTO book_purchases (buyer_id, book_id, price_paid) VALUES ($1, $2, $3)',
+                [req.user.userId, req.params.id, bookPrice]
+            );
+
+            // Record wallet transactions
+            const refId = `BOOK-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            await client.query(
                 `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                  VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
-                [req.user.userId, adminId, adminCut, `Book Purchase (Platform Fee): "${book.title}"`, refId + '-A']
+                [req.user.userId, book.user_id, sellerCut, `Book Purchase (Seller Cut): "${book.title}"`, refId + '-S']
             );
+            
+            if (adminId) {
+                await client.query(
+                    `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                     VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
+                    [req.user.userId, adminId, adminCut, `Book Purchase (Platform Fee): "${book.title}"`, refId + '-A']
+                );
+            }
+
+            // Get updated balance
+            const newBalResult = await client.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
+            const newBalance = parseFloat(newBalResult.rows[0]?.balance || 0);
+
+            await client.query('COMMIT');
+
+            res.json({
+                success: true,
+                message: `Successfully purchased "${book.title}"!`,
+                balance: newBalance
+            });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
         }
-
-        // Get updated balance
-        const newBalResult = await db.query('SELECT balance FROM wallet_balances WHERE user_id = $1', [req.user.userId]);
-        const newBalance = parseFloat(newBalResult.rows[0]?.balance || 0);
-
-        res.json({
-            success: true,
-            message: `Successfully purchased "${book.title}"!`,
-            balance: newBalance
-        });
     } catch (error) {
         console.error('Purchase book error:', error);
         res.status(500).json({ error: 'Failed to purchase book' });

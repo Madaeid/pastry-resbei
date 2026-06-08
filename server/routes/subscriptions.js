@@ -503,7 +503,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     let event;
     try {
-        event = constructWebhookEvent(req.body, sig);
+        // Use req.rawBody which contains the raw Buffer saved in server.js
+        event = constructWebhookEvent(req.rawBody || req.body, sig);
     } catch (err) {
         console.error('Webhook signature verification failed:', err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);

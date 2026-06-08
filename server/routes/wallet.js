@@ -88,14 +88,12 @@ router.post('/deposit', authenticateToken, async (req, res) => {
             await client.query('BEGIN');
             const wallet = await getOrCreateWallet(client, req.user.userId, true);
 
-            const newBalance = parseFloat(wallet.balance) + depositAmount;
-            const referenceId = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-
-            // Update balance
-            await client.query(
-                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [newBalance, req.user.userId]
+            // Update balance atomically using DB calculation
+            const updateResult = await client.query(
+                'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2 RETURNING balance',
+                [depositAmount, req.user.userId]
             );
+            const newBalance = parseFloat(updateResult.rows[0].balance);
 
             // Record transaction
             await client.query(
@@ -188,23 +186,22 @@ router.post('/transfer', authenticateToken, async (req, res) => {
                 recipientWallet.currency
             );
 
-            const senderNewBalance = parseFloat(senderWallet.balance) - transferAmount;
-            const recipientNewBalance = parseFloat(recipientWallet.balance) + recipientAmount;
-
             let finalNote = note || `Transfer to @${recipient.username}`;
             if (senderWallet.currency !== recipientWallet.currency) {
                 finalNote += ` (Converted from ${transferAmount.toFixed(2)} ${senderWallet.currency} to ${recipientAmount.toFixed(2)} ${recipientWallet.currency})`;
             }
 
-            // Update sender, update recipient, record
-            await client.query(
-                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [senderNewBalance, senderId]
+            // Update sender atomically
+            const senderUpdateRes = await client.query(
+                'UPDATE wallet_balances SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2 RETURNING balance',
+                [transferAmount, senderId]
             );
+            const senderNewBalance = parseFloat(senderUpdateRes.rows[0].balance);
 
+            // Update recipient atomically
             await client.query(
-                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [recipientNewBalance, recipient.id]
+                'UPDATE wallet_balances SET balance = balance + $1, updated_at = NOW() WHERE user_id = $2',
+                [recipientAmount, recipient.id]
             );
 
             // Record transaction
@@ -321,12 +318,24 @@ router.post('/purchase', authenticateToken, async (req, res) => {
                 });
             }
 
-            // 1. Deduct from balance
-            const newBalance = parseFloat(wallet.balance) - purchaseAmount;
-            await client.query(
-                'UPDATE wallet_balances SET balance = $1, updated_at = NOW() WHERE user_id = $2',
-                [newBalance, userId]
+            // Prevent double-purchasing recipes
+            if (type === 'recipe') {
+                const existingPurchase = await client.query(
+                    'SELECT id FROM store_purchases WHERE buyer_id = $1 AND store_recipe_id = $2',
+                    [userId, recipeId]
+                );
+                if (existingPurchase.rows.length > 0) {
+                    await client.query('ROLLBACK');
+                    return res.status(400).json({ error: 'You have already purchased this recipe' });
+                }
+            }
+
+            // 1. Deduct from balance atomically
+            const updateResult = await client.query(
+                'UPDATE wallet_balances SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2 RETURNING balance',
+                [purchaseAmount, userId]
             );
+            const newBalance = parseFloat(updateResult.rows[0].balance);
 
             const referenceId = `WLT-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 

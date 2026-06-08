@@ -44,7 +44,14 @@ app.use(cors({
 }));
 
 // Body parser
-app.use(express.json({ limit: '100mb' })); // Allow large base64 videos and images
+// We use the 'verify' function to preserve the raw request body as a Buffer. 
+// This is strictly required by Stripe to verify Webhook signatures!
+app.use(express.json({ 
+    limit: '100mb',
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+})); 
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
 // Auth rate limiter (stricter)
@@ -54,10 +61,19 @@ const authLimiter = rateLimit({
     message: { error: 'Too many authentication attempts, please try again later.' }
 });
 
-// Apply authLimiter first so it takes precedence over the general limiter
-app.use('/api/auth', authLimiter);
+// Financial rate limiter (stricter for wallet and payments)
+const financialLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 50, // Limit each IP to 50 requests per windowMs for financial operations
+    message: { error: 'Too many financial operations, please try again later.' }
+});
 
-// Rate limiting
+// Apply stricter limiters first so they take precedence over the general limiter
+app.use('/api/auth', authLimiter);
+app.use('/api/wallet', financialLimiter);
+app.use('/api/subscriptions', financialLimiter);
+
+// General rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 1000, // Limit each IP to 1000 requests per windowMs
@@ -127,8 +143,10 @@ const server = app.listen(PORT, async () => {
         // Initialize exchange rate fetching scheduler
         currencyUtils.initCurrencyScheduler();
     } catch (err) {
-        console.error('⚠️ Startup warning:', err.message);
-        // Don't crash the server — migrations are non-destructive checks
+        console.error('❌ Critical Startup Error: Database migrations failed.');
+        console.error(err);
+        console.error('The server cannot start safely with an inconsistent database schema. Exiting...');
+        process.exit(1);
     }
 });
 

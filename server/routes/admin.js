@@ -1,7 +1,7 @@
 
 // Admin Routes
 import express from 'express';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 
@@ -9,6 +9,16 @@ const router = express.Router();
 
 // All admin routes require authentication and admin privileges
 router.use(authenticateToken);
+
+// Strict JWT Role Check (Fast-fail without hitting DB)
+router.use((req, res, next) => {
+    if (!req.user || req.user.isAdmin !== true) {
+        console.warn(`Unauthorized admin access attempt by user ${req.user?.userId}`);
+        return res.status(403).json({ error: 'Strict Admin Role Required. Access Denied.' });
+    }
+    next();
+});
+
 router.use(requireAdmin);
 
 // ===== Get Dashboard Stats =====
