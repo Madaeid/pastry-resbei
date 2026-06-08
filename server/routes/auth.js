@@ -4,43 +4,36 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../database/db.js';
-import { generateToken, authenticateToken } from '../middleware/auth.js';
+import { generateToken, generateRefreshToken, authenticateToken } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../utils/validators.js';
 
 const router = express.Router();
 
+async function ensureAuthTables() {
+    const db = getDatabase();
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                token TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+        `);
+    } catch (err) {
+        console.error('Auth table init error:', err.message);
+    }
+}
+ensureAuthTables();
+
 // ===== Register =====
-router.post('/register', async (req, res) => {
+router.post('/register', validate(registerSchema), async (req, res) => {
     try {
         const { username, email, phone, birthday, password } = req.body;
         const db = getDatabase();
-
-        // Validation
-        if (!username || username.length < 3) {
-            return res.status(400).json({ error: 'Username must be at least 3 characters long' });
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Please enter a valid email address' });
-        }
-
-        const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
-        if (phone && !phoneRegex.test(phone.replace(/\s/g, ''))) {
-            return res.status(400).json({ error: 'Please enter a valid phone number' });
-        }
-
-        if (!password || password.length < 4) {
-            return res.status(400).json({ error: 'Password must be at least 4 characters long' });
-        }
-
-        // Check password strength: must contain uppercase, lowercase, and number
-        const hasUppercase = /[A-Z]/.test(password);
-        const hasLowercase = /[a-z]/.test(password);
-        const hasNumber = /[0-9]/.test(password);
-
-        if (!hasUppercase || !hasLowercase || !hasNumber) {
-            return res.status(400).json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
-        }
 
         // Age validation
         if (birthday) {
@@ -114,14 +107,10 @@ router.post('/register', async (req, res) => {
 });
 
 // ===== Login =====
-router.post('/login', async (req, res) => {
+router.post('/login', validate(loginSchema), async (req, res) => {
     try {
         const { username, password } = req.body;
         const db = getDatabase();
-
-        if (!username || !password) {
-            return res.status(400).json({ error: 'Username and password are required' });
-        }
 
         // Find user
         const result = await db.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
@@ -143,6 +132,21 @@ router.post('/login', async (req, res) => {
 
         // Generate token
         const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+        const refreshToken = generateRefreshToken(user.id);
+        
+        // Save refresh token to DB
+        await db.query(`
+            INSERT INTO refresh_tokens (user_id, token, expires_at)
+            VALUES ($1, $2, NOW() + INTERVAL '7 days')
+        `, [user.id, refreshToken]);
+
+        // Set refresh token in HttpOnly cookie
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
 
         res.json({
             success: true,
@@ -195,7 +199,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // ===== Send Reset Code =====
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res) => {
     try {
         const { username, contactValue, method = 'email' } = req.body;
         const db = getDatabase();
@@ -254,23 +258,10 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // ===== Reset Password with Code =====
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', validate(resetPasswordSchema), async (req, res) => {
     try {
         const { username, code, newPassword } = req.body;
         const db = getDatabase();
-
-        if (!newPassword || newPassword.length < 4) {
-            return res.status(400).json({ error: 'Password must be at least 4 characters' });
-        }
-
-        // Check password strength: must contain uppercase, lowercase, and number
-        const hasUppercase = /[A-Z]/.test(newPassword);
-        const hasLowercase = /[a-z]/.test(newPassword);
-        const hasNumber = /[0-9]/.test(newPassword);
-
-        if (!hasUppercase || !hasLowercase || !hasNumber) {
-            return res.status(400).json({ error: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
-        }
 
         const result = await db.query('SELECT * FROM users WHERE username = $1', [username.toLowerCase()]);
         const user = result.rows[0];
@@ -306,10 +297,68 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// ===== Logout (optional - client-side token removal is usually sufficient) =====
-router.post('/logout', authenticateToken, (req, res) => {
-    // In a production app, you might blacklist the token here
-    res.json({ success: true, message: 'Logged out successfully' });
+// ===== Logout =====
+router.post('/logout', authenticateToken, async (req, res) => {
+    try {
+        const db = getDatabase();
+        const cookieHeader = req.headers?.cookie || '';
+        const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+        const refreshToken = cookies.refreshToken;
+
+        if (refreshToken) {
+            await db.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
+        }
+        res.clearCookie('refreshToken');
+        res.json({ success: true, message: 'Logged out successfully' });
+    } catch (err) {
+        console.error('Logout error:', err);
+        res.status(500).json({ error: 'Logout failed' });
+    }
+});
+
+// ===== Refresh Token =====
+router.post('/refresh-token', async (req, res) => {
+    try {
+        const db = getDatabase();
+        const cookieHeader = req.headers?.cookie || '';
+        const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+        const refreshToken = cookies.refreshToken;
+
+        if (!refreshToken) {
+            return res.status(401).json({ error: 'Refresh token required' });
+        }
+
+        const result = await db.query('SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > NOW()', [refreshToken]);
+        if (result.rows.length === 0) {
+            return res.status(403).json({ error: 'Invalid or expired refresh token' });
+        }
+
+        const { default: jwt } = await import('jsonwebtoken');
+        const JWT_SECRET = process.env.JWT_SECRET || 'pastry-secret-key';
+        let decoded;
+        try {
+            decoded = jwt.verify(refreshToken, JWT_SECRET);
+        } catch (err) {
+            return res.status(403).json({ error: 'Invalid refresh token signature' });
+        }
+
+        const userResult = await db.query('SELECT * FROM users WHERE id = $1', [decoded.userId]);
+        const user = userResult.rows[0];
+        
+        if (!user) {
+            return res.status(403).json({ error: 'User no longer exists' });
+        }
+
+        const newAccessToken = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+
+        res.json({
+            success: true,
+            token: newAccessToken
+        });
+    } catch (error) {
+        console.error('Refresh token error:', error);
+        res.status(500).json({ error: 'Failed to refresh token' });
+    }
 });
 
 export default router;

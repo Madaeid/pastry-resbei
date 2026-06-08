@@ -4,6 +4,8 @@ import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import currencyUtils from '../utils/currency.js';
+import { validate } from '../middleware/validate.js';
+import { storeRecipeSchema, updateStoreRecipeSchema } from '../utils/validators.js';
 
 const router = express.Router();
 
@@ -162,15 +164,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // ===== Create Store Recipe =====
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', validate(storeRecipeSchema), authenticateToken, async (req, res) => {
     try {
         let { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
         if (photo) photo = await uploadMedia(photo, 'store');
         if (video) video = await uploadMedia(video, 'store');
-
-        if (!name || !price || price <= 0) {
-            return res.status(400).json({ error: 'Recipe name and a valid price are required' });
-        }
 
         const db = getDatabase();
         const result = await db.query(`
@@ -187,7 +185,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // ===== Update Store Recipe =====
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', validate(updateStoreRecipeSchema), authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
 

@@ -4,6 +4,8 @@ import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { fulfillSubscription } from '../utils/subscriptionHelper.js';
 import currencyUtils from '../utils/currency.js';
+import { validate } from '../middleware/validate.js';
+import { depositSchema, transferSchema, changeCurrencySchema } from '../utils/validators.js';
 
 const router = express.Router();
 
@@ -72,14 +74,10 @@ router.get('/balance', authenticateToken, async (req, res) => {
 });
 
 // ===== POST /api/wallet/deposit — Add funds to own wallet =====
-router.post('/deposit', authenticateToken, async (req, res) => {
+router.post('/deposit', validate(depositSchema), authenticateToken, async (req, res) => {
     try {
         const { amount, cardLast4, cardBrand } = req.body;
         const depositAmount = parseFloat(amount);
-
-        if (!depositAmount || depositAmount <= 0 || depositAmount > 10000) {
-            return res.status(400).json({ error: 'Invalid deposit amount. Must be between $0.01 and $10,000.' });
-        }
 
         const db = getDatabase();
         const client = await db.connect();
@@ -122,22 +120,10 @@ router.post('/deposit', authenticateToken, async (req, res) => {
 });
 
 // ===== POST /api/wallet/transfer — Send money to any user =====
-router.post('/transfer', authenticateToken, async (req, res) => {
+router.post('/transfer', validate(transferSchema), authenticateToken, async (req, res) => {
     try {
         const { recipientUsername, amount, note } = req.body;
         const transferAmount = parseFloat(amount);
-
-        if (!recipientUsername || !recipientUsername.trim()) {
-            return res.status(400).json({ error: 'Recipient username is required' });
-        }
-
-        if (!transferAmount || transferAmount <= 0) {
-            return res.status(400).json({ error: 'Transfer amount must be greater than $0.00' });
-        }
-
-        if (transferAmount > 5000) {
-            return res.status(400).json({ error: 'Maximum transfer amount is $5,000' });
-        }
 
         const db = getDatabase();
         const senderId = req.user.userId;
@@ -428,12 +414,9 @@ router.get('/search-users', authenticateToken, async (req, res) => {
 });
 
 // ===== POST /api/wallet/settings/currency — Change base currency =====
-router.post('/settings/currency', authenticateToken, async (req, res) => {
+router.post('/settings/currency', validate(changeCurrencySchema), authenticateToken, async (req, res) => {
     try {
         const { newCurrency } = req.body;
-        if (!newCurrency || newCurrency.length !== 3) {
-            return res.status(400).json({ error: 'Valid 3-letter currency code required' });
-        }
         
         const targetCurrency = newCurrency.toUpperCase();
         const db = getDatabase();
