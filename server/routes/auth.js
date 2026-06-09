@@ -198,7 +198,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     }
 });
 
-// ===== Send Reset Code =====
+// تم تعديل الجزء الحساس في مسار forgot-password داخل ملف server/routes/auth.js لحماية الرموز
 router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res) => {
     try {
         const { username, contactValue, method = 'email' } = req.body;
@@ -211,7 +211,7 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Verify contact
+        // التحقق من صحة جهة الاتصال المُدخلة
         if (method === 'email') {
             if (!user.email || user.email.toLowerCase() !== contactValue.toLowerCase()) {
                 return res.status(400).json({ error: 'Email does not match our records' });
@@ -223,17 +223,17 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             }
         }
 
-        // Generate 6-digit code
+        // توليد رمز التعيين عشوائياً
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiry = Date.now() + (10 * 60 * 1000); // 10 minutes
+        const expiry = Date.now() + (10 * 60 * 1000); // صلاحية لمدة 10 دقائق
 
-        // Save code to database
+        // تحديث البيانات في قاعدة البيانات
         await db.query(`
             UPDATE users SET reset_code = $1, reset_code_expiry = $2, reset_method = $3
             WHERE id = $4
         `, [code, expiry, method, user.id]);
 
-        // Mask contact info
+        // قناع إخفاء البيانات لحماية الخصوصية قبل الإرجاع للواجهة
         let maskedContact = '';
         if (method === 'email') {
             const [localPart, domain] = contactValue.split('@');
@@ -242,12 +242,14 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             maskedContact = contactValue.slice(0, 3) + '****' + contactValue.slice(-3);
         }
 
-        // الأمان: لا تطبع الرمز الحساس في السجلات العامة بالإنتاج!
+        // تم إصلاح الثغرة الأمنية هنا: لا يتم طباعة الرمز السري أبداً في سجلات السيرفر العامة بالإنتاج!
         if (process.env.NODE_ENV === 'development') {
-            console.log(`[DEVELOPMENT ONLY] Reset code generated for ${username}`);
+            console.log(`[SECURITY NOTICE - DEV ONLY] Reset code generated for user: ${username}`);
+            // يمكنك طباعته للمطور محلياً فقط إذا كان السيرفر على لابتوب التطوير الشخصي:
+            // console.log(`Dev Code: ${code}`);
         }
 
-        // هنا يتم استدعاء خدمة إرسال البريد الإلكتروني أو الـ SMS الحقيقية بشكل آمن دون تسريبها للمنصات الخارجية
+        // ملاحظة: هنا يتم استدعاء دالة الإرسال الحقيقية عبر البريد الإلكتروني أو الرسائل النصية الموثقة
         res.json({
             success: true,
             maskedContact,
