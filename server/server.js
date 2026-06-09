@@ -244,13 +244,20 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-    console.error('Error:', err.message);
-    if (process.env.NODE_ENV === 'development') {
+    // وضع قيمة افتراضية صارمة: البيئة هي الإنتاج ما لم يتم تحديد التطوير صراحة
+    const env = process.env.NODE_ENV || 'production';
+    const isDev = env === 'development';
+
+    // طباعة الخطأ في سجلات الخادم دائماً
+    console.error(`[${new Date().toISOString()}] Error:`, err.message);
+    
+    if (isDev) {
         console.error(err.stack);
     }
 
+    // إخفاء التفاصيل الحساسة للمستخدم النهائي إلا في بيئة التطوير
     res.status(err.status || 500).json({
-        error: process.env.NODE_ENV === 'development'
+        error: isDev
             ? err.message
             : 'Internal server error'
     });
@@ -280,7 +287,10 @@ async function startServer() {
             if (err.code === 'EADDRINUSE') {
                 console.error(`Port ${PORT} is already in use. Retrying in 2 seconds...`);
                 setTimeout(() => {
-                    server.close();
+                    // إغلاق الخادم فقط إذا كان يعمل بالفعل لتجنب خطأ ERR_SERVER_NOT_RUNNING
+                    if (server.listening) {
+                        server.close();
+                    }
                     server.listen(PORT);
                 }, 2000);
             } else {
