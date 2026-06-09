@@ -170,19 +170,19 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// حماية الذاكرة: تحديد حجم معقول لطلبات الـ JSON لمنع هجمات حجب الخدمة DoS
-// We use the 'verify' function to preserve the raw request body as a Buffer. 
-// This is strictly required by Stripe to verify Webhook signatures!
+// تحديد حد آمن (2 ميجابايت) للطلبات العامة والبيانات النصية القياسية لمنع هجمات DoS
+// ملاحظة هامة جداً: تم الإبقاء على دالة 'verify' لأنها ضرورية جداً وتُستخدم من قبل Stripe للتحقق من التوقيعات (Webhooks).
 app.use(express.json({ 
-    limit: '2mb', // الحجم الافتراضي الآمن للنصوص والبيانات العادية
+    limit: '2mb',
     verify: (req, res, buf) => {
         req.rawBody = buf;
     }
 })); 
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
-// في حال وجود مسار مخصص لرفع الفيديوهات أو الصور الكبيرة بصيغة base64، يتم استثناؤه بشكل منفرد مثل:
-// app.use('/api/recipes/upload-heavy', express.json({ limit: '50mb' }));
+// إذا كان لديك واجهة معينة مخصصة لرفع صور الطهاة أو فيديوهات الوصفات بصيغة base64 ثقيلة،
+// يمكنك تخصيص مسارها حصرياً بحجم أكبر هكذا (قبل تعريف الروافد العامة):
+// app.use('/api/recipes/upload-heavy-assets', express.json({ limit: '50mb' }));
 
 // Auth rate limiter (stricter)
 const authLimiter = rateLimit({
