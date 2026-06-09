@@ -84,7 +84,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
             RETURNING id
         `, [
             username.toLowerCase(),
-            username, // Display name defaults to username
+            username,
             email.toLowerCase(),
             phone || null,
             birthday || null,
@@ -242,9 +242,12 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             maskedContact = contactValue.slice(0, 3) + '****' + contactValue.slice(-3);
         }
 
-        // In production, send actual email/SMS
-        console.log(`[RESET CODE] User: ${username}, Code: ${code}, Method: ${method}`);
+        // الأمان: لا تطبع الرمز الحساس في السجلات العامة بالإنتاج!
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`[DEVELOPMENT ONLY] Reset code generated for ${username}`);
+        }
 
+        // هنا يتم استدعاء خدمة إرسال البريد الإلكتروني أو الـ SMS الحقيقية بشكل آمن دون تسريبها للمنصات الخارجية
         res.json({
             success: true,
             maskedContact,

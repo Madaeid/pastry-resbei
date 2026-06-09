@@ -174,12 +174,15 @@ app.use(cors({
 // We use the 'verify' function to preserve the raw request body as a Buffer. 
 // This is strictly required by Stripe to verify Webhook signatures!
 app.use(express.json({ 
-    limit: '2mb',
+    limit: '2mb', // الحجم الافتراضي الآمن للنصوص والبيانات العادية
     verify: (req, res, buf) => {
         req.rawBody = buf;
     }
 })); 
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+
+// في حال وجود مسار مخصص لرفع الفيديوهات أو الصور الكبيرة بصيغة base64، يتم استثناؤه بشكل منفرد مثل:
+// app.use('/api/recipes/upload-heavy', express.json({ limit: '50mb' }));
 
 // Auth rate limiter (stricter)
 const authLimiter = rateLimit({
