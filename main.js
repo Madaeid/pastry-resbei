@@ -580,6 +580,11 @@ function setupEventListeners() {
         tab.addEventListener('click', () => {
             const targetTab = tab.dataset.tab;
 
+            // Update URL hash without causing page jump
+            if (window.history.replaceState) {
+                window.history.replaceState(null, null, `#${targetTab}`);
+            }
+
             // Update active tab
             tabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
