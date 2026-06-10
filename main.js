@@ -409,7 +409,6 @@ async function initApp() {
 function initKitchenRotator() {
     const kitchenImg = document.getElementById('kitchenRotator');
     const heroWrapper = document.getElementById('heroImageWrapper');
-    const refreshBtn = document.getElementById('refreshHeroBtn');
     
     if (!kitchenImg) return;
 
@@ -443,15 +442,6 @@ function initKitchenRotator() {
     };
 
     startRotation();
-
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent zooming
-            clearInterval(rotationInterval);
-            rotateImage();
-            startRotation();
-        });
-    }
 
     if (heroWrapper) {
         heroWrapper.addEventListener('click', () => {
