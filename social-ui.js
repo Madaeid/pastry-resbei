@@ -118,7 +118,7 @@ export function createPostCard(post) {
 
     // Image logic for post
     let photoHtml = '';
-    if (post.photo) {
+    if (post.photo && !post.sharedFrom) {
         photoHtml = `
             <div class="post-media" style="margin-top: 15px; border-radius: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <img src="${post.photo}" alt="Post Photo" style="max-width: 100%; border-radius: 20px; margin: auto; display: block; max-height: 500px; object-fit: cover;">
@@ -128,7 +128,7 @@ export function createPostCard(post) {
 
     // Video logic
     let videoHtml = '';
-    if (post.video) {
+    if (post.video && !post.sharedFrom) {
         videoHtml = `
             <div class="post-media" style="margin-top: 15px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1);">
                 <video src="${post.video}" controls style="width: 100%; display: block; max-height: 500px; background: #000;"></video>
@@ -185,7 +185,7 @@ export function createPostCard(post) {
                     <div class="author-name-row">
                         <span class="author-display-name">${authorName}</span>
                         ${isPremium ? '<span class="premium-star" title="Premium Chef">💎</span>' : ''}
-                        ${post.sharedFrom ? '<span style="font-size: 0.75rem; color: var(--accent-pink); margin-left: 5px; background: rgba(255,107,138,0.1); padding: 2px 8px; border-radius: 10px; font-weight: 600;">RESHARED</span>' : ''}
+                        ${post.sharedFrom ? `<span style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 6px; font-weight: normal;">shared <strong>${post.sharedFrom.author?.name || 'Chef'}</strong>'s post</span>` : ''}
                     </div>
                     <span class="post-time">${timeAgo}</span>
                 </div>
