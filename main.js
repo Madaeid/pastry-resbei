@@ -408,6 +408,9 @@ async function initApp() {
  */
 function initKitchenRotator() {
     const kitchenImg = document.getElementById('kitchenRotator');
+    const heroWrapper = document.getElementById('heroImageWrapper');
+    const refreshBtn = document.getElementById('refreshHeroBtn');
+    
     if (!kitchenImg) return;
 
     // Array of chef, food, and dessert photos
@@ -418,6 +421,7 @@ function initKitchenRotator() {
         'public/master-chef-header.png'
     ];
     let currentIndex = 0;
+    let rotationInterval;
 
     // Preload images to prevent flicker
     images.forEach(src => {
@@ -425,17 +429,35 @@ function initKitchenRotator() {
         img.src = src;
     });
 
-    setInterval(() => {
-        // Fade out
+    const rotateImage = () => {
         kitchenImg.style.opacity = '0';
-
         setTimeout(() => {
             currentIndex = (currentIndex + 1) % images.length;
             kitchenImg.src = images[currentIndex];
-            // Fade in
             kitchenImg.style.opacity = '1';
-        }, 500); // Wait for fade out to complete
-    }, 3500); // Change image every 3.5 seconds
+        }, 500);
+    };
+
+    const startRotation = () => {
+        rotationInterval = setInterval(rotateImage, 3500);
+    };
+
+    startRotation();
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // prevent zooming
+            clearInterval(rotationInterval);
+            rotateImage();
+            startRotation();
+        });
+    }
+
+    if (heroWrapper) {
+        heroWrapper.addEventListener('click', () => {
+            heroWrapper.classList.toggle('zoomed');
+        });
+    }
 }
 
 /**

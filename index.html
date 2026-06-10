@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="sidebar.css">
     <link rel="stylesheet" href="recipe-generator.css">
     <link rel="stylesheet" href="servings-calculator.css">
+    <link rel="stylesheet" href="hero.css">
 
 
 
@@ -205,21 +206,31 @@
 
     <!-- Home Tab Content -->
     <div id="home" class="tab-content active">
-        <!-- Home Logo (Moved from Header) -->
-        <div class="home-brand-logo-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px 0 45px 0; margin-bottom: 15px; position: relative; z-index: 10;">
-            <div style="position: relative; display: flex; justify-content: center; align-items: center; margin-top: 2%; margin-bottom: 50px;">
-                <div class="premium-brand-logo" style="transform: scale(2.8); cursor: default; pointer-events: none;">
-                    <div class="logo-icon-wrapper">
-                        <span class="logo-icon">👨‍🍳</span>
-                        <div class="logo-glow"></div>
+        <!-- Hero Section (Redesigned Header) -->
+        <div class="hero-section">
+            <div class="hero-content">
+                <div class="hero-image-wrapper" id="heroImageWrapper">
+                    <!-- Photo Badge -->
+                    <div class="hero-photo-badge">
+                        <span class="hero-badge-icon">👨‍🍳</span>
+                        <span class="hero-badge-text" data-i18n="featuredChef">Featured Chef</span>
                     </div>
-                    <span class="logo-text">Chef<span>Book</span></span>
+
+                    <!-- Hero Image with Rotator and onerror fallback -->
+                    <img id="kitchenRotator" src="public/modern-chef-studio.png" alt="Featured Chef" class="hero-image" onerror="this.onerror=null; this.src='public/modern-chef-studio.png';">
+                    
+                    <div class="hero-image-overlay"></div>
+                    <div class="hero-image-decoration"></div>
+
+                    <!-- Title Overlay -->
+                    <h1 class="hero-title-overlay">Chef<span>Book</span></h1>
+
+                    <!-- Premium Badge (retaining existing logic) -->
+                    <span class="premium-badge" id="premiumBadge" style="display: none; position: absolute; right: 20px; top: 20px; z-index: 20; transform: scale(1.1);" data-i18n="premiumBadge">💎 PREMIUM</span>
+
+                    <!-- Refresh Button -->
+                    <button class="refresh-hero-btn" id="refreshHeroBtn" title="Change Image">🔄</button>
                 </div>
-                <span class="premium-badge" id="premiumBadge" style="display: none; position: absolute; right: -180px; top: -15px; z-index: 20; transform: scale(1.1);" data-i18n="premiumBadge">💎 PREMIUM</span>
-            </div>
-            
-            <div class="kitchen-photo-container" style="width: 100%; max-width: 1000px; height: clamp(200px, 40vw, 400px); border-radius: 24px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 10px;">
-                <img id="kitchenRotator" src="public/modern-chef-studio.png" alt="Chef, Food and Dessert Showcase" style="width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.5s ease, transform 0.5s ease;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
             </div>
         </div>
 
