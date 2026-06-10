@@ -1,7 +1,6 @@
-// Main Express Server for Chef Book - Secured & Optimized
+// Main Express Server for Chef Book
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -12,6 +11,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+// التحقق الإلزامي من وجود المفتاح السري قبل تشغيل السيرفر لضمان عدم الاختراق
+if (!process.env.JWT_SECRET) {
+    console.error('❌ FATAL ERROR: JWT_SECRET is not defined in environment variables.');
+    process.exit(1);
+}
+
 // Import routes
 import authRoutes from './routes/auth.js';
 import oauthRoutes from './routes/oauth.js';
@@ -20,16 +25,12 @@ import recipeRoutes from './routes/recipes.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import adminRoutes from './routes/admin.js';
 import dailyMenuRoutes from './routes/dailyMenu.js';
-import cvRoutes from './routes/cv.js'; 
-import storeRoutes from './routes/store.js'; 
-import walletRoutes from './routes/wallet.js'; 
-import booksRoutes from './routes/books.js'; 
-import scannerRoutes from './routes/scanner.js'; // AI Ingredient Scanner
-import nutritionRoutes from './routes/nutrition.js'; // AI Nutritional Analysis
+import cvRoutes from './routes/cv.js';
+import storeRoutes from './routes/store.js';
+import walletRoutes from './routes/wallet.js';
+import booksRoutes from './routes/books.js';
 
 import { getDatabase } from './database/db.js';
-import currencyUtils from './utils/currency.js';
-import { runMigrations as originalRunMigrations } from './database/migrate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -37,132 +38,84 @@ const PORT = process.env.PORT || 3001;
 // ===== Database Migrations =====
 async function runMigrations() {
     try {
-        // Run original migrations first
-        try {
-            await originalRunMigrations();
-        } catch (err) {
-            console.log('Original migration note:', err.message);
-        }
-
         const db = getDatabase();
         
-        // Migration: Convert is_public from BOOLEAN to TEXT and add allowed_viewers
-        try {
-            const colCheck = await db.query(`
-                SELECT data_type FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name = 'is_public'
-            `);
-            
-            if (colCheck.rows.length > 0 && colCheck.rows[0].data_type === 'boolean') {
-                console.log('🔄 Migrating is_public from BOOLEAN to TEXT...');
-                await db.query(`
-                    ALTER TABLE users 
-                    ALTER COLUMN is_public TYPE TEXT USING CASE WHEN is_public = true THEN 'all' WHEN is_public = false THEN 'private' ELSE 'all' END
-                `);
-                await db.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
-                console.log('✅ is_public column migrated to TEXT');
-            }
-            
-            const viewersCheck = await db.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name = 'allowed_viewers'
-            `);
-            
-            if (viewersCheck.rows.length === 0) {
-                await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
-                console.log('✅ allowed_viewers column added');
-            }
-
-            const resetMethodCheck = await db.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name = 'reset_method'
-            `);
-            if (resetMethodCheck.rows.length === 0) {
-                await db.query(`ALTER TABLE users ADD COLUMN reset_method TEXT`);
-                console.log('✅ reset_method column added');
-            }
-        } catch (migErr) {
-            console.log('Migration note:', migErr.message);
+        // التأكد أولاً من وجود جدول المستخدمين لتجنب توقف السيرفر عند أول تشغيل
+        const tableCheck = await db.query(`
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'users'
+            );
+        `);
+        
+        if (!tableCheck.rows[0].exists) {
+            console.log('ℹ️ Users table does not exist yet. Skipping migrations until tables are initialized.');
+            return;
         }
 
-        // Migration: Add sharing columns to recipes
-        try {
-            const fromIdCheck = await db.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'recipes' AND column_name = 'shared_from_id'
+        // Migration: Convert is_public from BOOLEAN to TEXT
+        const colCheck = await db.query(`
+            SELECT data_type FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'is_public'
+        `);
+        
+        if (colCheck.rows.length > 0 && colCheck.rows[0].data_type === 'boolean') {
+            console.log('🔄 Migrating is_public from BOOLEAN to TEXT...');
+            await db.query(`
+                ALTER TABLE users 
+                ALTER COLUMN is_public TYPE TEXT USING CASE WHEN is_public = true THEN 'all' WHEN is_public = false THEN 'private' ELSE 'all' END
             `);
+            await db.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
+            console.log('✅ is_public column migrated to TEXT');
+        }
+        
+        // Add allowed_viewers column
+        const viewersCheck = await db.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'allowed_viewers'
+        `);
+        if (viewersCheck.rows.length === 0) {
+            await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
+            console.log('✅ allowed_viewers column added');
+        }
+
+        // Add reset_method column
+        const resetMethodCheck = await db.query(`
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_name = 'users' AND column_name = 'reset_method'
+        `);
+        if (resetMethodCheck.rows.length === 0) {
+            await db.query(`ALTER TABLE users ADD COLUMN reset_method TEXT`);
+            console.log('✅ reset_method column added');
+        }
+
+        // Add sharing columns to recipes
+        const recipeTableCheck = await db.query(`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'recipes');`);
+        if (recipeTableCheck.rows[0].exists) {
+            const fromIdCheck = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'recipes' AND column_name = 'shared_from_id'`);
             if (fromIdCheck.rows.length === 0) {
                 await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL`);
-                console.log('✅ shared_from_id column added to recipes');
             }
-
-            const storeIdCheck = await db.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'recipes' AND column_name = 'shared_from_store_id'
-            `);
-            if (storeIdCheck.rows.length === 0) {
-                await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_store_id INTEGER REFERENCES store_recipes(id) ON DELETE SET NULL`);
-                console.log('✅ shared_from_store_id column added to recipes');
-            }
-
-            const notesCheck = await db.query(`
-                SELECT column_name FROM information_schema.columns 
-                WHERE table_name = 'recipes' AND column_name = 'shared_notes'
-            `);
-            if (notesCheck.rows.length === 0) {
-                await db.query(`ALTER TABLE recipes ADD COLUMN shared_notes TEXT`);
-                console.log('✅ shared_notes column added to recipes');
-            }
-            
-            await db.query(`
-                CREATE TABLE IF NOT EXISTS recipe_shares (
-                    id SERIAL PRIMARY KEY,
-                    recipe_id INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-                    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-        } catch (migErr) {
-            console.log('Migration note (sharing columns):', migErr.message);
         }
 
-        try {
-            const expiryTypeCheck = await db.query(`
-                SELECT data_type FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name = 'reset_code_expiry'
-            `);
-            if (expiryTypeCheck.rows.length > 0 && expiryTypeCheck.rows[0].data_type !== 'bigint') {
+        // Fix reset_code_expiry type
+        const expiryTypeCheck = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'reset_code_expiry'`);
+        if (expiryTypeCheck.rows.length > 0) {
+            const typeCheck = await db.query(`SELECT data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'reset_code_expiry'`);
+            if (typeCheck.rows[0].data_type !== 'bigint') {
                 await db.query(`ALTER TABLE users ALTER COLUMN reset_code_expiry TYPE BIGINT USING EXTRACT(EPOCH FROM reset_code_expiry)::BIGINT * 1000`);
                 console.log('✅ reset_code_expiry column converted to BIGINT');
             }
-        } catch (migErr) {
-            console.log('Migration note (reset_code_expiry):', migErr.message);
         }
 
-        try {
-            const passNullCheck = await db.query(`
-                SELECT is_nullable FROM information_schema.columns 
-                WHERE table_name = 'users' AND column_name = 'password_hash'
-            `);
-            if (passNullCheck.rows.length > 0 && passNullCheck.rows[0].is_nullable === 'NO') {
-                await db.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
-                console.log('✅ password_hash made nullable for OAuth users');
-            }
-        } catch (migErr) {
-            console.log('Migration note (password_hash):', migErr.message);
-        }
     } catch (err) {
         console.error('Migration error:', err.message);
-        throw err; // تمرير الخطأ لمنع تشغيل الخادم في حال فشل قاعدة البيانات الحرجة
     }
 }
 
+runMigrations();
+
 // ===== Middleware =====
-
-// Security Headers
-app.use(helmet());
-
-// CORS Configuration
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials: true,
@@ -170,54 +123,26 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// تحديد حد آمن (2 ميجابايت) للطلبات العامة والبيانات النصية القياسية لمنع هجمات DoS
-// ملاحظة هامة جداً: تم الإبقاء على دالة 'verify' لأنها ضرورية جداً وتُستخدم من قبل Stripe للتحقق من التوقيعات (Webhooks).
-app.use(express.json({ 
-    limit: '2mb',
-    verify: (req, res, buf) => {
-        req.rawBody = buf;
-    }
-})); 
-app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.json({ limit: '50mb' })); // تقليل الحد لتجنب هجمات الحرمان من الخدمة DOS
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// إذا كان لديك واجهة معينة مخصصة لرفع صور الطهاة أو فيديوهات الوصفات بصيغة base64 ثقيلة،
-// يمكنك تخصيص مسارها حصرياً بحجم أكبر هكذا (قبل تعريف الروافد العامة):
-// app.use('/api/recipes/upload-heavy-assets', express.json({ limit: '50mb' }));
-
-// Auth rate limiter (stricter)
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, 
-    message: { error: 'Too many authentication attempts, please try again later.' },
-    standardHeaders: true,
-    legacyHeaders: false,
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    message: { error: 'Too many authentication attempts, please try again later.' }
 });
-
-// Financial rate limiter (stricter for wallet and payments)
-const financialLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50, // Limit each IP to 50 requests per windowMs for financial operations
-    message: { error: 'Too many financial operations, please try again later.' }
-});
-
-// Apply stricter limiters first so they take precedence over the general limiter
 app.use('/api/auth', authLimiter);
-app.use('/api/wallet', financialLimiter);
-app.use('/api/subscriptions', financialLimiter);
 
-// Rate limiting العام لحماية الموارد
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, 
-    max: 1000, 
-    message: { error: 'Too many requests, please try again later.' },
-    standardHeaders: true,
-    legacyHeaders: false,
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
 
 // ===== Routes =====
 app.use('/api/auth', authRoutes);
-app.use('/api/auth', oauthRoutes); 
+app.use('/api/auth', oauthRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/recipes', recipeRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -227,85 +152,31 @@ app.use('/api/cv', cvRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/books', booksRoutes);
-app.use('/api/scanner', scannerRoutes); // AI Ingredient Scanner
-app.use('/api/nutrition', nutritionRoutes); // AI Nutritional Analysis
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        message: 'Chef Book API is running',
-        timestamp: new Date().toISOString()
-    });
+    res.json({ status: 'ok', message: 'Chef Book API is running', timestamp: new Date().toISOString() });
 });
 
-// ===== Error Handling =====
-
-// 404 handler
-app.use((req, res, next) => {
+app.use((req, res) => {
     res.status(404).json({ error: 'Endpoint not found' });
 });
 
 app.use((err, req, res, next) => {
-    // وضع قيمة افتراضية صارمة: البيئة هي الإنتاج ما لم يتم تحديد التطوير صراحة
-    const env = process.env.NODE_ENV || 'production';
-    const isDev = env === 'development';
-
-    // طباعة الخطأ في سجلات الخادم دائماً
-    console.error(`[${new Date().toISOString()}] Error:`, err.message);
-    
-    if (isDev) {
-        console.error(err.stack);
-    }
-
-    // إخفاء التفاصيل الحساسة للمستخدم النهائي إلا في بيئة التطوير
+    console.error('Error:', err.message);
     res.status(err.status || 500).json({
-        error: isDev
-            ? err.message
-            : 'Internal server error'
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
 });
 
-// ===== تشغيل الترحيل أولاً ثم بدء الخادم لضمان سلامة البيانات =====
-async function startServer() {
-    try {
-        await runMigrations(); // الانتظار حتى تكتمل التحديثات الهيكلية لقاعدة البيانات
-        
-        // Initialize exchange rate fetching scheduler
-        currencyUtils.initCurrencyScheduler();
-        
-        const server = app.listen(PORT, () => {
-            console.log(`
-╔════════════════════════════════════════════════════════════╗
-║          👨‍🍳 Chef Book API Server 👨‍🍳                    ║
-╠════════════════════════════════════════════════════════════╣
-║  Server running on: http://localhost:${PORT}                  ║
-║  Environment: ${process.env.NODE_ENV || 'development'}                           ║
-║  Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}           ║
-╚════════════════════════════════════════════════════════════╝
-            `);
-        });
+const server = app.listen(PORT, () => {
+    console.log(`👨🍳 Server running on: http://localhost:${PORT}`);
+});
 
-        server.on('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                console.error(`Port ${PORT} is already in use. Retrying in 2 seconds...`);
-                setTimeout(() => {
-                    // إغلاق الخادم فقط إذا كان يعمل بالفعل لتجنب خطأ ERR_SERVER_NOT_RUNNING
-                    if (server.listening) {
-                        server.close();
-                    }
-                    server.listen(PORT);
-                }, 2000);
-            } else {
-                console.error('Server error:', err);
-            }
-        });
-    } catch (error) {
-        console.error('Failed to start server due to migration error:', error.message);
-        process.exit(1);
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Exiting...`);
+        process.exit(1); // الخروج الآمن لمنع كراش اللوب والسماح لـ PM2 أو Docker بإعادة التشغيل
     }
-}
-
-startServer();
+});
 
 export default app;
