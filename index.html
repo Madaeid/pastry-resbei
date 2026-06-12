@@ -210,15 +210,10 @@
         <div class="hero-section">
             <div class="hero-content">
                 <div class="hero-image-wrapper" id="heroImageWrapper">
-                    <!-- Photo Badge -->
-                    <div class="hero-photo-badge">
-                        <span class="hero-badge-icon">👨‍🍳</span>
-                        <span class="hero-badge-text" data-i18n="featuredChef">Featured Chef</span>
-                    </div>
-
                     <!-- Hero Image with Rotator and onerror fallback -->
-                    <img id="kitchenRotator" src="public/modern-chef-studio.png" alt="Featured Chef" class="hero-image" onerror="this.onerror=null; this.src='public/modern-chef-studio.png';">
-                    
+                    <img id="kitchenRotator" src="public/modern-chef-studio.png" alt="Featured Chef" class="hero-image"
+                        onerror="this.onerror=null; this.src='public/modern-chef-studio.png';">
+
                     <div class="hero-image-overlay"></div>
                     <div class="hero-image-decoration"></div>
 
@@ -226,10 +221,9 @@
                     <h1 class="hero-title-overlay">Chef<span>Book</span></h1>
 
                     <!-- Premium Badge (retaining existing logic) -->
-                    <span class="premium-badge" id="premiumBadge" style="display: none; position: absolute; right: 20px; top: 20px; z-index: 20; transform: scale(1.1);" data-i18n="premiumBadge">💎 PREMIUM</span>
-
-                    <!-- Refresh Button -->
-                    <button class="refresh-hero-btn" id="refreshHeroBtn" title="Change Image">🔄</button>
+                    <span class="premium-badge" id="premiumBadge"
+                        style="display: none; position: absolute; right: 20px; top: 20px; z-index: 20; transform: scale(1.1);"
+                        data-i18n="premiumBadge">💎 PREMIUM</span>
                 </div>
             </div>
         </div>
@@ -277,6 +271,82 @@
             </div>
             <input type="file" id="qpPhotoInput" accept="image/*" hidden>
             <input type="file" id="qpVideoInput" accept="video/*" hidden>
+        </div>
+
+        <!-- Sweets Gallery -->
+        <div class="sweets-gallery" style="margin-bottom: 40px; text-align: center;">
+            <h3
+                style="font-family: 'Playfair Display', serif; font-size: 2rem; text-align: center; margin-bottom: 25px; letter-spacing: 1px;">
+                Delicious Sweets</h3>
+
+            <style>
+                @keyframes sweetZoom {
+                    0% {
+                        transform: scale(1);
+                    }
+
+                    50% {
+                        transform: scale(1.06);
+                    }
+
+                    100% {
+                        transform: scale(1);
+                    }
+                }
+
+                .sweet-photo-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 0;
+                    overflow: hidden;
+                    width: 100%;
+                    margin: 0 auto;
+                    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+                }
+
+                .sweet-photo {
+                    width: 100%;
+                    height: 400px;
+                    object-fit: cover;
+                    transition: opacity 0.8s ease-in-out, transform 0.3s ease;
+                    animation: sweetZoom 12s infinite ease-in-out;
+                    cursor: pointer;
+                }
+
+                .sweet-photo:hover {
+                    animation-play-state: paused;
+                }
+            </style>
+
+            <div class="sweet-photo-container">
+                <img id="sweetsImage" src="public/chocolate_cake.png" alt="Delicious Sweets" class="sweet-photo">
+            </div>
+
+            <script>
+                (function () {
+                    const sweetImages = [
+                        'public/chocolate_cake.png',
+                        'public/macarons.png',
+                        'public/fruit_tart.png',
+                        'public/cupcakes.png',
+                        'public/cheesecake.png'
+                    ];
+                    let currentSweetIndex = 0;
+                    const sweetsImgElement = document.getElementById('sweetsImage');
+
+                    if (sweetsImgElement) {
+                        setInterval(() => {
+                            sweetsImgElement.style.opacity = 0;
+                            setTimeout(() => {
+                                currentSweetIndex = (currentSweetIndex + 1) % sweetImages.length;
+                                sweetsImgElement.src = sweetImages[currentSweetIndex];
+                                sweetsImgElement.style.opacity = 1;
+                            }, 800); // Smooth transition
+                        }, 4000); // Change image every 4 seconds
+                    }
+                })();
+            </script>
         </div>
 
         <div id="homeGrid" class="recipes-grid communities-grid">
@@ -391,27 +461,32 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Advanced Filters -->
-            <div class="store-filters" style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(198,123,75,0.1);">
-                <span style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Filters:</span>
-                
-                <select id="storePriceFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 120px;">
+            <div class="store-filters"
+                style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(198,123,75,0.1);">
+                <span
+                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Filters:</span>
+
+                <select id="storePriceFilter" class="search-input"
+                    style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 120px;">
                     <option value="all">Any Price</option>
                     <option value="free">Free</option>
                     <option value="under5">Under $5</option>
                     <option value="under15">Under $15</option>
                     <option value="premium">Premium ($15+)</option>
                 </select>
-                
-                <select id="storeRatingFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 130px;">
+
+                <select id="storeRatingFilter" class="search-input"
+                    style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 130px;">
                     <option value="all">Any Rating</option>
                     <option value="4.5">4.5+ Stars ⭐️</option>
                     <option value="4">4.0+ Stars ⭐️</option>
                     <option value="3">3.0+ Stars ⭐️</option>
                 </select>
 
-                <select id="storeSortFilter" class="search-input" style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 140px; margin-left: auto;">
+                <select id="storeSortFilter" class="search-input"
+                    style="width: auto; padding: 6px 12px; font-size: 0.85rem; min-width: 140px; margin-left: auto;">
                     <option value="newest">Newest First</option>
                     <option value="price_low">Price: Low to High</option>
                     <option value="price_high">Price: High to Low</option>

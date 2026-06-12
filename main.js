@@ -415,10 +415,16 @@ function initKitchenRotator() {
 
     // Array of chef, food, and dessert photos
     const images = [
+        'public/featured_chef.jpg',
+        'public/artisan-pastry-chef.png',
+        'public/chef-hero.png',
+        'public/premium-chef-hero.png',
         'public/modern-chef-studio.png',
         'public/fruit-spread-header.png',
         'public/chef-fire-cooking.png',
-        'public/master-chef-header.png'
+        'public/master-chef-header.png',
+        'public/new-chef-hero.png',
+        'public/chef-group.png'
     ];
     let currentIndex = 0;
     let rotationInterval;
