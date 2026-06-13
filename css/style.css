@@ -39,7 +39,7 @@
     --border-glow: rgba(198, 123, 75, 0.2);
     --shadow-color: rgba(45, 31, 19, 0.08);
     --body-bg: linear-gradient(135deg, #FAF6F1 0%, #F3EDE4 50%, #FFF8F0 100%);
-    --input-bg: linear-gradient(145deg, #ffffff, #F8F2EB);
+    --input-bg: linear-gradient(145deg, #fff, #F8F2EB);
     --form-bg: linear-gradient(145deg, rgba(255, 253, 250, 0.98), rgba(248, 242, 235, 0.98));
     --modal-bg: rgba(255, 253, 250, 0.98);
     --header-bg: linear-gradient(145deg, rgba(255, 253, 250, 0.95), rgba(248, 242, 235, 0.98));
@@ -84,7 +84,7 @@
 }
 
 [data-theme="light"] .form-group select option {
-    background: #ffffff;
+    background: #fff;
     color: var(--text-primary);
 }
 
@@ -251,7 +251,7 @@
 
 /* Keep day button text WHITE on dark button backgrounds */
 [data-theme="light"] .day-btn .day-name {
-    color: #ffffff;
+    color: #fff;
 }
 
 [data-theme="light"] .day-btn .day-arrow {
@@ -416,7 +416,7 @@
 }
 
 body {
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: Outfit, Inter, sans-serif;
     background: var(--body-bg);
     min-height: 100vh;
     color: var(--text-primary);
@@ -502,7 +502,6 @@ body {
 }
 
 @keyframes floatParticle {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(0deg);
@@ -681,7 +680,6 @@ body {
 }
 
 @keyframes cupcakeWiggle {
-
     0%,
     100% {
         transform: rotate(-5deg) scale(1);
@@ -706,7 +704,6 @@ body {
 }
 
 @keyframes gradientShift {
-
     0%,
     100% {
         background-position: 0% center;
@@ -2456,7 +2453,6 @@ footer {
 }
 
 @keyframes crownBounce {
-
     0%,
     100% {
         transform: rotate(-5deg);
@@ -2480,7 +2476,6 @@ footer {
 }
 
 @keyframes goldShift {
-
     0%,
     100% {
         background-position: 0% center;
@@ -2930,7 +2925,7 @@ footer {
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     color: var(--text-primary);
-    margin: 0 0 8px 0;
+    margin: 0 0 8px;
 }
 
 .recipe-meta {
@@ -3053,7 +3048,7 @@ footer {
 }
 
 .recipe-preview h4 {
-    margin: 0 0 12px 0;
+    margin: 0 0 12px;
     font-size: 1.2rem;
     color: var(--text-primary);
     font-family: 'Playfair Display', serif;
@@ -3456,7 +3451,6 @@ footer {
 }
 
 @keyframes badgePulse {
-
     0%,
     100% {
         box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
@@ -3561,7 +3555,6 @@ footer {
 }
 
 @keyframes pricePulse {
-
     0%,
     100% {
         opacity: 0.7;
@@ -3595,7 +3588,7 @@ footer {
 .pricing-features {
     list-style: none;
     padding: 0;
-    margin: 0 0 30px 0;
+    margin: 0 0 30px;
     flex: 1;
 }
 
@@ -4555,7 +4548,7 @@ footer {
     font-family: 'Playfair Display', serif;
     font-size: 2.4rem;
     font-weight: 700;
-    margin: 0 0 20px 0;
+    margin: 0 0 20px;
     letter-spacing: -0.5px;
 }
 
@@ -4570,7 +4563,7 @@ footer {
     display: flex;
     align-items: center;
     gap: 15px;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     font-size: 1.1rem;
     color: #e2e8f0;
 }
@@ -5358,7 +5351,6 @@ footer {
 }
 
 @keyframes pulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -5375,7 +5367,7 @@ footer {
     font-weight: 600;
     color: var(--text-primary);
     text-align: left;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
 }
 
 .day-btn .day-arrow {
@@ -5396,12 +5388,12 @@ footer {
     gap: 10px;
     padding: 14px 35px;
     background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #ffffff;
+    color: #fff;
     border: none;
     border-radius: 30px;
     font-size: 1rem;
     font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     cursor: pointer;
     box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
     transition: all 0.3s ease;
@@ -5441,7 +5433,7 @@ footer {
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     transition: all 0.3s ease;
     white-space: nowrap;
 }
@@ -5454,7 +5446,7 @@ footer {
 
 .shopping-tab.active {
     background: linear-gradient(135deg, #22c55e, #16a34a);
-    color: #ffffff;
+    color: #fff;
     border-color: transparent;
     box-shadow: 0 3px 12px rgba(34, 197, 94, 0.3);
 }
@@ -5500,7 +5492,7 @@ footer {
     font-weight: 600;
     font-size: 0.95rem;
     color: var(--text-primary);
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
 }
 
 .shopping-category-count {
@@ -5871,7 +5863,6 @@ footer {
 }
 
 @keyframes bounce {
-
     0%,
     100% {
         transform: translateY(0);
@@ -6220,7 +6211,7 @@ footer {
 }
 
 .select-recipe-info h4 {
-    margin: 0 0 5px 0;
+    margin: 0 0 5px;
     color: var(--text-primary);
     font-size: 1rem;
 }
@@ -6541,7 +6532,6 @@ footer {
 }
 
 @keyframes doorWiggle {
-
     0%,
     100% {
         transform: rotate(0deg);
@@ -8208,7 +8198,6 @@ body:has(.calculator-container) .btn-logout:hover {
 }
 
 @keyframes globeSpin {
-
     0%,
     100% {
         transform: rotate(-5deg);
@@ -8577,7 +8566,7 @@ body.rtl .user-table td {
 
 /* RTL - Font loading for Arabic */
 body.rtl {
-    font-family: 'Poppins', 'Cairo', 'Tajawal', 'Noto Sans Arabic', sans-serif;
+    font-family: Poppins, Cairo, Tajawal, 'Noto Sans Arabic', sans-serif;
 }
 
 /* Mobile RTL adjustments */
@@ -8694,8 +8683,8 @@ body.rtl {
 
 /* Apple Button */
 .apple-btn {
-    background: linear-gradient(145deg, #000000, #1a1a1a);
-    color: #ffffff;
+    background: linear-gradient(145deg, #000, #1a1a1a);
+    color: #fff;
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
@@ -8712,7 +8701,7 @@ body.rtl {
 }
 
 .apple-btn .social-icon {
-    color: #ffffff;
+    color: #fff;
 }
 
 /* Social buttons loading state */
@@ -8725,7 +8714,7 @@ body.rtl {
     content: '';
     width: 20px;
     height: 20px;
-    border: 2px solid currentColor;
+    border: 2px solid currentcolor;
     border-top-color: transparent;
     border-radius: 50%;
     animation: socialSpinner 0.8s linear infinite;
@@ -8825,12 +8814,12 @@ body.rtl .social-btn.loading::after {
 .pricing-card .pricing-features li strong,
 .pricing-card .period,
 .pricing-card .currency {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 .current-plan-section .plan-info h3,
 .current-plan-section .plan-info p {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 /* Ensure original price shows as white/light but crossed out */
@@ -8842,7 +8831,7 @@ body.rtl .social-btn.loading::after {
 .comparison-table th,
 .comparison-table td,
 .comparison-table .feature-name {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 .comparison-table th {
@@ -8852,7 +8841,7 @@ body.rtl .social-btn.loading::after {
 
 /* Ensure row hover effect doesn't darken text */
 .comparison-table tr:hover td {
-    color: #ffffff !important;
+    color: #fff !important;
     background-color: rgba(255, 255, 255, 0.05);
 }
 
@@ -8867,13 +8856,13 @@ body.rtl .social-btn.loading::after {
 .faq-question,
 .faq-question span,
 .faq-toggle {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 /* Ensure FAQ Answer text is also white since the whole container is dark */
 .faq-answer,
 .faq-answer p {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 /* Trust Badges - Text color adapts to theme (Dark in light mode, White in dark mode) */
@@ -8886,14 +8875,14 @@ body.rtl .social-btn.loading::after {
 /* This card always has a dark background, so text must always be white */
 .day-recipe-card .recipe-card-title,
 .day-recipe-card .recipe-card-preview {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 /* ===== Fix Notification Text ===== */
 .notification,
 .notification span,
 .notification-message {
-    color: #ffffff !important;
+    color: #fff !important;
 }
 
 /* Add Recipe Modal Enhancements */
@@ -8907,7 +8896,7 @@ body.rtl .social-btn.loading::after {
 }
 
 .recipe-form-card .modal-body {
-    padding: 0 20px 20px 20px;
+    padding: 0 20px 20px;
 }
 
 .recipe-form-card .modal-close {
@@ -9179,7 +9168,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] #quickPostInput:focus {
-    background: #ffffff;
+    background: #fff;
     border-color: var(--accent-pink);
     box-shadow: 0 0 0 3px rgba(198, 123, 75, 0.1);
 }
@@ -9575,7 +9564,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .store-card {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
@@ -9928,7 +9917,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .quick-action-card {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
@@ -10036,7 +10025,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .stat-card {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
@@ -10046,7 +10035,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .admin-section {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
 }
@@ -10065,7 +10054,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .users-table tr td {
-    background: #ffffff;
+    background: #fff;
 }
 
 [data-theme="light"] .quick-action-card {
@@ -10193,7 +10182,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .book-card {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
@@ -10308,7 +10297,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .book-meta-editor {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
@@ -10418,7 +10407,7 @@ body.rtl .social-btn.loading::after {
 }
 
 [data-theme="light"] .book-recipes-section {
-    background: #ffffff;
+    background: #fff;
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
@@ -10955,10 +10944,7 @@ body.rtl .social-btn.loading::after {
 .slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
@@ -10969,7 +10955,7 @@ body.rtl .social-btn.loading::after {
     border-color: rgba(0, 0, 0, 0.1);
 }
 
-.slider:before {
+.slider::before {
     position: absolute;
     content: "";
     height: 20px;
@@ -10986,7 +10972,7 @@ input:checked+.slider {
     border-color: transparent;
 }
 
-input:checked+.slider:before {
+input:checked+.slider::before {
     transform: translateX(24px);
 }
 
@@ -10994,7 +10980,7 @@ input:checked+.slider:before {
     border-radius: 28px;
 }
 
-.slider.round:before {
+.slider.round::before {
     border-radius: 50%;
 }
 
@@ -11163,7 +11149,6 @@ input:checked+.slider:before {
 }
 
 @keyframes scannerBtnShine {
-
     0%,
     100% {
         transform: translateX(-100%) rotate(45deg);
@@ -11243,7 +11228,6 @@ input:checked+.slider:before {
 }
 
 @keyframes scannerFloat {
-
     0%,
     100% {
         transform: translateY(0);
@@ -11263,7 +11247,6 @@ input:checked+.slider:before {
 }
 
 @keyframes scannerRingPulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -11338,7 +11321,6 @@ input:checked+.slider:before {
 }
 
 @keyframes gateGlow {
-
     0%,
     100% {
         transform: scale(1);
@@ -11542,7 +11524,7 @@ input:checked+.slider:before {
     left: 10px;
     border-top-width: 3px;
     border-left-width: 3px;
-    border-radius: 4px 0 0 0;
+    border-radius: 4px 0 0;
 }
 
 .scan-corners .tr {
@@ -11566,7 +11548,7 @@ input:checked+.slider:before {
     right: 10px;
     border-bottom-width: 3px;
     border-right-width: 3px;
-    border-radius: 0 0 4px 0;
+    border-radius: 0 0 4px;
 }
 
 /* Placeholder */
@@ -11709,7 +11691,6 @@ input:checked+.slider:before {
 }
 
 @keyframes processingBounce {
-
     0%,
     100% {
         transform: scale(1);
@@ -11756,7 +11737,6 @@ input:checked+.slider:before {
 }
 
 @keyframes dotBounce {
-
     0%,
     80%,
     100% {

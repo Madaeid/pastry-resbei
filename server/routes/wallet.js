@@ -79,6 +79,7 @@ router.post('/deposit', validate(depositSchema), authenticateToken, async (req, 
     try {
         const { amount, cardLast4, cardBrand } = req.body;
         const depositAmount = parseFloat(amount);
+        const referenceId = `DEP-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 
         const db = getDatabase();
         const client = await db.connect();

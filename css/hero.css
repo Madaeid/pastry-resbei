@@ -42,7 +42,7 @@
     line-height: 1;
     margin-bottom: 0;
     letter-spacing: -2px;
-    background: linear-gradient(135deg, #ffffff 0%, #D4A55A 50%, #C67B4B 100%);
+    background: linear-gradient(135deg, #fff 0%, #D4A55A 50%, #C67B4B 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -144,7 +144,7 @@
 .hero-badge-text {
     font-size: 1rem;
     font-weight: 800;
-    color: #ffffff;
+    color: #fff;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -208,7 +208,7 @@
     font-size: clamp(3.5rem, 8vw, 6.5rem);
     font-weight: 900;
     font-family: 'Playfair Display', serif;
-    color: #ffffff;
+    color: #fff;
     filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6));
     margin: 0;
     pointer-events: none;
@@ -277,7 +277,6 @@
 }
 
 @keyframes heroGradientShift {
-
     0%,
     100% {
         background-position: 0% center;
@@ -383,7 +382,7 @@
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
 }
 
 .view-all-btn:hover {
@@ -469,7 +468,7 @@
 }
 
 .trending-overlay h3 {
-    margin: 0 0 5px 0;
+    margin: 0 0 5px;
     font-size: 1.4rem;
     font-weight: 600;
     color: white;
@@ -477,7 +476,7 @@
 }
 
 .trending-overlay p {
-    margin: 0 0 15px 0;
+    margin: 0 0 15px;
     color: var(--accent-orange);
     font-size: 0.9rem;
     opacity: 0.9;
@@ -573,7 +572,6 @@
 }
 
 @keyframes emptyBounce {
-
     0%,
     100% {
         transform: translateY(0);

@@ -67,9 +67,9 @@
 /* User Name */
 .user-name {
     font-weight: 600;
-    color: var(--text-primary, #ffffff);
+    color: var(--text-primary, #fff);
     font-size: 1rem;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     text-transform: capitalize;
 }
 
@@ -95,7 +95,7 @@
     justify-content: center;
     gap: 8px;
     transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     white-space: nowrap;
 }
 
@@ -103,7 +103,7 @@
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
-    color: #ffffff;
+    color: #fff;
 }
 
 /* Active state */
@@ -222,7 +222,7 @@
     border-radius: 12px;
     padding: 12px 15px;
     color: var(--text-primary);
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     transition: all 0.3s ease;
 }
 
@@ -359,7 +359,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
 }
 
 .btn-add-entry:hover {
@@ -590,7 +590,7 @@
     font-size: 2rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 15px 0;
+    margin: 0 0 15px;
 }
 
 .cv-contact-grid {
@@ -630,7 +630,7 @@
     font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 15px 0;
+    margin: 0 0 15px;
 }
 
 .cv-summary-text {
@@ -737,7 +737,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     box-shadow: 0 8px 20px rgba(102, 126, 234, 0.35);
     transition: all 0.3s ease;
 }
@@ -778,7 +778,7 @@
 
 /* PDF Print Mode - forces clean white styling for the PDF output */
 .pdf-printing {
-    background: #ffffff !important;
+    background: #fff !important;
     color: #2D1F13 !important;
     border: none !important;
     box-shadow: none !important;
@@ -793,7 +793,7 @@
 
 .pdf-printing .cv-display-photo {
     box-shadow: 0 0 0 3px #667eea !important;
-    border-color: #ffffff !important;
+    border-color: #fff !important;
 }
 
 .pdf-printing .cv-contact-item {
@@ -885,7 +885,7 @@
     flex-shrink: 0;
     width: 140px;
     height: 140px;
-    background: #ffffff;
+    background: #fff;
     border-radius: 16px;
     padding: 10px;
     display: flex;
@@ -951,14 +951,14 @@
     color: var(--accent-pink, #C67B4B);
     font-size: 0.82rem;
     font-weight: 600;
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .btn-qr-action:hover {
     background: var(--accent-pink, #C67B4B);
-    color: #ffffff;
+    color: #fff;
     border-color: transparent;
     transform: translateY(-1px);
     box-shadow: 0 4px 15px rgba(198, 123, 75, 0.3);
@@ -966,7 +966,7 @@
 
 .btn-qr-action.primary {
     background: var(--primary-gradient, linear-gradient(135deg, #C67B4B, #D4A55A));
-    color: #ffffff;
+    color: #fff;
     border-color: transparent;
     box-shadow: 0 4px 15px rgba(198, 123, 75, 0.25);
 }
@@ -996,7 +996,7 @@
 }
 
 .qr-modal-card {
-    background: #ffffff;
+    background: #fff;
     border-radius: 28px;
     padding: 40px;
     text-align: center;
@@ -1045,7 +1045,7 @@
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+    color: #fff;
     font-size: 1.5rem;
     cursor: pointer;
     display: flex;
