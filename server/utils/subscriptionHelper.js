@@ -60,7 +60,7 @@ export async function fulfillSubscription(userId, planId, amount, paymentMethod 
             planId, 
             startDate.toISOString(), 
             endDate.toISOString(), 
-            (planId !== 'lifetime' && paymentMethod === 'stripe'), // Auto-renew only for Stripe subscriptions
+            (planId !== 'lifetime' && paymentMethod === 'stripe') ? 1 : 0, // Auto-renew only for Stripe subscriptions
             stripeSessionId, 
             stripeCustomerId, 
             userId
@@ -74,7 +74,7 @@ export async function fulfillSubscription(userId, planId, amount, paymentMethod 
             planId, 
             startDate.toISOString(), 
             endDate.toISOString(), 
-            (planId !== 'lifetime' && paymentMethod === 'stripe'),
+            (planId !== 'lifetime' && paymentMethod === 'stripe') ? 1 : 0,
             stripeSessionId,
             stripeCustomerId
         ]);

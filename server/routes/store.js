@@ -6,6 +6,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import currencyUtils from '../utils/currency.js';
 import { validate } from '../middleware/validate.js';
 import { storeRecipeSchema, updateStoreRecipeSchema } from '../utils/validators.js';
+import { createRecipeCheckoutSession, verifyCheckoutSession } from '../config/stripe.js';
 
 const router = express.Router();
 
@@ -437,9 +438,6 @@ router.get('/my/purchases', authenticateToken, async (req, res) => {
     }
 });
 
-// ===== STRIPE INTEGRATION FOR RECIPES =====
-import { createRecipeCheckoutSession, verifyCheckoutSession } from '../config/stripe.js';
-
 // Create Stripe Checkout Session for a Recipe
 router.post('/create-checkout-session', authenticateToken, async (req, res) => {
     try {
@@ -540,26 +538,78 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
             });
         }
 
-        // Record purchase
-        const recipeResult = await db.query('SELECT price FROM store_recipes WHERE id = $1', [recipeId]);
-        const pricePaid = recipeResult.rows[0]?.price || 0;
+        // Record purchase and credit wallets
+        const recipeResult = await db.query('SELECT price, seller_id, name FROM store_recipes WHERE id = $1', [recipeId]);
+        const recipe = recipeResult.rows[0];
+        const pricePaid = parseFloat(recipe?.price || 0);
 
-        await db.query(`
-            INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid, stripe_session_id)
-            VALUES ($1, $2, $3, $4)
-        `, [req.user.userId, recipeId, pricePaid, sessionId]);
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
 
-        // Also add to transactions table for unified history
-        await db.query(`
-            INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
-            VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
-        `, [
-            req.user.userId,
-            `TXN-RECIPE-${Date.now()}`,
-            `Recipe #${recipeId}`,
-            pricePaid,
-            sessionId
-        ]);
+            await client.query(`
+                INSERT INTO store_purchases (buyer_id, store_recipe_id, price_paid, stripe_session_id)
+                VALUES ($1, $2, $3, $4)
+            `, [req.user.userId, recipeId, pricePaid, sessionId]);
+
+            // Also add to transactions table for unified history
+            await client.query(`
+                INSERT INTO transactions (user_id, transaction_id, type, plan, amount, status, stripe_session_id)
+                VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed', $5)
+            `, [
+                req.user.userId,
+                `TXN-RECIPE-${Date.now()}`,
+                `Recipe #${recipeId}`,
+                pricePaid,
+                sessionId
+            ]);
+
+            if (pricePaid > 0 && recipe.seller_id) {
+                // Get seller's currency
+                const sellerWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [recipe.seller_id]);
+                const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
+
+                const sellerCut = pricePaid * 0.8;
+                const adminCut = pricePaid - sellerCut;
+
+                await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [recipe.seller_id, sellerCurrency]);
+                await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
+
+                const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
+                const adminId = adminResult.rows[0]?.id;
+                if (adminId) {
+                    const adminWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [adminId]);
+                    const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
+                    const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+
+                    await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
+                    await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
+                }
+
+                // Record wallet transactions
+                const refId = `REC-PUR-${Date.now()}`;
+                await client.query(
+                    `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                     VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                    [req.user.userId, recipe.seller_id, sellerCut, `Recipe Purchase (Seller Cut): "${recipe.name}"`, refId + '-S']
+                );
+                
+                if (adminId) {
+                    await client.query(
+                        `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                         VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                        [req.user.userId, adminId, adminCut, `Recipe Purchase (Platform Fee): "${recipe.name}"`, refId + '-A']
+                    );
+                }
+            }
+
+            await client.query('COMMIT');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
 
         res.json({
             success: true,

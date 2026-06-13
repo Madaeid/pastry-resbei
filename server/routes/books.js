@@ -6,6 +6,7 @@ import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { createBookCheckoutSession, verifyCheckoutSession } from '../config/stripe.js';
+import currencyUtils from '../utils/currency.js';
 
 const router = express.Router();
 
@@ -682,9 +683,87 @@ router.get('/verify-session/:sessionId', authenticateToken, async (req, res) => 
             });
         }
 
+        const bookId = session.metadata.bookId;
+
+        if (!bookId) {
+            return res.status(400).json({ error: 'Invalid session metadata: bookId missing' });
+        }
+
+        const existingPurchase = await db.query(
+            'SELECT id FROM book_purchases WHERE buyer_id = $1 AND book_id = $2',
+            [req.user.userId, bookId]
+        );
+
+        if (existingPurchase.rows.length > 0) {
+            return res.json({
+                success: true,
+                alreadyProcessed: true,
+                bookId: bookId
+            });
+        }
+
+        const bookResult = await db.query('SELECT price, user_id, title FROM books WHERE id = $1', [bookId]);
+        const book = bookResult.rows[0];
+        const pricePaid = parseFloat(book?.price || 0);
+
+        const client = await db.connect();
+        try {
+            await client.query('BEGIN');
+
+            await client.query(`
+                INSERT INTO book_purchases (buyer_id, book_id, price_paid, stripe_session_id)
+                VALUES ($1, $2, $3, $4)
+            `, [req.user.userId, bookId, pricePaid, sessionId]);
+
+            if (pricePaid > 0 && book.user_id) {
+                const sellerWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [book.user_id]);
+                const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
+
+                const sellerCut = pricePaid * 0.8;
+                const adminCut = pricePaid - sellerCut;
+
+                await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [book.user_id, sellerCurrency]);
+                await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, book.user_id]);
+
+                const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
+                const adminId = adminResult.rows[0]?.id;
+                if (adminId) {
+                    const adminWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [adminId]);
+                    const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
+                    const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+
+                    await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
+                    await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
+                }
+
+                // Record wallet transactions
+                const refId = `BOOK-PUR-STR-${Date.now()}`;
+                await client.query(
+                    `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                     VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
+                    [req.user.userId, book.user_id, sellerCut, `Book Purchase (Seller Cut): "${book.title}"`, refId + '-S']
+                );
+                
+                if (adminId) {
+                    await client.query(
+                        `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                         VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,
+                        [req.user.userId, adminId, adminCut, `Book Purchase (Platform Fee): "${book.title}"`, refId + '-A']
+                    );
+                }
+            }
+
+            await client.query('COMMIT');
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+
         return res.json({
             success: true,
-            bookId: session.metadata.bookId
+            bookId: bookId
         });
     } catch (error) {
         console.error('Verify checkout session error:', error);

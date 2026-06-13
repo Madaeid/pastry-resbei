@@ -210,7 +210,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                     payment_brand = $5,
                     payment_expiry = $6,
                     auto_renew = $7,
-                    granted_by_admin = FALSE,
+                    granted_by_admin = 0,
                     cancelled_at = NULL,
                     updated_at = $8
                 WHERE user_id = $9
@@ -221,7 +221,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                plan !== 'lifetime',
+                plan !== 'lifetime' ? 1 : 0,
                 new Date().toISOString(),
                 req.user.userId
             ]);
@@ -238,7 +238,7 @@ router.post('/subscribe', authenticateToken, async (req, res) => {
                 cardNumber.slice(-4),
                 getCardBrand(cardNumber),
                 cardData.cardExpiry,
-                plan !== 'lifetime'
+                plan !== 'lifetime' ? 1 : 0
             ]);
         }
 

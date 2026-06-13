@@ -79,7 +79,6 @@ router.post('/deposit', validate(depositSchema), authenticateToken, async (req, 
     try {
         const { amount, cardLast4, cardBrand } = req.body;
         const depositAmount = parseFloat(amount);
-        const referenceId = `DEP-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 
         const db = getDatabase();
         const client = await db.connect();
@@ -94,6 +93,8 @@ router.post('/deposit', validate(depositSchema), authenticateToken, async (req, 
                 [depositAmount, req.user.userId]
             );
             const newBalance = parseFloat(updateResult.rows[0].balance);
+
+            const referenceId = `DEP-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 
             // Record transaction
             await client.query(
@@ -359,8 +360,46 @@ router.post('/purchase', authenticateToken, async (req, res) => {
                     VALUES ($1, $2, 'recipe_purchase', $3, $4, 'completed')
                 `, [userId, `TXN-RECIPE-WLT-${Date.now()}`, `Recipe #${recipeId}`, purchaseAmount]);
                 
-                // Note: Revenue split (80/20) should ideally be handled here too if not already.
-                // But for now, we'll maintain the existing logic structure.
+                // Credit seller and admin
+                const recipeResult = await client.query('SELECT seller_id, name FROM store_recipes WHERE id = $1', [recipeId]);
+                const recipe = recipeResult.rows[0];
+
+                if (recipe && recipe.seller_id) {
+                    const sellerWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [recipe.seller_id]);
+                    const sellerCurrency = sellerWalletResult.rows[0]?.currency || 'USD';
+
+                    const sellerCut = purchaseAmount * 0.8;
+                    const adminCut = purchaseAmount - sellerCut;
+
+                    await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [recipe.seller_id, sellerCurrency]);
+                    await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
+
+                    const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
+                    const adminId = adminResult.rows[0]?.id;
+                    if (adminId) {
+                        const adminWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [adminId]);
+                        const adminCurrency = adminWalletResult.rows[0]?.currency || 'USD';
+                        const adminCutConverted = await currencyUtils.convertCurrency(adminCut, sellerCurrency, adminCurrency);
+
+                        await client.query('INSERT INTO wallet_balances (user_id, balance, currency) VALUES ($1, 0, $2) ON CONFLICT DO NOTHING', [adminId, adminCurrency]);
+                        await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [adminCutConverted, adminId]);
+                    }
+
+                    const refId = `REC-PUR-WLT-${Date.now()}`;
+                    await client.query(
+                        `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                         VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                        [userId, recipe.seller_id, sellerCut, `Recipe Purchase (Seller Cut): "${recipe.name}"`, refId + '-S']
+                    );
+                    
+                    if (adminId) {
+                        await client.query(
+                            `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
+                             VALUES ($1, $2, 'purchase', $3, $4, 'completed', $5)`,
+                            [userId, adminId, adminCut, `Recipe Purchase (Platform Fee): "${recipe.name}"`, refId + '-A']
+                        );
+                    }
+                }
             }
 
             await client.query('COMMIT');
