@@ -2,6 +2,7 @@
 // AI-powered calorie and macro analysis of recipe ingredients using Gemini
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -268,7 +269,7 @@ function generateMockNutrition(ingredientLines, servings) {
             fat: Math.round(totalFat * 10) / 10,
             fiber: Math.round(totalCarbs * 0.08 * 10) / 10,
             sugar: Math.round(totalCarbs * 0.4 * 10) / 10,
-            sodium: Math.round(200 + Math.random() * 300)
+            sodium: crypto.randomInt(200, 501)
         },
         perServing: {
             calories: Math.round(totalCals / serv),
@@ -277,7 +278,7 @@ function generateMockNutrition(ingredientLines, servings) {
             fat: Math.round(totalFat / serv * 10) / 10,
             fiber: Math.round(totalCarbs * 0.08 / serv * 10) / 10,
             sugar: Math.round(totalCarbs * 0.4 / serv * 10) / 10,
-            sodium: Math.round((200 + Math.random() * 300) / serv)
+            sodium: Math.round(crypto.randomInt(200, 501) / serv)
         },
         servings: serv,
         items: mockItems,

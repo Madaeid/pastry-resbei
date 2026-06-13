@@ -22,7 +22,7 @@ async function deleteNonAdmins() {
             await client.query('BEGIN');
 
             // Find non-admin users first to log them
-            const res = await client.query('SELECT username FROM users WHERE is_admin != 1 AND username != \'admin\'');
+            const res = await client.query('SELECT username FROM users WHERE is_admin != true AND username != \'admin\'');
             const usernames = res.rows.map(r => r.username);
             
             if (usernames.length === 0) {
@@ -31,7 +31,7 @@ async function deleteNonAdmins() {
                 console.log(`🗑️ Deleting ${usernames.length} users: ${usernames.join(', ')}`);
                 
                 // Delete from users. Cascade should handle other tables.
-                const deleteRes = await client.query('DELETE FROM users WHERE is_admin != 1 AND username != \'admin\'');
+                const deleteRes = await client.query('DELETE FROM users WHERE is_admin != true AND username != \'admin\'');
                 console.log(`✅ Deleted ${deleteRes.rowCount} users successfully.`);
             }
 

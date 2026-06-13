@@ -616,7 +616,20 @@ function logout() {
 }
 
 // Actually perform the logout
-function performLogout() {
+async function performLogout() {
+    const authToken = sessionStorage.getItem('authToken');
+    if (authToken) {
+        try {
+            await fetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+        } catch (err) {
+            console.error('Failed to log out from server:', err);
+        }
+    }
     sessionStorage.removeItem('currentUser');
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('authToken');

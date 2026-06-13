@@ -321,7 +321,7 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
             await client.query('UPDATE wallet_balances SET balance = balance + $1 WHERE user_id = $2', [sellerCut, recipe.seller_id]);
 
             // Credit admin (20%) - assume admin ID 1 is main admin, get their currency
-            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
             const adminId = adminResult.rows[0]?.id;
             if (adminId) {
                 const adminWalletResult = await client.query('SELECT currency FROM wallet_balances WHERE user_id = $1 FOR UPDATE', [adminId]);

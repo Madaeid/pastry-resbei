@@ -29,7 +29,7 @@ router.get('/stats', async (req, res) => {
         const totalUsersResult = await db.query('SELECT COUNT(*) as count FROM users');
         const totalUsers = parseInt(totalUsersResult.rows[0].count);
 
-        const totalAdminsResult = await db.query('SELECT COUNT(*) as count FROM users WHERE is_admin = 1');
+        const totalAdminsResult = await db.query('SELECT COUNT(*) as count FROM users WHERE is_admin = true');
         const totalAdmins = parseInt(totalAdminsResult.rows[0].count);
 
         const totalRecipesResult = await db.query('SELECT COUNT(*) as count FROM recipes');
@@ -77,7 +77,7 @@ router.get('/users', async (req, res) => {
         const formattedUsers = users.map(user => {
             // Check if premium
             let isPremium = false;
-            if (Number(user.is_admin) === 1) {
+            if (user.is_admin) {
                 isPremium = true;
             } else if (user.subscription_status === 'active' && new Date(user.subscription_end_date) > new Date()) {
                 isPremium = true;
@@ -90,7 +90,7 @@ router.get('/users', async (req, res) => {
                 email: user.email,
                 phone: user.phone,
                 birthday: user.birthday,
-                isAdmin: Number(user.is_admin) === 1,
+                isAdmin: !!user.is_admin,
                 isPremium,
                 isPublic: user.is_public && user.is_public !== 'private' && user.is_public !== 'false',
                 visibilityLevel: user.is_public || 'all',
@@ -137,7 +137,7 @@ router.get('/users/:id', async (req, res) => {
             email: user.email,
             phone: user.phone,
             birthday: user.birthday,
-            isAdmin: Number(user.is_admin) === 1,
+            isAdmin: !!user.is_admin,
             subscriptionPlan: user.subscription_plan,
             subscriptionStatus: user.subscription_status,
             subscriptionEndDate: user.subscription_end_date,
@@ -200,7 +200,7 @@ router.put('/users/:id', async (req, res) => {
 
         if (isAdmin !== undefined && user.username !== 'admin') {
             updates.push(`is_admin = $${paramIndex++}`);
-            params.push(isAdmin ? 1 : 0);
+            params.push(isAdmin ? true : false);
         }
 
         if (updates.length === 0) {
@@ -268,13 +268,13 @@ router.patch('/users/:id/toggle-admin', async (req, res) => {
             return res.status(400).json({ error: 'Cannot modify main admin user' });
         }
 
-        const newAdminStatus = Number(user.is_admin) === 1 ? 0 : 1;
+        const newAdminStatus = !user.is_admin;
         await db.query('UPDATE users SET is_admin = $1, updated_at = NOW() WHERE id = $2', [newAdminStatus, userId]);
 
         res.json({
             success: true,
-            isAdmin: newAdminStatus === 1,
-            message: `User is now ${newAdminStatus === 1 ? 'an admin' : 'a regular user'}`
+            isAdmin: newAdminStatus,
+            message: `User is now ${newAdminStatus ? 'an admin' : 'a regular user'}`
         });
 
     } catch (error) {
@@ -428,7 +428,7 @@ router.post('/recipes/clear-all', async (req, res) => {
 router.post('/users/clear-all-non-admins', async (req, res) => {
     try {
         const db = getDatabase();
-        const deleteRes = await db.query("DELETE FROM users WHERE is_admin != 1 AND username != 'admin'");
+        const deleteRes = await db.query("DELETE FROM users WHERE is_admin != true AND username != 'admin'");
         res.json({ success: true, message: `Successfully deleted ${deleteRes.rowCount} users and their associated data.` });
     } catch (error) {
         console.error('Clear all users error:', error);
@@ -503,7 +503,7 @@ router.get('/analytics', async (req, res) => {
                 username: u.username,
                 displayName: u.display_name,
                 profilePic: u.profile_picture,
-                isAdmin: Number(u.is_admin) === 1,
+                isAdmin: !!u.is_admin,
                 recipeCount: parseInt(u.recipe_count),
                 joinDate: u.created_at
             }));
@@ -573,7 +573,7 @@ router.get('/analytics', async (req, res) => {
                 username: u.username,
                 displayName: u.display_name,
                 profilePic: u.profile_picture,
-                isAdmin: Number(u.is_admin) === 1,
+                isAdmin: !!u.is_admin,
                 joinDate: u.created_at
             }));
         } catch (err) {

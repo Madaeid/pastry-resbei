@@ -1,5 +1,6 @@
 // Wallet Routes - Send money to any account
 import express from 'express';
+import crypto from 'crypto';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { fulfillSubscription } from '../utils/subscriptionHelper.js';
@@ -163,7 +164,7 @@ router.post('/transfer', validate(transferSchema), authenticateToken, async (req
             // Get or create recipient wallet - with FOR UPDATE lock
             const recipientWallet = await getOrCreateWallet(client, recipient.id, true);
 
-            const referenceId = `TRF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const referenceId = `TRF-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
             
             // Handle currency conversion
             const recipientAmount = await currencyUtils.convertCurrency(
@@ -323,7 +324,7 @@ router.post('/purchase', authenticateToken, async (req, res) => {
             );
             const newBalance = parseFloat(updateResult.rows[0].balance);
 
-            const referenceId = `WLT-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const referenceId = `WLT-PUR-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
 
             // 2. Record wallet transaction
             let note = '';
@@ -396,7 +397,7 @@ router.get('/search-users', authenticateToken, async (req, res) => {
             FROM users
             WHERE (LOWER(username) LIKE $1 OR LOWER(display_name) LIKE $1)
             AND id != $2
-            AND is_admin != 1
+            AND is_admin = false
             ORDER BY username ASC
             LIMIT 10
         `, [`%${q.toLowerCase()}%`, req.user.userId]);

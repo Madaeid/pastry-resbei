@@ -1,4 +1,6 @@
 import { getDatabase, closeDatabase } from './db.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 export async function runMigrations() {
     const startTime = Date.now();
@@ -36,6 +38,23 @@ export async function runMigrations() {
                 `);
                 await client.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
                 console.log('✅ is_public column migrated to TEXT');
+                migrationCount++;
+            }
+
+            // Migration: Convert is_admin from INTEGER to BOOLEAN
+            const isAdminTypeCheck = await client.query(`
+                SELECT data_type FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'is_admin'
+            `);
+
+            if (isAdminTypeCheck.rows.length > 0 && isAdminTypeCheck.rows[0].data_type === 'integer') {
+                console.log('🔄 Migrating is_admin from INTEGER to BOOLEAN...');
+                await client.query(`
+                    ALTER TABLE users ALTER COLUMN is_admin DROP DEFAULT;
+                    ALTER TABLE users ALTER COLUMN is_admin TYPE BOOLEAN USING CASE WHEN is_admin = 1 THEN true ELSE false END;
+                `);
+                await client.query(`ALTER TABLE users ALTER COLUMN is_admin SET DEFAULT false`);
+                console.log('✅ is_admin column migrated to BOOLEAN');
                 migrationCount++;
             }
 
@@ -193,8 +212,9 @@ export async function runMigrations() {
 }
 
 // ===== CLI Entry Point =====
-// Run standalone with: node database/migrate.js
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/').replace(/^[a-zA-Z]:/, ''));
+const currentFilePath = fileURLToPath(import.meta.url);
+const resolvedArg = process.argv[1] ? path.resolve(process.argv[1]) : '';
+const isDirectRun = resolvedArg && currentFilePath.toLowerCase() === resolvedArg.toLowerCase();
 
 if (isDirectRun) {
     runMigrations()

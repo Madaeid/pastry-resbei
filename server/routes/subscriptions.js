@@ -57,7 +57,7 @@ router.get('/status', authenticateToken, async (req, res) => {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (Number(user?.is_admin) === 1) {
+        if (user?.is_admin) {
             return res.json({
                 isPremium: true,
                 plan: 'lifetime',
@@ -574,7 +574,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${recipe?.name || recipeId}"`, `STRIPE-REC-S-${session.id}`]);
 
                             // Credit admin wallet (20%)
-                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
                             const adminId = adminResult.rows[0]?.id;
                             if (adminId) {
                                 await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
@@ -635,7 +635,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
                             `, [null, sellerId, sellerCut, `Stripe Sale (Seller Cut): "${book?.title || bookId}"`, `STRIPE-BOOK-S-${session.id}`]);
 
                             // Credit admin wallet (20%)
-                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+                            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
                             const adminId = adminResult.rows[0]?.id;
                             if (adminId) {
                                 await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);

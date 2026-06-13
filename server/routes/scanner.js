@@ -3,6 +3,7 @@
 import express from 'express';
 import { getDatabase } from '../database/db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ async function requirePremium(req, res, next) {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (Number(user?.is_admin) === 1) {
+        if (user?.is_admin) {
             return next(); // Admins bypass premium check
         }
 
@@ -110,8 +111,8 @@ router.post('/scan', authenticateToken, requirePremium, async (req, res) => {
                         parts: [
                             { text: prompt },
                             {
-                                inline_data: {
-                                    mime_type: mimeType,
+                                inlineData: {
+                                    mimeType: mimeType,
                                     data: base64Image
                                 }
                             }
@@ -317,7 +318,7 @@ function generateMockScanResult(mode) {
 
     const category = mode || 'ingredients';
     const results = mockResults[category] || mockResults.ingredients;
-    const randomIdx = Math.floor(Math.random() * results.length);
+    const randomIdx = crypto.randomInt(0, results.length);
 
     return results[randomIdx];
 }
@@ -514,7 +515,7 @@ function generateMockRecipe(ingredients, category, difficulty) {
         }
     ];
 
-    const randomIdx = Math.floor(Math.random() * mockRecipes.length);
+    const randomIdx = crypto.randomInt(0, mockRecipes.length);
     return mockRecipes[randomIdx];
 }
 

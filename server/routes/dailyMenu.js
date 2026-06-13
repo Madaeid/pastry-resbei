@@ -19,7 +19,7 @@ async function isPremiumUser(db, userId) {
     const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
-    return !!(subscription || (user && Number(user.is_admin) === 1));
+    return !!(subscription || (user && user.is_admin));
 }
 
 // ===== Get All Menus for User =====

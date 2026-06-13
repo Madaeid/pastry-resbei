@@ -32,7 +32,7 @@ async function initDB() {
                     phone TEXT,
                     birthday TEXT,
                     password_hash TEXT,
-                    is_admin INTEGER DEFAULT 0,
+                    is_admin BOOLEAN DEFAULT FALSE,
                     is_public TEXT DEFAULT 'all',
                     allowed_viewers JSON DEFAULT '[]',
                     profile_picture TEXT,

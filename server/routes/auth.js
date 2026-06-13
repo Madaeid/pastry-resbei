@@ -3,10 +3,13 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { getDatabase } from '../database/db.js';
 import { generateToken, generateRefreshToken, authenticateToken } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../utils/validators.js';
+
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -22,6 +25,14 @@ async function ensureAuthTables() {
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
             CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
+
+            CREATE TABLE IF NOT EXISTS token_blacklist (
+                id SERIAL PRIMARY KEY,
+                token TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_token_blacklist_token ON token_blacklist(token);
         `);
     } catch (err) {
         console.error('Auth table init error:', err.message);
@@ -80,7 +91,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
 
         const insertResult = await db.query(`
             INSERT INTO users (username, display_name, email, phone, birthday, password_hash, is_admin)
-            VALUES ($1, $2, $3, $4, $5, $6, 0)
+            VALUES ($1, $2, $3, $4, $5, $6, false)
             RETURNING id
         `, [
             username.toLowerCase(),
@@ -131,7 +142,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
         }
 
         // Generate token
-        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+        const token = generateToken(user.id, user.username, !!user.is_admin);
         const refreshToken = generateRefreshToken(user.id);
         
         // Save refresh token to DB
@@ -156,7 +167,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
                 username: user.username,
                 displayName: user.display_name,
                 email: user.email,
-                isAdmin: Number(user.is_admin) === 1
+                isAdmin: !!user.is_admin
             }
         });
 
@@ -188,7 +199,7 @@ router.get('/me', authenticateToken, async (req, res) => {
             email: user.email,
             phone: user.phone,
             birthday: user.birthday,
-            isAdmin: Number(user.is_admin) === 1,
+            isAdmin: !!user.is_admin,
             createdAt: user.created_at
         });
 
@@ -223,8 +234,8 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             }
         }
 
-        // توليد رمز التعيين عشوائياً
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        // توليد رمز التعيين عشوائياً بشكل آمن تشفيرياً
+        const code = crypto.randomInt(100000, 1000000).toString();
         const expiry = Date.now() + (10 * 60 * 1000); // صلاحية لمدة 10 دقائق
 
         // تحديث البيانات في قاعدة البيانات
@@ -242,11 +253,10 @@ router.post('/forgot-password', validate(forgotPasswordSchema), async (req, res)
             maskedContact = contactValue.slice(0, 3) + '****' + contactValue.slice(-3);
         }
 
-        // تم إصلاح الثغرة الأمنية هنا: لا يتم طباعة الرمز السري أبداً في سجلات السيرفر العامة بالإنتاج!
         if (process.env.NODE_ENV === 'development') {
-            console.log(`[SECURITY NOTICE - DEV ONLY] Reset code generated for user: ${username}`);
-            // يمكنك طباعته للمطور محلياً فقط إذا كان السيرفر على لابتوب التطوير الشخصي:
-            // console.log(`Dev Code: ${code}`);
+            console.log(`[RESET CODE] User: ${username}, Code: ${code}, Method: ${method}`);
+        } else {
+            // TODO: Add real email or SMS sending logic here for production environment
         }
 
         // ملاحظة: هنا يتم استدعاء دالة الإرسال الحقيقية عبر البريد الإلكتروني أو الرسائل النصية الموثقة
@@ -307,12 +317,35 @@ router.post('/logout', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
         const cookieHeader = req.headers?.cookie || '';
-        const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+        const cookies = cookieHeader ? Object.fromEntries(cookieHeader.split(';').map(c => {
+            const parts = c.split('=');
+            return [parts[0].trim(), parts.slice(1).join('=').trim()];
+        })) : {};
         const refreshToken = cookies.refreshToken;
 
         if (refreshToken) {
             await db.query('DELETE FROM refresh_tokens WHERE token = $1', [refreshToken]);
         }
+
+        // Add the current access token to the blacklist to fully revoke it
+        if (req.token) {
+            let expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // Default fallback: 24h
+            try {
+                const decoded = jwt.decode(req.token);
+                if (decoded && decoded.exp) {
+                    expiresAt = new Date(decoded.exp * 1000);
+                }
+            } catch (decodeErr) {
+                console.error('Error decoding token expiration:', decodeErr);
+            }
+
+            await db.query(`
+                INSERT INTO token_blacklist (token, expires_at)
+                VALUES ($1, $2)
+                ON CONFLICT (token) DO NOTHING
+            `, [req.token, expiresAt]);
+        }
+
         res.clearCookie('refreshToken');
         res.json({ success: true, message: 'Logged out successfully' });
     } catch (err) {
@@ -326,7 +359,10 @@ router.post('/refresh-token', async (req, res) => {
     try {
         const db = getDatabase();
         const cookieHeader = req.headers?.cookie || '';
-        const cookies = Object.fromEntries(cookieHeader.split('; ').map(c => c.split('=')));
+        const cookies = cookieHeader ? Object.fromEntries(cookieHeader.split(';').map(c => {
+            const parts = c.split('=');
+            return [parts[0].trim(), parts.slice(1).join('=').trim()];
+        })) : {};
         const refreshToken = cookies.refreshToken;
 
         if (!refreshToken) {
@@ -354,7 +390,7 @@ router.post('/refresh-token', async (req, res) => {
             return res.status(403).json({ error: 'User no longer exists' });
         }
 
-        const newAccessToken = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+        const newAccessToken = generateToken(user.id, user.username, !!user.is_admin);
 
         res.json({
             success: true,

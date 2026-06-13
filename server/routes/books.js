@@ -1,4 +1,5 @@
 import { uploadMedia } from '../utils/cloudinary.js';
+import crypto from 'crypto';
 
 // Books Routes — Chef Book Portfolio Feature
 import express from 'express';
@@ -19,7 +20,7 @@ async function isPremiumUser(db, userId) {
     const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
 
-    return !!(subscription || (user && Number(user.is_admin) === 1));
+    return !!(subscription || (user && user.is_admin));
 }
 
 // ===== Get All Books for User =====
@@ -509,7 +510,7 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
             );
 
             // Credit admin wallet (20%)
-            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = 1 ORDER BY id ASC LIMIT 1');
+            const adminResult = await client.query('SELECT id FROM users WHERE is_admin = true ORDER BY id ASC LIMIT 1');
             const adminId = adminResult.rows[0]?.id;
             if (adminId) {
                 await client.query('INSERT INTO wallet_balances (user_id, balance) VALUES ($1, 0) ON CONFLICT DO NOTHING', [adminId]);
@@ -526,7 +527,7 @@ router.post('/public/:id/purchase', authenticateToken, async (req, res) => {
             );
 
             // Record wallet transactions
-            const refId = `BOOK-PUR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const refId = `BOOK-PUR-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
             await client.query(
                 `INSERT INTO wallet_transactions (sender_id, receiver_id, type, amount, note, status, reference_id)
                  VALUES ($1, $2, 'book_purchase', $3, $4, 'completed', $5)`,

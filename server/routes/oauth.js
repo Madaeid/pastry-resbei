@@ -4,6 +4,7 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../database/db.js';
 import { generateToken } from '../middleware/auth.js';
+import crypto from 'crypto';
 
 const router = express.Router();
 
@@ -104,12 +105,12 @@ router.get('/google/callback', async (req, res) => {
 
         if (!user) {
             // Create new user
-            const username = googleUser.email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6);
+            const username = googleUser.email.split('@')[0] + '_' + crypto.randomBytes(2).toString('hex');
             const displayName = googleUser.name || username;
 
             const insertResult = await db.query(`
                 INSERT INTO users (username, display_name, email, google_id, auth_provider, created_at, is_admin)
-                VALUES ($1, $2, $3, $4, 'google', NOW(), 0)
+                VALUES ($1, $2, $3, $4, 'google', NOW(), false)
                 RETURNING *
             `, [username, displayName, googleUser.email.toLowerCase(), googleUser.id]);
 
@@ -127,14 +128,14 @@ router.get('/google/callback', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+        const token = generateToken(user.id, user.username, !!user.is_admin);
 
         // Send success message to parent window
         res.send(generateSuccessPage('google', {
             username: user.username,
             displayName: user.display_name || user.username,
             email: user.email,
-            isAdmin: Number(user.is_admin) === 1
+            isAdmin: !!user.is_admin
         }, token));
 
     } catch (error) {
@@ -230,12 +231,12 @@ router.post('/apple/callback', async (req, res) => {
 
         if (!user) {
             // Create new user
-            const username = (appleUser.email?.split('@')[0] || 'apple_user') + '_' + Math.random().toString(36).substring(2, 6);
+            const username = (appleUser.email?.split('@')[0] || 'apple_user') + '_' + crypto.randomBytes(2).toString('hex');
             const displayName = appleUser.name || username;
 
             const insertResult = await db.query(`
                 INSERT INTO users (username, display_name, email, apple_id, auth_provider, created_at, is_admin)
-                VALUES ($1, $2, $3, $4, 'apple', NOW(), 0)
+                VALUES ($1, $2, $3, $4, 'apple', NOW(), false)
                 RETURNING *
             `, [username, displayName, appleUser.email?.toLowerCase() || null, appleUser.id]);
 
@@ -252,14 +253,14 @@ router.post('/apple/callback', async (req, res) => {
         }
 
         // Generate JWT token
-        const token = generateToken(user.id, user.username, Number(user.is_admin) === 1);
+        const token = generateToken(user.id, user.username, !!user.is_admin);
 
         // Send success message to parent window
         res.send(generateSuccessPage('apple', {
             username: user.username,
             displayName: user.display_name || user.username,
             email: user.email,
-            isAdmin: Number(user.is_admin) === 1
+            isAdmin: !!user.is_admin
         }, token));
 
     } catch (error) {

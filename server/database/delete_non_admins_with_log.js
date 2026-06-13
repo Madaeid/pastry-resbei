@@ -22,14 +22,14 @@ async function deleteNonAdmins() {
         try {
             await client.query('BEGIN');
 
-            const res = await client.query('SELECT username FROM users WHERE is_admin != 1 AND username != \'admin\'');
+            const res = await client.query('SELECT username FROM users WHERE is_admin != true AND username != \'admin\'');
             const usernames = res.rows.map(r => r.username);
             
             if (usernames.length === 0) {
                 log += 'ℹ️ No non-admin users found to delete.\n';
             } else {
                 log += `🗑️ Deleting ${usernames.length} users: ${usernames.join(', ')}\n`;
-                const deleteRes = await client.query('DELETE FROM users WHERE is_admin != 1 AND username != \'admin\'');
+                const deleteRes = await client.query('DELETE FROM users WHERE is_admin != true AND username != \'admin\'');
                 log += `✅ Deleted ${deleteRes.rowCount} users successfully.\n`;
             }
 

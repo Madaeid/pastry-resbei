@@ -25,9 +25,9 @@ const pool = new Pool({
 });
 
 // Test connection
+// Log the error but do not crash the process. The pool will handle reconnecting.
 pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
 });
 
 export function getDatabase() {

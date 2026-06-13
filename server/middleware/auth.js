@@ -12,21 +12,34 @@ export function authenticateToken(req, res, next) {
         return res.status(401).json({ error: 'Access token required' });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            if (err.name === 'TokenExpiredError') {
-                return res.status(401).json({ error: 'Token expired' });
+    const db = getDatabase();
+    db.query('SELECT 1 FROM token_blacklist WHERE token = $1', [token])
+        .then(result => {
+            if (result.rows.length > 0) {
+                return res.status(401).json({ error: 'Token is blacklisted / logged out' });
             }
-            return res.status(403).json({ error: 'Invalid token' });
-        }
-        
-        req.user = user;
-        if (isNaN(parseInt(req.user.userId))) {
-            return res.status(403).json({ error: 'Invalid token payload' });
-        }
-        
-        next();
-    });
+
+            jwt.verify(token, JWT_SECRET, (err, user) => {
+                if (err) {
+                    if (err.name === 'TokenExpiredError') {
+                        return res.status(401).json({ error: 'Token expired' });
+                    }
+                    return res.status(403).json({ error: 'Invalid token' });
+                }
+                
+                req.user = user;
+                req.token = token;
+                if (isNaN(parseInt(req.user.userId))) {
+                    return res.status(403).json({ error: 'Invalid token payload' });
+                }
+                
+                next();
+            });
+        })
+        .catch(err => {
+            console.error('Blacklist check error:', err);
+            res.status(500).json({ error: 'Internal server error' });
+        });
 }
 
 export function optionalAuthenticateToken(req, res, next) {
@@ -37,13 +50,24 @@ export function optionalAuthenticateToken(req, res, next) {
         return next();
     }
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (err) {
-        next();
-    }
+    const db = getDatabase();
+    db.query('SELECT 1 FROM token_blacklist WHERE token = $1', [token])
+        .then(result => {
+            if (result.rows.length > 0) {
+                return next();
+            }
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                req.user = decoded;
+                req.token = token;
+                next();
+            } catch (err) {
+                next();
+            }
+        })
+        .catch(() => {
+            next();
+        });
 }
 
 export async function requireAdmin(req, res, next) {
@@ -57,7 +81,7 @@ export async function requireAdmin(req, res, next) {
         const user = result.rows[0];
 
         // التأكد من المقارنة الصارمة والآمنة للصلاحيات
-        if (!user || parseInt(user.is_admin) !== 1) {
+        if (!user || !user.is_admin) {
             return res.status(403).json({ error: 'Admin access required' });
         }
 
@@ -85,7 +109,7 @@ export async function requirePremium(req, res, next) {
         const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [req.user.userId]);
         const user = userResult.rows[0];
 
-        if (!hasSubscription && (!user || parseInt(user.is_admin) !== 1)) {
+        if (!hasSubscription && (!user || !user.is_admin)) {
             return res.status(403).json({ error: 'Premium subscription required' });
         }
 

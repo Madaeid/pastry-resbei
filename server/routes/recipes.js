@@ -81,7 +81,7 @@ router.get('/public', optionalAuthenticateToken, async (req, res) => {
                 r.*, 
                 u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
                 -- Premium status check
-                (u.is_admin = 1 OR EXISTS(
+                (u.is_admin = true OR EXISTS(
                     SELECT 1 FROM subscriptions s 
                     WHERE s.user_id = r.user_id AND s.status = 'active' AND s.end_date::timestamp > NOW()
                 )) as author_is_premium,
@@ -216,7 +216,7 @@ router.get('/public/user/:username', async (req, res) => {
             SELECT 
                 r.*, u.display_name as author_name, u.profile_picture as author_pic, u.username as author_username, u.is_admin as author_is_admin,
                 -- Premium status check
-                (u.is_admin = 1 OR EXISTS(
+                (u.is_admin = true OR EXISTS(
                     SELECT 1 FROM subscriptions s 
                     WHERE s.user_id = r.user_id AND s.status = 'active' AND s.end_date::timestamp > NOW()
                 )) as author_is_premium,
@@ -354,7 +354,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const subscription = subResult.rows[0];
 
         // Ensure is_admin is treated correctly as number or boolean from PG
-        const isPremium = (Number(user?.is_admin) === 1) || (subscription != null);
+        const isPremium = user?.is_admin || (subscription != null);
 
         if (!isPremium) {
             const countResult = await db.query('SELECT COUNT(*) as count FROM recipes WHERE user_id = $1', [req.user.userId]);
@@ -422,7 +422,7 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
-        let { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video } = req.body;
+        let { name, category, prepTime, cookTime, servings, difficulty, ingredients, instructions, notes, photo, video, visibility } = req.body;
         if (photo) photo = await uploadMedia(photo, 'recipes');
         if (video) video = await uploadMedia(video, 'recipes');
 
@@ -434,7 +434,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
         `, [req.user.userId]);
         const subscription = subResult.rows[0];
-        const isPremium = (Number(user?.is_admin) === 1) || (subscription != null);
+        const isPremium = user?.is_admin || (subscription != null);
 
         // Check if recipe exists and belongs to user
         const existingResult = await db.query('SELECT * FROM recipes WHERE id = $1 AND user_id = $2', [req.params.id, req.user.userId]);
@@ -444,21 +444,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Recipe not found' });
         }
 
+        const updatedVisibility = visibility === 'public' ? 'public' : 'private';
+
         await db.query(`
             UPDATE recipes SET
-                name = $1,
-                category = $2,
-                prep_time = $3,
-                cook_time = $4,
-                servings = $5,
-                difficulty = $6,
-                ingredients = $7,
-                instructions = $8,
-                notes = $9,
-                photo = $10,
-                video = $11,
-                visibility = $12,
-                updated_at = NOW()
+                name = $1, category = $2, prep_time = $3, cook_time = $4,
+                servings = $5, difficulty = $6, ingredients = $7, instructions = $8,
+                notes = $9, photo = $10, video = $11, visibility = $12, updated_at = NOW()
             WHERE id = $13 AND user_id = $14
         `, [
             name || existingRecipe.name,
@@ -472,7 +464,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             notes !== undefined ? notes : existingRecipe.notes,
             photo !== undefined ? photo : existingRecipe.photo,
             video !== undefined ? video : existingRecipe.video,
-            (req.body.visibility === 'public') ? 'public' : 'private',
+            updatedVisibility,
             req.params.id,
             req.user.userId
         ]);

@@ -29,91 +29,15 @@ import cvRoutes from './routes/cv.js';
 import storeRoutes from './routes/store.js';
 import walletRoutes from './routes/wallet.js';
 import booksRoutes from './routes/books.js';
+import scannerRoutes from './routes/scanner.js';
+import nutritionRoutes from './routes/nutrition.js';
 
 import { getDatabase } from './database/db.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ===== Database Migrations =====
-async function runMigrations() {
-    try {
-        const db = getDatabase();
-        
-        // التأكد أولاً من وجود جدول المستخدمين لتجنب توقف السيرفر عند أول تشغيل
-        const tableCheck = await db.query(`
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = 'users'
-            );
-        `);
-        
-        if (!tableCheck.rows[0].exists) {
-            console.log('ℹ️ Users table does not exist yet. Skipping migrations until tables are initialized.');
-            return;
-        }
 
-        // Migration: Convert is_public from BOOLEAN to TEXT
-        const colCheck = await db.query(`
-            SELECT data_type FROM information_schema.columns 
-            WHERE table_name = 'users' AND column_name = 'is_public'
-        `);
-        
-        if (colCheck.rows.length > 0 && colCheck.rows[0].data_type === 'boolean') {
-            console.log('🔄 Migrating is_public from BOOLEAN to TEXT...');
-            await db.query(`
-                ALTER TABLE users 
-                ALTER COLUMN is_public TYPE TEXT USING CASE WHEN is_public = true THEN 'all' WHEN is_public = false THEN 'private' ELSE 'all' END
-            `);
-            await db.query(`ALTER TABLE users ALTER COLUMN is_public SET DEFAULT 'all'`);
-            console.log('✅ is_public column migrated to TEXT');
-        }
-        
-        // Add allowed_viewers column
-        const viewersCheck = await db.query(`
-            SELECT column_name FROM information_schema.columns 
-            WHERE table_name = 'users' AND column_name = 'allowed_viewers'
-        `);
-        if (viewersCheck.rows.length === 0) {
-            await db.query(`ALTER TABLE users ADD COLUMN allowed_viewers JSON DEFAULT '[]'`);
-            console.log('✅ allowed_viewers column added');
-        }
-
-        // Add reset_method column
-        const resetMethodCheck = await db.query(`
-            SELECT column_name FROM information_schema.columns 
-            WHERE table_name = 'users' AND column_name = 'reset_method'
-        `);
-        if (resetMethodCheck.rows.length === 0) {
-            await db.query(`ALTER TABLE users ADD COLUMN reset_method TEXT`);
-            console.log('✅ reset_method column added');
-        }
-
-        // Add sharing columns to recipes
-        const recipeTableCheck = await db.query(`SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'recipes');`);
-        if (recipeTableCheck.rows[0].exists) {
-            const fromIdCheck = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'recipes' AND column_name = 'shared_from_id'`);
-            if (fromIdCheck.rows.length === 0) {
-                await db.query(`ALTER TABLE recipes ADD COLUMN shared_from_id INTEGER REFERENCES recipes(id) ON DELETE SET NULL`);
-            }
-        }
-
-        // Fix reset_code_expiry type
-        const expiryTypeCheck = await db.query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'reset_code_expiry'`);
-        if (expiryTypeCheck.rows.length > 0) {
-            const typeCheck = await db.query(`SELECT data_type FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'reset_code_expiry'`);
-            if (typeCheck.rows[0].data_type !== 'bigint') {
-                await db.query(`ALTER TABLE users ALTER COLUMN reset_code_expiry TYPE BIGINT USING EXTRACT(EPOCH FROM reset_code_expiry)::BIGINT * 1000`);
-                console.log('✅ reset_code_expiry column converted to BIGINT');
-            }
-        }
-
-    } catch (err) {
-        console.error('Migration error:', err.message);
-    }
-}
-
-runMigrations();
 
 // ===== Middleware =====
 app.use(cors({
@@ -152,6 +76,8 @@ app.use('/api/cv', cvRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/books', booksRoutes);
+app.use('/api/scanner', scannerRoutes);
+app.use('/api/nutrition', nutritionRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Chef Book API is running', timestamp: new Date().toISOString() });
