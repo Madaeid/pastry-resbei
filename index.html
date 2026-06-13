@@ -10,14 +10,14 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="toggle.css">
-    <link rel="stylesheet" href="public_card.css">
-    <link rel="stylesheet" href="my_recipe_card.css">
-    <link rel="stylesheet" href="sidebar.css">
-    <link rel="stylesheet" href="recipe-generator.css">
-    <link rel="stylesheet" href="servings-calculator.css">
-    <link rel="stylesheet" href="hero.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/toggle.css">
+    <link rel="stylesheet" href="css/public_card.css">
+    <link rel="stylesheet" href="css/my_recipe_card.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/recipe-generator.css">
+    <link rel="stylesheet" href="css/servings-calculator.css">
+    <link rel="stylesheet" href="css/hero.css">
 
 
 
@@ -110,7 +110,7 @@
                 <span class="sidebar-link-indicator"></span>
             </button>
 
-            <a href="./admin.html" id="adminDashboardBtn" class="sidebar-link" style="display: none;">
+            <a href="./pages/admin.html" id="adminDashboardBtn" class="sidebar-link" style="display: none;">
                 <span class="sidebar-link-icon">👑</span>
                 <span class="sidebar-link-text" data-i18n="dashboard">Dashboard</span>
             </a>
@@ -122,17 +122,17 @@
         <div class="sidebar-nav">
             <span class="sidebar-section-label">Tools</span>
 
-            <a href="./days-selection.html" id="dailyMenuBtn" class="sidebar-link" style="display: none;">
+            <a href="./pages/days-selection.html" id="dailyMenuBtn" class="sidebar-link" style="display: none;">
                 <span class="sidebar-link-icon">📅</span>
                 <span class="sidebar-link-text" data-i18n="dailyMenu">Daily Menu</span>
             </a>
 
-            <a href="./user-analytics.html" id="userDashboardBtn" class="sidebar-link">
+            <a href="./pages/user-analytics.html" id="userDashboardBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">📈</span>
                 <span class="sidebar-link-text">My Dashboard</span>
             </a>
 
-            <a href="./cost-calculator.html" id="costCalculatorBtn" class="sidebar-link">
+            <a href="./pages/cost-calculator.html" id="costCalculatorBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">🧮</span>
                 <span class="sidebar-link-text" data-i18n="calculator">Calculator</span>
             </a>
@@ -153,12 +153,12 @@
                     style="font-size: 0.6rem; background: linear-gradient(135deg, #eab366, #ea7a66); color: white; padding: 2px 6px; border-radius: 8px; font-weight: 700; letter-spacing: 0.5px;">💎</span>
             </button>
 
-            <a href="./cv-view.html" id="myCvBtn" class="sidebar-link">
+            <a href="./pages/cv-view.html" id="myCvBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">📄</span>
                 <span class="sidebar-link-text" data-i18n="myCv">My CV</span>
             </a>
 
-            <!-- <a href="./wallet.html" id="walletBtn" class="sidebar-link">
+            <!-- <a href="./pages/wallet.html" id="walletBtn" class="sidebar-link">
                 <span class="sidebar-link-icon">💰</span>
                 <span class="sidebar-link-text">Wallet</span> -->
             </a>
@@ -167,7 +167,7 @@
         <div class="sidebar-divider"></div>
 
         <!-- Upgrade -->
-        <a href="./payment.html" id="upgradeBtn" class="sidebar-upgrade">
+        <a href="./pages/payment.html" id="upgradeBtn" class="sidebar-upgrade">
             <span class="sidebar-upgrade-icon">💎</span>
             <span class="sidebar-upgrade-text" data-i18n="upgrade">Subscribe</span>
             <span class="sidebar-upgrade-glow"></span>
@@ -1224,7 +1224,7 @@
         <p data-i18n="footer">👨‍🍳 Chef Book &copy; 2024</p>
     </footer>
 
-    <script type="module" src="./main.js"></script>
+    <script type="module" src="js/main.js"></script>
     <script>
         // Sidebar Toggle Logic
         (function () {

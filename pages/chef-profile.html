@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef Profile | Chef Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/public_card.css">
+    <link rel="stylesheet" href="../css/cv-style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <style>
+        .profile-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .profile-hero {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 24px;
+            padding: 20px 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--accent-pink);
+            padding: 5px;
+            background: var(--bg-dark);
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .hero-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .hero-info {
+            position: relative;
+            z-index: 1;
+            flex-grow: 1;
+        }
+
+        .hero-name-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .hero-name {
+            font-size: 2.5rem;
+            font-family: 'Playfair Display', serif;
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .premium-badge {
+            display: none;
+            background: linear-gradient(45deg, #ffd700, #ff8c00);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .hero-username {
+            color: var(--accent-pink);
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 1.1rem;
+        }
+
+        .hero-bio {
+            color: var(--text-secondary);
+            margin: 15px 0;
+            font-size: 1rem;
+            line-height: 1.5;
+            max-width: 600px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: left;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: block;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tabs Styles */
+        .profile-nav-tabs {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .nav-tab {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 8px 5px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab.active {
+            color: var(--accent-pink);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent-pink);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Gallery Styles */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: zoom-in;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 25px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-5px);
+        }
+
+        .chef-recipes-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 768px) {
+            .profile-hero {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 20px;
+            }
+
+            .hero-avatar {
+                width: 120px;
+                height: 120px;
+            }
+
+            .hero-name-row {
+                justify-content: center;
+            }
+
+            .hero-stats {
+                justify-content: center;
+            }
+
+            .hero-bio {
+                margin-left: auto;
+                margin-right: auto;
+            }
+        }
+
+        /* Lightbox overlay */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            cursor: zoom-out;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-overlay img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        /* User requested photo styles */
+        .photo-small {
+            width: 100px !important;
+            height: 100px !important;
+            border-width: 3px !important;
+        }
+
+        .margin-top-5 {
+            margin-top: 5% !important;
+        }
+
+        .w-100 {
+            width: 100% !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="profile-container margin-top-5">
+        <a href="../index.html" class="back-btn">
+            <span>←</span> Back to Feed
+        </a>
+
+        <div id="chefProfileHero" class="profile-hero">
+            <button id="refreshProfileHeroBtn" class="refresh-hero-btn" title="Change Header Photo"
+                style="position: absolute; top: 15px; right: 15px; z-index: 10;">🔄</button>
+            <script>
+                (function () {
+                    const headerImages = [
+                        '/new-chef-hero.png',
+                        '/premium-chef-hero.png',
+                        '/hero-chef.png',
+                        '/hero-chef-premium.png',
+                        '/my-chef-hero.png',
+                        '/another-chef-premium.png',
+                        '/new-premium-hero.png',
+                        '/chef-hero.png',
+                        '/master-chef-header.png',
+                        '/artisan-pastry-chef.png',
+                        '/modern-chef-studio.png',
+                        '/chef-rooftop-garden.png',
+                        '/chef-fire-cooking.png'
+                    ];
+                    let currentHeroInterval = null;
+
+                    function setRandomHero(manual = false) {
+                        const heroEl = document.getElementById('chefProfileHero');
+                        if (!heroEl) return;
+                        const randomImg = headerImages[Math.floor(Math.random() * headerImages.length)];
+                        // We use !important because the initial style block uses it
+                        heroEl.style.setProperty('background', `linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${randomImg}') no-repeat center center / cover`, 'important');
+
+                        if (manual && currentHeroInterval) {
+                            clearInterval(currentHeroInterval);
+                            currentHeroInterval = setInterval(() => setRandomHero(false), 15000);
+                        }
+                    }
+
+                    const initialImg = headerImages[Math.floor(Math.random() * headerImages.length)];
+                    document.write(`<style>#chefProfileHero { transition: background 0.8s ease; background: linear-gradient(to bottom, rgba(26, 18, 11, 0.6), rgba(26, 18, 11, 0.9)), url('${initialImg}') no-repeat center center / cover !important; }</style>`);
+
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const refreshBtn = document.getElementById('refreshProfileHeroBtn');
+                        if (refreshBtn) {
+                            refreshBtn.addEventListener('click', () => setRandomHero(true));
+                        }
+                        currentHeroInterval = setInterval(() => setRandomHero(false), 15000);
+                    });
+                })();
+            </script>
+            <div class="hero-avatar">
+                <img id="chefPic" src="/assets/default-avatar.png" alt="Chef">
+            </div>
+            <div class="hero-info">
+                <div class="hero-name-row">
+                    <h1 id="chefName" class="hero-name">Loading...</h1>
+                    <div id="chefPremiumBadge" class="premium-badge">UPGRADE Chef</div>
+                </div>
+                <span id="chefUsername" class="hero-username">@loading</span>
+                <p id="chefBio" class="hero-bio">Loading bio...</p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <span id="postsCount" class="stat-value">0</span>
+                        <span class="stat-label">Posts</span>
+                    </div>
+                    <div class="stat-item" style="cursor: pointer;" id="followersStat">
+                        <span id="followersCount" class="stat-value">0</span>
+                        <span class="stat-label">Followers</span>
+                    </div>
+                    <div class="stat-item" style="cursor: pointer;" id="followingStat">
+                        <span id="followingCount" class="stat-value">0</span>
+                        <span class="stat-label">Following</span>
+                    </div>
+                    <div id="editProfileBtnWrapper" style="display: none; align-items: flex-end; gap: 10px;">
+                        <a href="index.html#edit-profile" class="btn btn-sm"
+                            style="background: rgba(255,255,255,0.1); color: white; text-decoration: none; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.2); font-weight: 500;">
+                            ⚙️ Edit Profile
+                        </a>
+                        <button id="followChefBtn" class="btn btn-sm"
+                            style="display: none; background: var(--accent-pink); color: white; border: none; padding: 6px 25px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(255,107,138,0.3);">
+                            Follow
+                        </button>
+                        <button id="shareProfileBtn" class="btn btn-sm"
+                            style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <span>🔗</span> Share
+                        </button>
+                        <button id="showProfileQrBtn" class="btn btn-sm"
+                            style="background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <span>📱</span> QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Post Section (Only for own profile) -->
+    <div id="ownProfilePostBox"
+        style="display: none; margin-bottom: 40px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 25px;">
+        <div style="display: flex; gap: 15px;">
+            <img id="postUserAvatar" src="/assets/default-avatar.png" alt="👤"
+                style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--accent-pink);">
+            <div style="flex: 1;">
+                <textarea id="quickPostText" placeholder="What are you baking today?"
+                    style="width: 100%; min-height: 100px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 15px; color: white; resize: none; outline: none; font-family: inherit; font-size: 1rem;"></textarea>
+
+                <div id="quickPostPhotoPreview" style="display: none; position: relative; margin-top: 15px;">
+                    <img src="" alt="Preview"
+                        style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <button id="removePostPhotoBtn"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
+
+                <div id="quickPostVideoPreview" style="display: none; position: relative; margin-top: 15px;">
+                    <video controls style="width: 100%; border-radius: 12px; max-height: 350px;"></video>
+                    <button id="removePostVideoBtn"
+                        style="position: absolute; top: 10px; right: 10px; background: rgba(0, 0, 0, 0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 1.2rem;">&times;</button>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                    <div style="display: flex; gap: 12px;">
+                        <button id="addPhotoBtn"
+                            style="background: rgba(198, 123, 75, 0.15); border: 1px solid rgba(198, 123, 75, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                            <span>📷</span> Photo
+                        </button>
+                        <input type="file" id="quickPostPhotoInput" accept="image/*" hidden>
+
+                        <button id="addVideoBtn"
+                            style="background: rgba(77, 182, 172, 0.15); border: 1px solid rgba(77, 182, 172, 0.4); color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+                            <span>📹</span> Video
+                        </button>
+                        <input type="file" id="quickPostVideoInput" accept="video/*" hidden>
+                    </div>
+                    <button id="submitQuickPostBtn"
+                        style="padding: 10px 30px; border-radius: 25px; background: var(--accent-pink); border: none; color: white; font-weight: 600; cursor: pointer; transition: transform 0.2s;">
+                        Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-nav-tabs">
+        <button class="nav-tab active" data-tab="feed">👨‍🍳 Culinary Feed</button>
+        <button class="nav-tab" data-tab="recipes">📖 Public Recipes</button>
+        <button class="nav-tab" data-tab="store" id="storeTabBtn">🏪 Store</button>
+        <button class="nav-tab" data-tab="books" id="booksTabBtn">📚 Chef Book</button>
+        <button class="nav-tab" data-tab="gallery">🖼️ Photo Gallery</button>
+    </div>
+
+    <!-- Recipe View Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div id="modalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Panels -->
+    <div id="feedPanel" class="tab-panel active">
+        <div id="chefRecipesGrid" class="chef-recipes-grid">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
+                culinary creations...</div>
+        </div>
+    </div>
+
+    <div id="recipesPanel" class="tab-panel">
+        <div id="publicRecipesListGrid" class="chef-recipes-grid"
+            style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading public
+                recipes...</div>
+        </div>
+    </div>
+
+    <div id="galleryPanel" class="tab-panel">
+        <div id="chefGalleryGrid" class="gallery-grid">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
+                gallery photos...</div>
+        </div>
+    </div>
+
+    <div id="storePanel" class="tab-panel">
+        <div id="chefStoreGrid" class="chef-recipes-grid"
+            style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+            <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading store
+                items...</div>
+        </div>
+    </div>
+
+    <div id="booksPanel" class="tab-panel">
+        <!-- Book Sub-Tabs (only for own profile) -->
+        <div id="profileBookSubTabs" class="profile-nav-tabs"
+            style="justify-content: center; margin-bottom: 25px; display: none; background: transparent; border: none; padding: 0;">
+            <button class="nav-tab book-sub-tab active" data-book-sub="my-books"
+                style="font-size: 0.9rem; padding: 8px 20px;">📚 My Books</button>
+            <button class="nav-tab book-sub-tab" data-book-sub="purchased"
+                style="font-size: 0.9rem; padding: 8px 20px;">🛒 Purchased</button>
+        </div>
+
+        <div id="myBooksSection">
+            <div id="chefBooksGrid" class="chef-recipes-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                <div class="loading" style="text-align: center; padding: 50px; color: var(--text-secondary);">Loading
+                    chef
+                    books...</div>
+            </div>
+        </div>
+
+        <div id="purchasedBooksSection" style="display: none;">
+            <div id="purchasedBooksGrid" class="chef-recipes-grid"
+                style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                <!-- Purchased books will be rendered here -->
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="this.style.display='none'">
+        <img src="" alt="Full view">
+    </div>
+
+    <script type="module">
+        import { createPostCard, formatTimeAgo, renderCommentsList } from '../js/social-ui.js';
+        import { initLanguage, t } from '../js/language.js';
+        import { getCategoryEmoji, getDifficultyText, createPublicRecipeCard } from '../js/recipe-utils.js';
+
+        const API_URL = '/api';
+        let chefData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initLanguage();
+            loadChefProfile();
+            initTabs();
+
+            // Modal close listener
+            const modal = document.getElementById('recipeModal');
+            const closeBtn = document.getElementById('closeModal');
+            if (closeBtn) {
+                closeBtn.onclick = () => modal.classList.remove('show');
+            }
+            window.onclick = (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            };
+        });
+
+        // Global viewRecipe for social-ui.js
+        window.viewRecipe = function (recipe, isPublic = true) {
+            const modal = document.getElementById('recipeModal');
+            const modalBody = document.getElementById('modalBody');
+            if (!modal || !modalBody) return;
+
+            const isReshare = !!recipe.sharedFrom;
+            const source = isReshare ? recipe.sharedFrom : recipe;
+
+            const categoryEmoji = getCategoryEmoji(source.category || recipe.category);
+            const difficultyText = getDifficultyText(source.difficulty || recipe.difficulty);
+            const totalTime = (source.prepTime || 0) + (source.cookTime || 0);
+
+            modalBody.innerHTML = `
+                <div class="modal-recipe-image" style="width: 100%; height: 300px; border-radius: 15px; overflow: hidden; margin-bottom: 20px; background: rgba(0,0,0,0.2);">
+                    ${source.photo
+                    ? `<img src="${source.photo}" alt="${source.name}" style="width: 100%; height: 100%; object-fit: cover;">`
+                    : `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:5rem;">${categoryEmoji}</div>`}
+                </div>
+                
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                    <button id="modalAddToMenu" class="btn btn-primary" style="padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                        <span>📅</span> Add to Menu
+                    </button>
+                </div>
+                
+                <h2 class="modal-recipe-title" style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 5px; color: var(--text-primary); text-align: center;">${source.name || recipe.name}</h2>
+                
+                ${isReshare ? `
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="background: rgba(255,107,138,0.1); color: var(--accent-pink); padding: 4px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">🔁 Shared from ${source.author?.name || 'another chef'}</span>
+                    </div>
+                ` : ''}
+
+                ${isReshare && recipe.instructions && recipe.instructions !== 'Shared this post!' ? `
+                    <div style="margin-bottom: 25px; padding: 15px; background: rgba(255,107,138,0.05); border-left: 4px solid var(--accent-pink); border-radius: 12px;">
+                        <strong style="color: var(--accent-pink); font-size: 0.8rem; text-transform: uppercase;">Chef's Notes:</strong>
+                        <p style="margin: 5px 0 0 0; font-style: italic;">${recipe.instructions}</p>
+                    </div>
+                ` : ''}
+
+                <div class="modal-recipe-meta" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; color: var(--text-secondary); font-size: 0.9rem; justify-content: center; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px;">
+                    <div class="meta-item">📁 ${source.category || recipe.category}</div>
+                    <div class="meta-item">⏱️ ${totalTime} min</div>
+                    <div class="meta-item">👥 ${source.servings || 0} servings</div>
+                    <div class="meta-item">${difficultyText}</div>
+                </div>
+                
+                ${(source.ingredients && source.ingredients !== 'N/A') ? `
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">🥬 Ingredients</h3>
+                        <ul style="padding-left: 20px; line-height: 1.6;">
+                            ${source.ingredients.split('\n').filter(i => i.trim()).map(i => `<li>${i}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                ${(source.instructions && source.instructions !== 'Shared this post!') ? `
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">📍 Instructions</h3>
+                        <ol style="padding-left: 20px; line-height: 1.6;">
+                            ${source.instructions.split('\n').filter(i => i.trim()).map(i => `<li>${i.replace(/^\d+\.\s*/, '')}</li>`).join('')}
+                        </ol>
+                    </div>
+                ` : ''}
+                
+                ${source.notes ? `
+                    <div class="modal-section" style="padding: 15px; background: rgba(255,255,255,0.02); border-radius: 12px; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="margin-bottom: 5px; font-size: 0.9rem; color: var(--text-secondary);">💡 Original Chef's Notes</h4>
+                        <p style="font-size: 0.9rem; margin: 0; line-height: 1.4;">${source.notes}</p>
+                    </div>
+                ` : ''}
+
+                ${source.video ? `
+                    <div class="modal-section" style="margin-top: 25px;">
+                        <h3 style="color: var(--accent-pink); margin-bottom: 10px; font-family: 'Playfair Display', serif;">📹 Video</h3>
+                        <video src="${source.video}" controls style="width: 100%; border-radius: 15px;"></video>
+                    </div>
+                ` : ''}
+            `;
+
+            // Attach add to menu listener
+            const menuBtn = modal.querySelector('#modalAddToMenu');
+            if (menuBtn) {
+                menuBtn.onclick = () => {
+                    if (typeof window.openDayPickerModal === 'function') {
+                        window.openDayPickerModal(recipe);
+                    } else {
+                        // Fallback: Redirect to home with open_recipe param
+                        window.location.href = `index.html?open_recipe=${recipe.id}`;
+                    }
+                };
+            }
+
+            modal.classList.add('show');
+        };
+
+        async function loadChefStore(username, isOwnProfile) {
+            const grid = document.getElementById('chefStoreGrid');
+            try {
+                const token = sessionStorage.getItem('authToken');
+                let url = `${API_URL}/store`;
+                let options = {};
+
+                if (isOwnProfile && token) {
+                    url = `${API_URL}/store/my/listings`;
+                    options = { headers: { 'Authorization': `Bearer ${token}` } };
+                }
+
+                const res = await fetch(url, options);
+                const items = await res.json();
+
+                // If not own profile, filter by username
+                const filteredItems = isOwnProfile ? items : items.filter(i => i.seller?.username === username);
+
+                // Update tab count
+                const storeTabBtn = document.getElementById('storeTabBtn');
+                if (storeTabBtn) {
+                    const label = isOwnProfile ? 'My Store' : 'Store';
+                    storeTabBtn.innerHTML = `🏪 ${label} <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px;">${filteredItems.length}</span>`;
+                }
+
+                renderStore(filteredItems, isOwnProfile);
+            } catch (err) {
+                console.error('Error loading store:', err);
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">Failed to load store items.</div>';
+            }
+        }
+
+        function renderStore(items, isOwnProfile) {
+            const grid = document.getElementById('chefStoreGrid');
+            grid.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">${isOwnProfile ? 'You haven\'t listed any recipes yet.' : 'This chef hasn\'t listed any recipes yet.'}</div>`;
+                return;
+            }
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+
+                const photo = item.photo || '/assets/default-recipe.png';
+                const sellerName = item.seller?.name || chefData?.displayName || 'Chef';
+
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <div style="position: absolute; top: 15px; right: 15px; background: var(--accent-pink); color: white; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(255,107,138,0.3);">$${item.price.toFixed(2)}</div>
+                        <h3 class="recipe-title" style="color: white; font-size: 1.2rem; margin-bottom: 2px; font-weight: 700;">${item.name}</h3>
+                        <p style="font-size: 0.8rem; color: #ccc; margin: 0 0 8px 0;">Seller: ${sellerName}</p>
+                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px;">
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">🏷️ ${item.category}</span>
+                            ${item.salesCount !== undefined ? `<span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">📈 ${item.salesCount} sales</span>` : ''}
+                        </div>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action buy-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>${isOwnProfile ? '⚙️' : '🛒'}</span>
+                                ${isOwnProfile ? 'Edit Listing' : 'Purchase Now'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+
+                card.querySelector('.buy-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    if (isOwnProfile) {
+                        window.location.href = 'index.html#store-manager';
+                    } else {
+                        window.location.href = `index.html?open_recipe=${item.id}`;
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function loadChefBooks(username, isOwnProfile) {
+            const grid = document.getElementById('chefBooksGrid');
+            try {
+                const token = sessionStorage.getItem('authToken');
+                let url = `${API_URL}/books/public/browse`;
+                let options = {};
+
+                if (isOwnProfile && token) {
+                    url = `${API_URL}/books`;
+                    options = { headers: { 'Authorization': `Bearer ${token}` } };
+                }
+
+                const res = await fetch(url, options);
+                const data = await res.json();
+                const books = Array.isArray(data) ? data : (data.books || []);
+
+                // If not own profile, filter by username
+                const filteredBooks = isOwnProfile ? books : books.filter(b => b.author?.username === username);
+
+                // Update tab count
+                const booksTabBtn = document.getElementById('booksTabBtn');
+                if (booksTabBtn) {
+                    const label = isOwnProfile ? 'My Books' : 'Chef Book';
+                    booksTabBtn.innerHTML = `📚 ${label} <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-left: 5px;">${filteredBooks.length}</span>`;
+                }
+
+                // Show sub-tabs if own profile
+                const subTabs = document.getElementById('profileBookSubTabs');
+                if (subTabs) {
+                    subTabs.style.display = isOwnProfile ? 'flex' : 'none';
+                    if (isOwnProfile) initBookSubTabs();
+                }
+
+                if (isOwnProfile) {
+                    loadPurchasedBooks();
+                }
+
+                renderBooks(filteredBooks, isOwnProfile);
+            } catch (err) {
+                console.error('Error loading books:', err);
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">Failed to load books.</div>';
+            }
+        }
+
+        async function loadPurchasedBooks() {
+            const grid = document.getElementById('purchasedBooksGrid');
+            if (!grid) return;
+            try {
+                const token = sessionStorage.getItem('authToken');
+                if (!token) return;
+
+                const res = await fetch(`${API_URL}/books/purchased`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const books = await res.json();
+                renderBooksInGrid(books, grid);
+            } catch (err) {
+                console.error('Error loading purchased books:', err);
+            }
+        }
+
+        function renderBooksInGrid(books, grid) {
+            grid.innerHTML = '';
+            if (!books || books.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No purchased books found.</div>`;
+                return;
+            }
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+                const photo = book.coverPhoto || book.cover_photo || '/assets/default-book.png';
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${book.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <h3 class="recipe-title" style="color: white; font-size: 1.3rem; margin-bottom: 2px; font-weight: 700;">${book.title}</h3>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action view-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1;">Open Book</button>
+                        </div>
+                    </div>
+                `;
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+                card.querySelector('.view-btn').onclick = () => { window.location.href = `index.html?open_book=${book.id}`; };
+                grid.appendChild(card);
+            });
+        }
+
+        function initBookSubTabs() {
+            const subTabs = document.querySelectorAll('.book-sub-tab');
+            subTabs.forEach(tab => {
+                tab.onclick = () => {
+                    subTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const sub = tab.getAttribute('data-book-sub');
+                    document.getElementById('myBooksSection').style.display = sub === 'my-books' ? 'block' : 'none';
+                    document.getElementById('purchasedBooksSection').style.display = sub === 'purchased' ? 'block' : 'none';
+                };
+            });
+        }
+
+        function renderBooks(books, isOwnProfile) {
+            const grid = document.getElementById('chefBooksGrid');
+            grid.innerHTML = '';
+
+            if (!books || books.length === 0) {
+                grid.innerHTML = `<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">${isOwnProfile ? 'You haven\'t created any books yet.' : 'This chef hasn\'t published any books yet.'}</div>`;
+                return;
+            }
+
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card public-recipe-card';
+                card.style.height = '350px';
+
+                const photo = book.coverPhoto || book.cover_photo || '/assets/default-book.png';
+                const authorName = book.author?.name || chefData?.displayName || 'Chef';
+                const price = parseFloat(book.price) || 0;
+
+                card.innerHTML = `
+                    <div class="recipe-card-image" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index:0;">
+                        <img src="${photo}" alt="${book.title}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); pointer-events: none;"></div>
+                    </div>
+                    <div class="public-card-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100%; background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%); padding: 15px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 1;">
+                        <div style="position: absolute; top: 15px; right: 15px; background: #ffd700; color: #000; padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(255,215,0,0.3);">${price > 0 ? `$${price.toFixed(2)}` : 'FREE'}</div>
+                        <h3 class="recipe-title" style="color: white; font-size: 1.3rem; margin-bottom: 2px; font-weight: 700; font-family: 'Playfair Display', serif;">${book.title}</h3>
+                        <p style="font-size: 0.8rem; color: #ccc; margin: 0 0 8px 0;">By ${authorName}</p>
+                        <div style="display: flex; gap: 8px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px;">
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">📖 ${book.recipeCount || book.recipe_count || 0} Recipes</span>
+                            <span style="background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 10px;">🎨 ${book.theme || 'Classic'}</span>
+                        </div>
+                        <div class="overlay-actions" style="display: flex; gap: 8px; margin-top: 10px; opacity: 0; transition: opacity 0.3s ease;">
+                            <button class="btn-overlay-action view-book-btn" style="background: var(--accent-pink); color: white; border: none; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; font-weight: 600; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>${isOwnProfile ? '📝' : '📖'}</span>
+                                ${isOwnProfile ? 'Manage Book' : 'View & Purchase'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                card.onmouseenter = () => { card.querySelector('.overlay-actions').style.opacity = '1'; };
+                card.onmouseleave = () => { card.querySelector('.overlay-actions').style.opacity = '0'; };
+
+                card.querySelector('.view-book-btn').onclick = (e) => {
+                    e.stopPropagation();
+                    if (isOwnProfile) {
+                        window.location.href = 'index.html#book-manager';
+                    } else {
+                        window.location.href = `index.html?open_book=${book.id}`;
+                    }
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        function initTabs() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+
+                    // Update buttons
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Update panels
+                    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                    document.getElementById(tabName + 'Panel').classList.add('active');
+                });
+            });
+        }
+
+        async function loadChefProfile() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get('username');
+
+            if (!username) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // 1. Load Profile Info (send token so admin can bypass privacy)
+                const token = sessionStorage.getItem('authToken');
+                const profileFetchOptions = {};
+                if (token) {
+                    profileFetchOptions.headers = { 'Authorization': `Bearer ${token}` };
+                }
+                const profileRes = await fetch(`${API_URL}/users/public/${username}`, profileFetchOptions);
+                chefData = await profileRes.json();
+
+                if (chefData.error) {
+                    renderError(chefData.error);
+                    return;
+                }
+
+                // Update Header UI
+                const displayName = chefData.displayName || chefData.username;
+                document.getElementById('chefName').textContent = displayName;
+                document.getElementById('chefUsername').textContent = `@${chefData.username}`;
+                document.getElementById('chefBio').textContent = chefData.bio || `Passionate pastry chef sharing delicious creations.`;
+                document.getElementById('postsCount').textContent = chefData.stats?.posts || 0;
+                document.getElementById('followersCount').textContent = chefData.stats?.followers || 0;
+                document.getElementById('followingCount').textContent = chefData.stats?.following || 0;
+
+                // Use profile picture or generate an avatar
+                const picUrl = chefData.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random&color=fff&size=150`;
+                document.getElementById('chefPic').src = picUrl;
+
+
+
+                // Show 'Private Profile' badge if admin is viewing a private user
+                if (chefData.isPrivate) {
+                    const nameRow = document.querySelector('.hero-name-row');
+                    if (nameRow) {
+                        const privateBadge = document.createElement('span');
+                        privateBadge.textContent = '🔒 Private Profile';
+                        privateBadge.style.cssText = 'background: rgba(255,60,60,0.15); color: #ff6b6b; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,60,60,0.3);';
+                        nameRow.appendChild(privateBadge);
+                    }
+                }
+
+                // Auth check
+                const currentUserUsername = sessionStorage.getItem('currentUser') || 'null';
+                const isOwnProfile = currentUserUsername !== 'null' && currentUserUsername === chefData.username;
+
+                // Customize and display premium/upgrade badge
+                const chefPremiumBadge = document.getElementById('chefPremiumBadge');
+                if (chefPremiumBadge) {
+                    if (chefData.isPremium) {
+                        chefPremiumBadge.style.display = 'inline-block';
+                        chefPremiumBadge.innerHTML = '💎 Premium';
+                        chefPremiumBadge.style.background = 'linear-gradient(45deg, #ffd700, #ff8c00)';
+                        chefPremiumBadge.style.cursor = 'default';
+                        chefPremiumBadge.title = 'Premium Chef';
+                        chefPremiumBadge.onclick = null;
+                    } else if (isOwnProfile) {
+                        // Show upgrade option for own profile if not premium
+                        chefPremiumBadge.style.display = 'inline-block';
+                        chefPremiumBadge.innerHTML = '👑 Upgrade to Premium';
+                        chefPremiumBadge.style.background = 'linear-gradient(135deg, #eab366, #ea7a66)';
+                        chefPremiumBadge.style.color = '#fff';
+                        chefPremiumBadge.style.cursor = 'pointer';
+                        chefPremiumBadge.title = 'Click to upgrade your profile to Premium';
+                        chefPremiumBadge.onclick = () => {
+                            window.location.href = './payment.html?source=chef-profile';
+                        };
+                    } else {
+                        chefPremiumBadge.style.display = 'none';
+                    }
+                }
+
+                // Update tab labels if own profile
+                if (isOwnProfile) {
+                    const storeTabBtn = document.getElementById('storeTabBtn');
+                    const booksTabBtn = document.getElementById('booksTabBtn');
+                    if (storeTabBtn) storeTabBtn.innerHTML = '🏪 My Store';
+                    if (booksTabBtn) booksTabBtn.innerHTML = '📚 My Books';
+                }
+
+                if (isOwnProfile) {
+                    const postBox = document.getElementById('ownProfilePostBox');
+                    postBox.style.display = 'block';
+                    document.getElementById('postUserAvatar').src = picUrl;
+
+                    const editWrapper = document.getElementById('editProfileBtnWrapper');
+                    if (editWrapper) editWrapper.style.display = 'flex';
+
+                    initPostBoxLogic();
+                } else {
+                    // Show follow button and share button
+                    const editWrapper = document.getElementById('editProfileBtnWrapper');
+                    if (editWrapper) {
+                        editWrapper.style.display = 'flex';
+                        const editBtn = editWrapper.querySelector('a');
+                        if (editBtn) editBtn.style.display = 'none';
+
+                        const followBtn = document.getElementById('followChefBtn');
+                        if (followBtn && token) {
+                            followBtn.style.display = 'inline-block';
+                            checkFollowStatus(chefData.id, followBtn);
+                            followBtn.onclick = () => toggleFollowChef(chefData.id, followBtn);
+                        } else if (followBtn) {
+                            followBtn.style.display = 'inline-block';
+                            followBtn.onclick = () => showNotification('Please log in to follow chefs', 'info');
+                        }
+                    }
+                }
+
+                // Init Share Profile Logic
+                const shareProfileBtn = document.getElementById('shareProfileBtn');
+                if (shareProfileBtn) {
+                    shareProfileBtn.onclick = () => {
+                        const shareData = {
+                            title: `${chefData.displayName || chefData.username}'s Pastry Profile`,
+                            text: chefData.bio || 'Check out my recipes and bakery creations!',
+                            url: window.location.href
+                        };
+
+                        if (navigator.share) {
+                            navigator.share(shareData).catch(err => console.error('Error sharing profile:', err));
+                        } else {
+                            navigator.clipboard.writeText(shareData.url).then(() => {
+                                showNotification('📋 Profile link copied to clipboard!', 'success');
+                            });
+                        }
+                    };
+                }
+
+                // 2. Load Feed (Recipes + Posts)
+                let fetchUrl = `${API_URL}/recipes/public/user/${username}`;
+                let fetchOptions = {};
+
+                if (isOwnProfile && token) {
+                    // Fetch all including private
+                    fetchUrl = `${API_URL}/recipes`;
+                    fetchOptions = { headers: { 'Authorization': `Bearer ${token}` } };
+                }
+
+                const recipesRes = await fetch(fetchUrl, fetchOptions);
+                const recipes = await recipesRes.json();
+                renderFeed(recipes);
+                renderPublicRecipes(recipes);
+
+                // 3. Load Gallery
+                renderGallery(chefData.gallery || []);
+
+                // 4. Load Store & Books
+                loadChefStore(username, isOwnProfile);
+                loadChefBooks(username, isOwnProfile);
+
+                // 5. Handle direct post link
+                const postId = urlParams.get('post');
+                if (postId && Array.isArray(recipes)) {
+                    const sharedPost = recipes.find(r => r.id === postId || r._id === postId);
+                    if (sharedPost) {
+                        setTimeout(() => window.viewRecipe(sharedPost, true), 500);
+                    }
+                }
+
+            } catch (err) {
+                console.error('Error loading chef profile:', err);
+                renderError('Failed to load profile details.');
+            }
+        }
+
+        function renderFeed(recipes) {
+            const grid = document.getElementById('chefRecipesGrid');
+            grid.innerHTML = '';
+
+            if (!Array.isArray(recipes) || recipes.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No posts shared yet.</div>';
+                return;
+            }
+
+            // Sort newest first
+            recipes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            recipes.forEach(recipe => {
+                // Ensure required author info for createPostCard
+                if (!recipe.author && chefData) {
+                    recipe.author = {
+                        userId: chefData.userId,
+                        username: chefData.username,
+                        name: chefData.displayName,
+                        pic: chefData.profilePicture,
+                        isPremium: chefData.isPremium
+                    };
+                }
+                const card = createPostCard(recipe);
+                grid.appendChild(card);
+            });
+        }
+
+        function renderPublicRecipes(recipes) {
+            const grid = document.getElementById('publicRecipesListGrid');
+            grid.innerHTML = '';
+
+            // Show all shared recipes
+            const pureRecipes = (Array.isArray(recipes) ? recipes : []).filter(r =>
+                r.visibility === 'public'
+            );
+
+            if (pureRecipes.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4);">No public recipes shared yet.</div>';
+                return;
+            }
+
+            pureRecipes.forEach(recipe => {
+                if (!recipe.author && chefData) {
+                    recipe.author = {
+                        userId: chefData.userId,
+                        username: chefData.username,
+                        name: chefData.displayName,
+                        pic: chefData.profilePicture,
+                        isPremium: chefData.isPremium
+                    };
+                }
+                const card = createPublicRecipeCard(recipe);
+                grid.appendChild(card);
+            });
+        }
+
+        function renderGallery(photos) {
+            const grid = document.getElementById('chefGalleryGrid');
+            grid.innerHTML = '';
+
+            if (!photos || photos.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; grid-column: 1/-1; padding: 40px; color: rgba(255, 255, 255, 0.4);">No photos in the gallery yet.</div>';
+                return;
+            }
+
+            photos.forEach(photo => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.innerHTML = `<img src="${photo}" alt="Gallery photo" loading="lazy">`;
+                item.onclick = () => {
+                    const lightbox = document.getElementById('lightboxOverlay');
+                    lightbox.querySelector('img').src = photo;
+                    lightbox.style.display = 'flex';
+                };
+                grid.appendChild(item);
+            });
+        }
+
+        function renderError(msg) {
+            document.body.innerHTML = `
+                <div style="text-align: center; padding: 100px 20px; color: white;">
+                    <h1 style="font-family: 'Playfair Display', serif;">Chef Profile Not Available</h1>
+                    <p style="color: #ff6b6b; margin: 20px 0;">${msg}</p>
+                    <a href="index.html" style="color: var(--accent-pink); text-decoration: none; font-weight: 600;">← Return to Community Feed</a>
+                </div>
+            `;
+        }
+
+        async function checkFollowStatus(userId, btn) {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) return;
+            try {
+                const res = await fetch(`${API_URL}/users/${userId}/is-following`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.following) {
+                    btn.textContent = 'Unfollow';
+                    btn.classList.add('active');
+                    btn.style.background = 'rgba(255, 255, 255, 0.1)';
+                    btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function toggleFollowChef(userId, btn) {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) return;
+
+            btn.disabled = true;
+            try {
+                const res = await fetch(`${API_URL}/users/${userId}/follow`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.following) {
+                        btn.textContent = 'Unfollow';
+                        btn.classList.add('active');
+                        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+                        btn.style.border = '1px solid rgba(255, 255, 255, 0.2)';
+                        showNotification('Chef followed!');
+                        document.getElementById('followersCount').textContent = parseInt(document.getElementById('followersCount').textContent) + 1;
+                    } else {
+                        btn.textContent = 'Follow';
+                        btn.classList.remove('active');
+                        btn.style.background = 'var(--accent-pink)';
+                        btn.style.border = 'none';
+                        showNotification('Chef unfollowed');
+                        document.getElementById('followersCount').textContent = parseInt(document.getElementById('followersCount').textContent) - 1;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                showNotification('Action failed', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function initPostBoxLogic() {
+            const textarea = document.getElementById('quickPostText');
+            const submitBtn = document.getElementById('submitQuickPostBtn');
+            const photoInput = document.getElementById('quickPostPhotoInput');
+            const videoInput = document.getElementById('quickPostVideoInput');
+            const photoPreview = document.getElementById('quickPostPhotoPreview');
+            const videoPreview = document.getElementById('quickPostVideoPreview');
+
+            document.getElementById('addPhotoBtn').onclick = () => photoInput.click();
+            document.getElementById('addVideoBtn').onclick = () => videoInput.click();
+
+            photoInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        photoPreview.querySelector('img').src = re.target.result;
+                        photoPreview.style.display = 'block';
+                        videoPreview.style.display = 'none';
+                        videoInput.value = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            videoInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const maxSize = 50 * 1024 * 1024;
+                    if (file.size > maxSize) {
+                        showNotification('❌ Video file is too large! Please choose a file under 50MB.', 'error');
+                        videoInput.value = '';
+                        return;
+                    }
+                    videoPreview.querySelector('video').src = URL.createObjectURL(file);
+                    videoPreview.style.display = 'block';
+                    photoPreview.style.display = 'none';
+                    photoInput.value = '';
+                }
+            };
+
+            document.getElementById('removePostPhotoBtn').onclick = () => { photoInput.value = ''; photoPreview.style.display = 'none'; };
+            document.getElementById('removePostVideoBtn').onclick = () => { videoInput.value = ''; videoPreview.style.display = 'none'; };
+
+            submitBtn.onclick = async () => {
+                const text = textarea.value.trim();
+                const photoFile = photoInput.files[0];
+                const videoFile = videoInput.files[0];
+                if (!text && !photoFile && !videoFile) return;
+
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Posting...';
+
+                try {
+                    const token = sessionStorage.getItem('authToken');
+                    const recipeData = {
+                        name: text.split('\n')[0].substring(0, 40) || 'Quick Update',
+                        category: 'Social',
+                        ingredients: 'N/A', // Required by backend
+                        instructions: text || (photoFile ? 'Shared a photo' : 'Shared a video'),
+                        visibility: 'public',
+                        notes: 'Shared via Quick Post'
+                    };
+
+                    const toBase64 = file => new Promise((res, rej) => {
+                        const r = new FileReader(); r.readAsDataURL(file); r.onload = () => res(r.result); r.onerror = e => rej(e);
+                    });
+
+                    if (photoFile) recipeData.photo = await toBase64(photoFile);
+                    if (videoFile) recipeData.video = await toBase64(videoFile);
+
+                    const resp = await fetch(`${API_URL}/recipes`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(recipeData)
+                    });
+
+                    if (resp.ok) {
+                        textarea.value = '';
+                        photoPreview.style.display = 'none';
+                        videoPreview.style.display = 'none';
+                        photoInput.value = '';
+                        videoInput.value = '';
+                        loadChefProfile();
+                        showNotification('✅ Shared successfully!', 'success');
+                    } else {
+                        const data = await resp.json();
+                        showNotification(data.error || 'Failed to share', 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Share';
+                }
+            };
+        }
+
+        // --- Social Interactions (Required by createPostCard) ---
+        window.toggleLike = async (id, countSpan, likeBtn) => {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) { showNotification('Please log in to like posts', 'error'); return; }
+            try {
+                const resp = await fetch(`${API_URL}/recipes/${id}/like`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (resp.ok) {
+                    let count = parseInt(countSpan.textContent);
+                    if (likeBtn.classList.contains('liked')) { likeBtn.classList.remove('liked'); count--; }
+                    else { likeBtn.classList.add('liked'); count++; }
+                    countSpan.textContent = count;
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        window.submitComment = async (id, text, card, parentId = null) => {
+            const token = sessionStorage.getItem('authToken');
+            if (!token) { showNotification('Please log in to comment', 'error'); return; }
+            try {
+                const resp = await fetch(`${API_URL}/recipes/${id}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ text, parentId })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const list = card.querySelector('.comments-list');
+                    if (list) {
+                        if (list.textContent.includes('No comments')) list.innerHTML = '';
+                        list.innerHTML += `<div class="post-comment" style="display: flex; gap: 10px; margin-top: 10px; font-size: 0.85rem;">
+                            <img src="${data.comment.authorPic}" style="width: 24px; height: 24px; border-radius: 50%;">
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 5px 10px; border-radius: 12px; flex: 1;">
+                                <strong style="color: var(--accent-pink);">${data.comment.authorName}</strong>
+                                <span style="display: block;">${text}</span>
+                            </div>
+                        </div>`;
+                    }
+                    const count = card.querySelector('.comments-count');
+                    if (count) count.textContent = parseInt(count.textContent) + 1;
+                }
+            } catch (e) { console.error(e); }
+        };
+
+        window.deletePost = async (id) => {
+            if (!confirm('Delete this post?')) return;
+            const token = sessionStorage.getItem('authToken');
+            try {
+                const resp = await fetch(`${API_URL}/recipes/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                if (resp.ok) { showNotification('Post deleted'); loadChefProfile(); }
+            } catch (e) { console.error(e); }
+        };
+
+        window.sharePost = async (id, initialNotes = '') => {
+            const notes = prompt('Add a note to your share? (Optional)', initialNotes);
+            if (notes === null) return;
+
+            const token = sessionStorage.getItem('authToken');
+            try {
+                const resp = await fetch(`${API_URL}/recipes/${id}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ notes })
+                });
+                if (resp.ok) showNotification('Post shared to your feed!');
+                else { const d = await resp.json(); showNotification(d.error, 'error'); }
+            } catch (e) { console.error(e); }
+        };
+
+        window.editPost = (id) => showNotification('Please edit this recipe on your My Recipes page.', 'info');
+
+        function showNotification(msg, type = 'success') {
+            const n = document.createElement('div');
+            n.className = `notification ${type}`;
+            n.innerHTML = `<span class="notification-message">${msg}</span>`;
+            document.body.appendChild(n);
+            setTimeout(() => n.classList.add('show'), 10);
+            setTimeout(() => { n.classList.remove('show'); setTimeout(() => n.remove(), 300); }, 3000);
+        }
+    </script>
+
+    <!-- QR Code Modal for Chef Profile -->
+    <div class="qr-modal-overlay" id="qrModalOverlay">
+        <button class="qr-modal-close" id="qrModalCloseBtn">&times;</button>
+        <div class="qr-modal-card">
+            <canvas id="qrModalCanvas"></canvas>
+            <h3 id="qrModalName">Chef Profile</h3>
+            <p id="qrModalUrl"></p>
+            <div class="qr-modal-actions">
+                <button type="button" class="btn-qr-action primary" id="qrModalDownloadBtn">
+                    <span>📥</span> Download PNG
+                </button>
+                <button type="button" class="btn-qr-action" id="qrModalCopyBtn">
+                    <span>🔗</span> Copy Link
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== Profile QR Code (Chef Profile Page) ==========
+        (function initProfileQR() {
+            const qrBtn = document.getElementById('showProfileQrBtn');
+            if (!qrBtn) return;
+
+            qrBtn.addEventListener('click', function () {
+                var urlParams = new URLSearchParams(window.location.search);
+                var username = urlParams.get('username');
+                if (!username) return;
+
+                var profileUrl = window.location.origin + '/chef-profile.html?username=' + encodeURIComponent(username);
+
+                // Generate QR
+                var qr = qrcode(0, 'M');
+                qr.addData(profileUrl);
+                qr.make();
+
+                // Render to modal canvas
+                var canvas = document.getElementById('qrModalCanvas');
+                if (canvas) {
+                    var ctx = canvas.getContext('2d');
+                    var size = 240;
+                    var moduleCount = qr.getModuleCount();
+                    var cellSize = size / moduleCount;
+
+                    canvas.width = size;
+                    canvas.height = size;
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, size, size);
+
+                    ctx.fillStyle = '#1a120b';
+                    for (var row = 0; row < moduleCount; row++) {
+                        for (var col = 0; col < moduleCount; col++) {
+                            if (qr.isDark(row, col)) {
+                                ctx.fillRect(
+                                    Math.round(col * cellSize),
+                                    Math.round(row * cellSize),
+                                    Math.ceil(cellSize),
+                                    Math.ceil(cellSize)
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // Set modal text
+                var chefNameEl = document.getElementById('chefName');
+                document.getElementById('qrModalName').textContent =
+                    chefNameEl ? chefNameEl.textContent : 'Chef Profile';
+                document.getElementById('qrModalUrl').textContent = profileUrl;
+
+                // Wire up download
+                document.getElementById('qrModalDownloadBtn').onclick = function () {
+                    var dlQr = qrcode(0, 'M');
+                    dlQr.addData(profileUrl);
+                    dlQr.make();
+
+                    var dlCanvas = document.createElement('canvas');
+                    var dlSize = 600;
+                    var padding = 40;
+                    var totalSize = dlSize + padding * 2;
+                    dlCanvas.width = totalSize;
+                    dlCanvas.height = totalSize + 60;
+
+                    var dlCtx = dlCanvas.getContext('2d');
+                    dlCtx.fillStyle = '#ffffff';
+                    dlCtx.fillRect(0, 0, dlCanvas.width, dlCanvas.height);
+
+                    var mc = dlQr.getModuleCount();
+                    var cs = dlSize / mc;
+                    dlCtx.fillStyle = '#1a120b';
+                    for (var r = 0; r < mc; r++) {
+                        for (var c = 0; c < mc; c++) {
+                            if (dlQr.isDark(r, c)) {
+                                dlCtx.fillRect(
+                                    padding + Math.round(c * cs),
+                                    padding + Math.round(r * cs),
+                                    Math.ceil(cs), Math.ceil(cs)
+                                );
+                            }
+                        }
+                    }
+
+                    dlCtx.fillStyle = '#8B7B6B';
+                    dlCtx.font = '500 16px Poppins, sans-serif';
+                    dlCtx.textAlign = 'center';
+                    dlCtx.fillText('Chef Book — @' + username, totalSize / 2, dlSize + padding + 40);
+
+                    var link = document.createElement('a');
+                    link.download = username + '_chef_qr.png';
+                    link.href = dlCanvas.toDataURL('image/png');
+                    link.click();
+                };
+
+                // Wire up copy link
+                document.getElementById('qrModalCopyBtn').onclick = function () {
+                    navigator.clipboard.writeText(profileUrl).then(function () {
+                        var btn = document.getElementById('qrModalCopyBtn');
+                        var original = btn.innerHTML;
+                        btn.innerHTML = '<span>\u2705</span> Copied!';
+                        setTimeout(function () { btn.innerHTML = original; }, 2000);
+                    });
+                };
+
+                // Show modal
+                document.getElementById('qrModalOverlay').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // Close modal
+            document.getElementById('qrModalCloseBtn').onclick = function () {
+                document.getElementById('qrModalOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+            };
+            document.getElementById('qrModalOverlay').onclick = function (e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            };
+        })();
+    </script>
+</body>
+
+</html>

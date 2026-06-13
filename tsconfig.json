@@ -31,6 +31,8 @@
   },
   "include": [
     "services/**/*.ts",
+    "js/**/*.ts",
+    "utils/**/*.ts",
     "*.ts",
     "vite-env.d.ts"
   ],

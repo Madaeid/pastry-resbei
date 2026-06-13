@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
+    <title>📅 Daily Menu - Chef Book</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <script type="module" src="../services/app-guard.ts"></script>
+</head>
+
+<body>
+    <!-- Page Header -->
+    <div class="daily-menu-header">
+        <div class="header-brand">
+            <a href="./days-selection.html" class="back-link">
+                <span>←</span>
+                <span data-i18n="backToDays">Back to Days</span>
+            </a>
+        </div>
+        <div class="header-title">
+            <span class="header-icon-emoji" id="dayEmoji">📅</span>
+            <h1 id="dayTitle">Loading...</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-logout" id="logoutBtn">
+                <span>🚪</span>
+                <span data-i18n="logout">Logout</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Day Cover Photo Section -->
+    <div class="day-cover-section">
+        <div class="day-cover-container" id="dayCoverContainer">
+            <div class="day-cover-preview" id="dayCoverPreview">
+                <span class="cover-upload-icon">🖼️</span>
+                <span class="cover-upload-text" data-i18n="clickToAddCover">Click to add a cover photo for this
+                    day</span>
+            </div>
+            <input type="file" id="dayCoverInput" accept="image/*" hidden>
+            <button class="btn-remove-cover" id="removeCoverBtn" style="display: none;">
+                <span>🗑️</span> <span data-i18n="removePhoto">Remove Photo</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Particles Background -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Decorative Gradient Orbs -->
+    <div class="decorative-orb orb-1"></div>
+    <div class="decorative-orb orb-2"></div>
+    <div class="decorative-orb orb-3"></div>
+
+    <!-- Main Content -->
+    <div class="day-recipes-container">
+        <!-- Add Recipe Section -->
+        <div class="add-recipe-section">
+            <button class="btn-add-recipe" id="addRecipeBtn">
+                <span class="add-icon">➕</span>
+                <span data-i18n="addRecipeBtn">Add Recipe</span>
+            </button>
+            <button class="btn-download-pdf" id="downloadPdfBtn">
+                <span class="pdf-icon">📥</span>
+                <span data-i18n="downloadPdf">Download PDF</span>
+            </button>
+        </div>
+
+        <!-- Recipes Grid -->
+        <div class="day-recipes-grid" id="recipesGrid">
+            <!-- Recipes will be dynamically inserted here -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-day-state" id="emptyState">
+            <div class="empty-icon">🍰</div>
+            <h3 data-i18n="noRecipesForDay">No recipes for this day yet</h3>
+            <p data-i18n="clickAddRecipe">Click the "Add Recipe" button to add your first recipe!</p>
+        </div>
+    </div>
+
+    <!-- Add Recipe Modal -->
+    <div id="addRecipeModal" class="modal">
+        <div class="modal-content modal-md">
+            <button class="modal-close" id="closeAddRecipeModal">&times;</button>
+            <div class="modal-header">
+                <h2>➕ <span data-i18n="addRecipeFor">Add Recipe for</span> <span id="modalDayName">Day</span></h2>
+            </div>
+
+            <!-- Select from My Recipes Option -->
+            <div class="select-from-recipes-section">
+                <p class="section-divider-text" data-i18n="chooseFromSaved">Choose from your saved recipes</p>
+                <button type="button" class="btn btn-secondary btn-select-recipes" id="selectFromMyRecipesBtn">
+                    <span>📖</span> <span data-i18n="selectFromMyRecipes">Select from My Recipes</span>
+                </button>
+                <p class="section-divider-text" data-i18n="orCreateNew">— or create a new recipe —</p>
+            </div>
+
+            <form id="addRecipeForm">
+                <div class="form-group cover-upload">
+                    <label data-i18n="recipePhoto">Recipe Photo</label>
+                    <div class="cover-preview" id="recipePhotoPreview">
+                        <span class="upload-icon">📷</span>
+                        <span class="upload-text" data-i18n="clickToUpload">Click to upload photo</span>
+                    </div>
+                    <input type="file" id="recipePhoto" accept="image/*" hidden>
+                </div>
+                <div class="form-group">
+                    <label for="recipeName" data-i18n="recipeName">Recipe Name *</label>
+                    <input type="text" id="recipeName" data-i18n="recipeNamePlaceholder"
+                        placeholder="e.g., Chocolate Croissant" required>
+                </div>
+                <div class="form-group">
+                    <label for="recipeIngredients" data-i18n="ingredientsOptional">Ingredients (optional)</label>
+                    <textarea id="recipeIngredients" rows="4" data-i18n="ingredientsPlaceholderShort"
+                        placeholder="e.g., 2 cups flour, 1 cup sugar, 3 eggs..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="recipeInstructions" data-i18n="instructionsOptional">Instructions (optional)</label>
+                    <textarea id="recipeInstructions" rows="5" data-i18n="instructionsPlaceholderShort"
+                        placeholder="e.g., Step 1: Preheat oven to 350°F..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelAddRecipe"
+                        data-i18n="cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-icon">✨</span>
+                        <span data-i18n="addRecipeBtn">Add Recipe</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Select Recipe Modal -->
+    <div id="selectRecipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeSelectRecipeModal">&times;</button>
+            <div class="modal-header">
+                <h2>📖 <span data-i18n="selectFromMyRecipes">Select from My Recipes</span></h2>
+            </div>
+            <div class="recipe-search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="selectRecipeSearch" class="search-input" data-i18n="searchRecipes"
+                    placeholder="Search recipes...">
+            </div>
+            <div id="selectRecipeList" class="select-recipe-list">
+                <!-- Recipes will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- View Recipe Modal -->
+    <div id="viewRecipeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeViewRecipeModal">&times;</button>
+            <div id="recipeModalBody">
+                <!-- Recipe details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p data-i18n="dailyMenuFooter">📅 Daily Menu - Chef Book © 2024</p>
+    </footer>
+
+    <script type="module" src="../js/daily-menu.js"></script>
+</body>
+
+</html>
