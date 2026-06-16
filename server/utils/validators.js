@@ -64,7 +64,7 @@ export const storeRecipeSchema = z.object({
     ingredients: z.string().optional().nullable(),
     instructions: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
-    price: z.coerce.number().positive('A valid price is required')
+    price: z.coerce.number().nonnegative('A valid price is required')
 });
 
 export const updateStoreRecipeSchema = storeRecipeSchema.partial();

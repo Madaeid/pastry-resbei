@@ -10,10 +10,25 @@ import { createRecipeCheckoutSession, verifyCheckoutSession } from '../config/st
 
 const router = express.Router();
 
-// ===== Get All Store Recipes (Public - Preview Only) =====
+// Helper to check premium status
+async function isPremiumUser(db, userId) {
+    const subResult = await db.query(`
+        SELECT * FROM subscriptions 
+        WHERE user_id = $1 AND status = 'active' AND end_date::timestamp > NOW()
+    `, [userId]);
+    const subscription = subResult.rows[0];
+
+    const userResult = await db.query('SELECT is_admin FROM users WHERE id = $1', [userId]);
+    const user = userResult.rows[0];
+
+    return !!(subscription || (user && user.is_admin));
+}
+
+// ===== Get All Store Recipes =====
 router.get('/', async (req, res) => {
     try {
         const db = getDatabase();
+
         const result = await db.query(`
             SELECT sr.id, sr.name, sr.photo, sr.price, sr.category, sr.difficulty,
                    sr.prep_time, sr.cook_time, sr.created_at,
@@ -167,11 +182,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // ===== Create Store Recipe =====
 router.post('/', validate(storeRecipeSchema), authenticateToken, async (req, res) => {
     try {
+        const db = getDatabase();
+        const isPremium = await isPremiumUser(db, req.user.userId);
+        if (!isPremium) {
+            return res.status(403).json({ error: 'Only premium users can sell recipes' });
+        }
+
         let { name, description, category, difficulty, prepTime, cookTime, photo, video, ingredients, instructions, notes, price } = req.body;
         if (photo) photo = await uploadMedia(photo, 'store');
         if (video) video = await uploadMedia(video, 'store');
-
-        const db = getDatabase();
         const result = await db.query(`
             INSERT INTO store_recipes (seller_id, name, description, category, difficulty, prep_time, cook_time, photo, video, ingredients, instructions, notes, price)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
@@ -189,6 +208,10 @@ router.post('/', validate(storeRecipeSchema), authenticateToken, async (req, res
 router.put('/:id', validate(updateStoreRecipeSchema), authenticateToken, async (req, res) => {
     try {
         const db = getDatabase();
+        const isPremium = await isPremiumUser(db, req.user.userId);
+        if (!isPremium) {
+            return res.status(403).json({ error: 'Only premium users can sell/edit store recipes' });
+        }
 
         // Verify ownership
         const check = await db.query('SELECT seller_id FROM store_recipes WHERE id = $1', [req.params.id]);

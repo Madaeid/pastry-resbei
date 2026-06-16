@@ -313,7 +313,12 @@ async function initApp() {
     checkAuth();
     loadRecipes();
     loadHomeFeed();
-    loadTrendingCarousel();
+    if (isPremium()) {
+        loadTrendingCarousel();
+    } else {
+        const section = document.getElementById('trendingSection');
+        if (section) section.style.display = 'none';
+    }
 
     // Trending "View All" button → navigate to Store tab
     const trendingViewAllBtn = document.getElementById('trendingViewAllBtn');
@@ -436,16 +441,19 @@ function initKitchenRotator() {
     });
 
     const rotateImage = () => {
-        kitchenImg.style.opacity = '0';
+        kitchenImg.style.opacity = ''; // Clear inline styles
+        kitchenImg.classList.add('rotating-out');
         setTimeout(() => {
             currentIndex = (currentIndex + 1) % images.length;
             kitchenImg.src = images[currentIndex];
-            kitchenImg.style.opacity = '1';
-        }, 500);
+            setTimeout(() => {
+                kitchenImg.classList.remove('rotating-out');
+            }, 50);
+        }, 1000);
     };
 
     const startRotation = () => {
-        rotationInterval = setInterval(rotateImage, 3500);
+        rotationInterval = setInterval(rotateImage, 8000);
     };
 
     startRotation();

@@ -521,6 +521,7 @@
         import { createPostCard, formatTimeAgo, renderCommentsList } from '../js/social-ui.js';
         import { initLanguage, t } from '../js/language.js';
         import { getCategoryEmoji, getDifficultyText, createPublicRecipeCard } from '../js/recipe-utils.js';
+        import { isPremium } from '../js/payment.js';
 
         const API_URL = '/api';
         let chefData = null;
@@ -640,10 +641,26 @@
 
         async function loadChefStore(username, isOwnProfile) {
             const grid = document.getElementById('chefStoreGrid');
+            
+            // Check premium status if viewing someone else's store
+            if (!isOwnProfile && !isPremium()) {
+                grid.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 20px; color: rgba(255, 255, 255, 0.4); grid-column: 1 / -1;">
+                        <div style="font-size: 2.5rem; margin-bottom: 10px;">🔒</div>
+                        <h4 style="margin: 0 0 5px; color: white; font-weight: 600;">Premium Feature</h4>
+                        <p style="margin: 0; font-size: 0.9rem;">Browsing chef store items is a Premium feature. Upgrade to unlock!</p>
+                        <button class="btn btn-sm" onclick="window.location.href='./payment.html'" style="margin-top: 15px; background: var(--accent-pink); color: white; border: none; padding: 6px 20px; border-radius: 20px; font-weight: 600; cursor: pointer;">
+                            Upgrade Now
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
             try {
                 const token = sessionStorage.getItem('authToken');
                 let url = `${API_URL}/store`;
-                let options = {};
+                let options = token ? { headers: { 'Authorization': `Bearer ${token}` } } : {};
 
                 if (isOwnProfile && token) {
                     url = `${API_URL}/store/my/listings`;

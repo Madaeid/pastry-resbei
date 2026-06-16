@@ -18,6 +18,10 @@ export function setupStoreListeners() {
 
     if (sellRecipeBtn && sellRecipeModal) {
         sellRecipeBtn.addEventListener('click', () => {
+            if (!isPremium()) {
+                showNotification('❌ Selling recipes is a premium-only feature.', 'error');
+                return;
+            }
             if (sellRecipeForm) {
                 sellRecipeForm.reset();
                 delete sellRecipeForm.dataset.prepTime;
@@ -203,10 +207,24 @@ export async function handleSellRecipeSubmit(e) {
 export async function loadStoreRecipes() {
     const grid = document.getElementById('storeGrid');
     const emptyState = document.getElementById('storeEmptyState');
+    const filters = document.querySelector('.store-filters');
     if (!grid) return;
 
+    // Restore default empty state structure for users
+    if (emptyState) {
+        emptyState.innerHTML = `
+            <div class="empty-icon">🛒</div>
+            <h3>No recipes found in the Store</h3>
+            <p>Check back later or start selling your own!</p>
+        `;
+    }
+
+    if (filters) filters.style.display = 'flex';
+
     try {
-        const response = await fetch(`${API_URL}/store`);
+        const token = sessionStorage.getItem('authToken');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const response = await fetch(`${API_URL}/store`, { headers });
         const recipes = await response.json();
 
         const searchTerm = (document.getElementById('storeSearch')?.value || '').toLowerCase().trim();
@@ -585,7 +603,14 @@ export async function loadMyListings() {
         grid.innerHTML = '';
 
         if (listings.length === 0) {
-            if (emptyState) { emptyState.style.display = 'block'; emptyState.querySelector('h3').textContent = 'No listings yet'; emptyState.querySelector('p').textContent = 'Start adding your secret recipes to pay!'; }
+            if (emptyState) {
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = `
+                    <div class="empty-icon">🧑‍🍳</div>
+                    <h3>No listings yet</h3>
+                    <p>Start adding your secret recipes to pay!</p>
+                `;
+            }
         } else {
             if (emptyState) emptyState.style.display = 'none';
             listings.forEach(recipe => {
@@ -630,7 +655,14 @@ export async function loadMyPurchases() {
         grid.innerHTML = '';
 
         if (purchases.length === 0) {
-            if (emptyState) { emptyState.style.display = 'block'; emptyState.querySelector('h3').textContent = 'No purchases yet'; emptyState.querySelector('p').textContent = 'Browse the store to find recipes you love!'; }
+            if (emptyState) {
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = `
+                    <div class="empty-icon">🛒</div>
+                    <h3>No purchases yet</h3>
+                    <p>Browse the store to find recipes you love!</p>
+                `;
+            }
         } else {
             if (emptyState) emptyState.style.display = 'none';
             purchases.forEach(recipe => {
@@ -691,6 +723,10 @@ export async function deleteStoreRecipe(id) {
 }
 
 export function openSellRecipeModalWithData(recipe) {
+    if (!isPremium()) {
+        showNotification('❌ Selling recipes is a premium-only feature.', 'error');
+        return;
+    }
     const sellRecipeModal = document.getElementById('sellRecipeModal');
     const sellRecipeForm = document.getElementById('sellRecipeForm');
     if (!sellRecipeModal || !sellRecipeForm) return;

@@ -293,6 +293,12 @@ export async function saveBookMeta() {
     const title = document.getElementById('bookTitleInput').value.trim();
     const description = document.getElementById('bookDescInput').value.trim();
     const price = parseFloat(document.getElementById('bookPriceInput').value) || 0;
+
+    if (price > 0 && !isPremium()) {
+        showNotification('❌ Selling books (setting a price) is a premium-only feature.', 'error');
+        return;
+    }
+
     const is_public = document.getElementById('bookIsPublic')?.checked || false;
     const theme = document.querySelector('.book-theme-btn.active')?.dataset.theme || 'classic';
     const coverImg = document.getElementById('bookCoverPreview');
@@ -319,6 +325,11 @@ export async function createNewBook() {
     const description = document.getElementById('newBookDesc').value.trim();
     const price = parseFloat(document.getElementById('newBookPrice').value) || 0;
     if (!title) { showNotification('❌ Please enter a book title', 'error'); return; }
+
+    if (price > 0 && !isPremium()) {
+        showNotification('❌ Selling books (setting a price) is a premium-only feature.', 'error');
+        return;
+    }
 
     try {
         const res = await fetch(BOOK_API, {

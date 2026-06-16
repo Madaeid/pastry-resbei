@@ -58,6 +58,13 @@ router.post('/', authenticateToken, async (req, res) => {
         if (cover_photo) cover_photo = await uploadMedia(cover_photo, 'books');
         const premium = await isPremiumUser(db, req.user.userId);
 
+        if (!premium && parseFloat(price) > 0) {
+            return res.status(403).json({
+                error: 'Premium required to sell books',
+                message: 'Setting a price for books is a Premium feature. Upgrade to unlock!'
+            });
+        }
+
         // Free user limit: 1 book
         if (!premium) {
             const countResult = await db.query('SELECT COUNT(*) as c FROM books WHERE user_id = $1', [req.user.userId]);
@@ -138,7 +145,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: 'Book not found' });
         }
 
+        const premium = await isPremiumUser(db, req.user.userId);
         const priceVal = price !== undefined && price !== null && price !== '' ? parseFloat(price) : null;
+        if (!premium && priceVal > 0) {
+            return res.status(403).json({
+                error: 'Premium required to sell books',
+                message: 'Setting a price for books is a Premium feature. Upgrade to unlock!'
+            });
+        }
         const isPublicVal = is_public !== undefined ? is_public : null;
         await db.query(`
             UPDATE books 

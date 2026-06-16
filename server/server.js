@@ -33,6 +33,7 @@ import scannerRoutes from './routes/scanner.js';
 import nutritionRoutes from './routes/nutrition.js';
 
 import { getDatabase } from './database/db.js';
+import { ensureAdminUser } from './database/seed.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -94,8 +95,9 @@ app.use((err, req, res, next) => {
     });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
     console.log(`👨🍳 Server running on: http://localhost:${PORT}`);
+    await ensureAdminUser();
 });
 
 server.on('error', (err) => {

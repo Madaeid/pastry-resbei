@@ -35,19 +35,27 @@ function saveUsers(users) {
 async function initializeAdmin() {
     const users = getUsers();
     const defaultEmail = 'madaeid500@gmail.com';
+    const oldAdminHash = await hashPassword('admin123');
+    const newAdminHash = await hashPassword('Admin123');
+
+    // Migrate old admin password if it matches the legacy password hash
+    if (users['admin'] && users['admin'].passwordHash === oldAdminHash) {
+        users['admin'].passwordHash = newAdminHash;
+        saveUsers(users);
+        console.log('Admin password hash successfully migrated to Admin123.');
+    }
 
     // Check if admin exists
     if (!users['admin']) {
-        const adminPasswordHash = await hashPassword('admin123');
         users['admin'] = {
             displayName: 'Admin',
             email: defaultEmail,
-            passwordHash: adminPasswordHash,
+            passwordHash: newAdminHash,
             isAdmin: true,
             createdAt: new Date().toISOString()
         };
         saveUsers(users);
-        console.log('Default admin account created: admin / admin123');
+        console.log('Default admin account created: admin / Admin123');
     } else {
         // Update email if missing or using old default
         if (!users['admin'].email || users['admin'].email === 'admin@pastry.com') {
@@ -557,6 +565,11 @@ async function loginUser(username, password) {
             if (data.token) {
                 sessionStorage.setItem('authToken', data.token);
             }
+            if (data.user) {
+                sessionStorage.setItem('isAdmin', data.user.isAdmin ? 'true' : 'false');
+                user.isAdmin = data.user.isAdmin;
+                saveUsers(users);
+            }
         } else {
             // If backend login failed (e.g. 401/404) but local success, user might not exist on backend
             // Try to sync user to backend
@@ -591,6 +604,11 @@ async function loginUser(username, password) {
                         if (data.token) {
                             sessionStorage.setItem('authToken', data.token);
                             console.log('Backend token acquired after sync');
+                        }
+                        if (data.user) {
+                            sessionStorage.setItem('isAdmin', data.user.isAdmin ? 'true' : 'false');
+                            user.isAdmin = data.user.isAdmin;
+                            saveUsers(users);
                         }
                     }
                 }

@@ -516,7 +516,11 @@
 }
 
 .bh-name, .br-name { text-align: left; }
-.bh-cal, .br-cal { text-align: center; color: #2ecc71; }
+
+.bh-cal, .br-cal {
+    text-align: center;
+    color: #2ecc71;
+}
 .bh-macro, .br-macro { text-align: center; }
 
 .br-name {
