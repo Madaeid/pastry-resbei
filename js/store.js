@@ -470,7 +470,6 @@ export async function purchaseRecipe(id, method = 'wallet') {
     try {
         if (method === 'stripe') {
             // Create Stripe checkout session
-            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
             const response = await fetch(`${API_URL}/store/create-checkout-session`, {
                 method: 'POST',
                 headers: {
@@ -479,8 +478,8 @@ export async function purchaseRecipe(id, method = 'wallet') {
                 },
                 body: JSON.stringify({
                     recipeId: id,
-                    successUrl: `${baseUrl}/pages/payment-success.html?type=recipe&recipe_id=${id}`,
-                    cancelUrl: `${baseUrl}/index.html`
+                    successUrl: `${window.location.origin}/pages/payment-success.html?type=recipe&recipe_id=${id}`,
+                    cancelUrl: `${window.location.origin}/index.html`
                 })
             });
 

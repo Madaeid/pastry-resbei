@@ -899,7 +899,7 @@ async function handleStripeCheckout(e) {
 
         console.log('Creating checkout session for plan:', selectedPlan);
         // Improved URL construction to support subpath deployments (GitHub Pages) and local dev
-        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+        const baseUrl = window.location.origin;
 
         const currentUrlParams = new URLSearchParams(window.location.search);
         const source = currentUrlParams.get('source');
@@ -908,23 +908,23 @@ async function handleStripeCheckout(e) {
         let endpoint = '/subscriptions/create-checkout-session';
         let body = {
             planId: selectedPlan,
-            successUrl: `${baseUrl}/payment-success.html${source ? `?source=${source}` : ''}`,
-            cancelUrl: `${baseUrl}/payment.html${source ? `?source=${source}` : ''}`
+            successUrl: `${window.location.origin}/pages/payment-success.html${source ? `?source=${source}` : ''}`,
+            cancelUrl: `${window.location.origin}/pages/payment.html${source ? `?source=${source}` : ''}`
         };
 
         if (selectedPlan === 'recipe') {
             endpoint = '/store/create-checkout-session';
             body = {
                 recipeId: pendingRecipeId,
-                successUrl: `${baseUrl}/payment-success.html?type=recipe&recipe_id=${pendingRecipeId}`,
-                cancelUrl: `${baseUrl}/payment.html?recipeId=${pendingRecipeId}`
+                successUrl: `${window.location.origin}/pages/payment-success.html?type=recipe&recipe_id=${pendingRecipeId}`,
+                cancelUrl: `${window.location.origin}/pages/payment.html?recipeId=${pendingRecipeId}`
             };
         } else if (selectedPlan === 'book') {
             endpoint = '/books/create-checkout-session';
             body = {
                 bookId: pendingBookId,
-                successUrl: `${baseUrl}/payment-success.html?type=book&book_id=${pendingBookId}`,
-                cancelUrl: `${baseUrl}/payment.html?bookId=${pendingBookId}`
+                successUrl: `${window.location.origin}/pages/payment-success.html?type=book&book_id=${pendingBookId}`,
+                cancelUrl: `${window.location.origin}/pages/payment.html?bookId=${pendingBookId}`
             };
         }
 

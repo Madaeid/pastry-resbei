@@ -905,8 +905,7 @@ window.purchaseBook = async function (bookId, method = 'wallet') {
     try {
         if (method === 'stripe') {
             // Create Stripe checkout session for book
-            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
-            const response = await fetch(`${API_URL}/books/create-checkout-session`, {
+            const response = await fetch(`${BOOK_API}/create-checkout-session`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -914,8 +913,8 @@ window.purchaseBook = async function (bookId, method = 'wallet') {
                 },
                 body: JSON.stringify({
                     bookId: bookId,
-                    successUrl: `${baseUrl}/pages/payment-success.html?type=book&book_id=${bookId}`,
-                    cancelUrl: `${baseUrl}/index.html`
+                    successUrl: `${window.location.origin}/pages/payment-success.html?type=book&book_id=${bookId}`,
+                    cancelUrl: `${window.location.origin}/index.html`
                 })
             });
 
